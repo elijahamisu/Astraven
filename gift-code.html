@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redeem Gift Code | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .gift-wrap { max-width: 520px; margin: 0 auto; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      background: var(--cream-white);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="gift-wrap">
+        <h1 class="font-heading" style="margin-bottom: 6px; font-size: 1.8rem;">Gift Code Redemption</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+          Enter your official promotional voucher code to credit verified capital instantly to your wallet.
+        </p>
+
+        <form class="astra-card" id="giftForm" style="margin-bottom: 24px;">
+          <div class="form-group">
+            <label for="code">Voucher Code</label>
+            <input type="text" id="code" class="form-control" placeholder="e.g. ASTRAVEN2026" required autocomplete="off">
+          </div>
+
+          <button type="submit" id="redeemBtn" class="btn-gold" style="width: 100%; padding: 14px;">
+            Redeem Voucher
+          </button>
+        </form>
+
+        <div class="astra-card">
+          <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 14px;">Redemption History</h2>
+          <div id="historyContainer">
+            <p style="text-align: center; color: var(--secondary-text); padding: 20px;">Loading your redemptions...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency, formatDate } from './shared/formatters.js';
+
+    let currentSession = null;
+
+    async function initGift() {
+      await initUserNavigation({ requireSession: true });
+      currentSession = await requireAuth();
+      if (!currentSession) return;
+
+      loadRedemptions();
+
+      document.getElementById('giftForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = document.getElementById('code').value.trim();
+        const btn = document.getElementById('redeemBtn');
+        btn.disabled = true;
+        btn.textContent = 'Verifying Voucher...';
+
+        try {
+          const res = await fetch('/api/gift-codes/redeem', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentSession.access_token}`
+            },
+            body: JSON.stringify({ code })
+          });
+
+          const data = await res.json();
+          if (!data.success) {
+            alert(data.error || 'Failed to redeem voucher.');
+          } else {
+            alert(`🎉 Success! ₦${data.amount} credited to your available balance.`);
+            document.getElementById('giftForm').reset();
+            loadRedemptions();
+          }
+        } catch (err) {
+          alert('Network or server error during redemption.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Redeem Voucher';
+        }
+      });
+    }
+
+    async function loadRedemptions() {
+      const { data: redemptions } = await supabase
+        .from('gift_code_redemptions')
+        .select('*')
+        .eq('user_id', currentSession.user.id)
+        .order('created_at', { ascending: false });
+
+      const container = document.getElementById('historyContainer');
+      if (!redemptions || redemptions.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 10px;">No gift codes redeemed yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = redemptions.map(r => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ECECEC;">
+          <div>
+            <div style="font-weight: 700; color: var(--deep-forest); font-size: 0.9rem;">${formatCurrency(r.reward_amount)}</div>
+            <div style="font-size: 0.75rem; color: var(--secondary-text);">${formatDate(r.created_at)}</div>
+          </div>
+          <span class="badge-status badge-completed">Claimed</span>
+        </div>
+      `).join('');
+    }
+
+    initGift();
+  </script>
+</body>
+</html>
