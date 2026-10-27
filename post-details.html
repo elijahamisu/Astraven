@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post Discussion | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .post-wrap { max-width: 680px; margin: 0 auto; }
+    .comment-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #ECECEC;
+    }
+    .comment-item:last-child { border-bottom: none; }
+    .comment-author-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="post-wrap">
+        <a href="blog.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 16px;">
+          ← Back to Community Feed
+        </a>
+
+        <div class="astra-card" id="postContentCard" style="margin-bottom: 24px;">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading post...</p>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="astra-card">
+          <h3 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 14px;">Discussion & Comments</h3>
+
+          <form id="commentForm" style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <input type="text" id="commentInput" class="form-control" style="flex: 1; padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm);" placeholder="Write a comment..." required maxlength="300">
+            <button type="submit" id="commentBtn" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">Send</button>
+          </form>
+
+          <div id="commentsList">
+            <p style="color: var(--secondary-text); font-size: 0.85rem; text-align: center; padding: 20px;">Loading comments...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatDate } from './shared/formatters.js';
+
+    let currentUserId = null;
+    let targetPostId = null;
+
+    async function loadPostDetails() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+      currentUserId = session.user.id;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      targetPostId = urlParams.get('id');
+
+      const card = document.getElementById('postContentCard');
+      if (!targetPostId) {
+        card.innerHTML = `<p style="color: var(--error-red); text-align: center;">No post identifier provided.</p>`;
+        return;
+      }
+
+      const { data: post, error } = await supabase
+        .from('blog_posts')
+        .select(`
+          id, title, content, caption, image_url, likes_count, bonus_awarded, created_at,
+          profiles!blog_posts_user_id_fkey(username, full_name)
+        `)
+        .eq('id', targetPostId)
+        .maybeSingle();
+
+      if (error || !post) {
+        card.innerHTML = `<p style="color: var(--error-red); text-align: center;">Post not found or pending review.</p>`;
+        return;
+      }
+
+      const author = post.profiles?.full_name || post.profiles?.username || 'Investor';
+
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div>
+            <strong style="color: var(--deep-forest); font-size: 1rem;">@${escapeHtml(author)}</strong>
+            <span style="font-size: 0.75rem; color: var(--secondary-text); display: block;">${formatDate(post.created_at)}</span>
+          </div>
+          ${post.bonus_awarded ? `<span class="badge-status badge-completed">✦ Verified Bonus Awarded</span>` : ''}
+        </div>
+
+        <h1 style="font-size: 1.4rem; color: var(--deep-forest); margin-bottom: 12px;">${escapeHtml(post.title)}</h1>
+        <p style="font-size: 0.95rem; color: var(--primary-text); line-height: 1.6; white-space: pre-wrap;">${escapeHtml(post.content)}</p>
+
+        ${post.image_url ? `
+          <img src="${post.image_url}" alt="Proof receipt" style="width: 100%; max-height: 440px; object-fit: contain; border-radius: var(--radius-sm); border: 1px solid #E5E7EB; margin-top: 14px; background: #000;">
+        ` : ''}
+
+        ${post.caption ? `
+          <p style="font-size: 0.85rem; color: var(--secondary-text); font-style: italic; margin-top: 10px;">"${escapeHtml(post.caption)}"</p>
+        ` : ''}
+      `;
+
+      loadComments();
+    }
+
+    async function loadComments() {
+      const container = document.getElementById('commentsList');
+      const { data: comments, error } = await supabase
+        .from('blog_comments')
+        .select(`id, comment, created_at, profiles!blog_comments_user_id_fkey(username, full_name)`)
+        .eq('post_id', targetPostId)
+        .order('created_at', { ascending: true });
+
+      if (error || !comments || comments.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); font-size: 0.85rem; padding: 14px;">No comments yet. Share your thoughts above!</p>`;
+        return;
+      }
+
+      container.innerHTML = comments.map(c => {
+        const name = c.profiles?.full_name || c.profiles?.username || 'Investor';
+        return `
+          <div class="comment-item">
+            <div class="comment-author-row">
+              <strong style="color: var(--deep-forest);">@${escapeHtml(name)}</strong>
+              <span style="color: var(--secondary-text);">${formatDate(c.created_at)}</span>
+            </div>
+            <p style="font-size: 0.88rem; color: var(--primary-text);">${escapeHtml(c.comment)}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('commentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('commentInput');
+      const btn = document.getElementById('commentBtn');
+      const text = input.value.trim();
+      if (!text) return;
+
+      btn.disabled = true;
+
+      const { error } = await supabase
+        .from('blog_comments')
+        .insert({
+          post_id: targetPostId,
+          user_id: currentUserId,
+          comment: text
+        });
+
+      btn.disabled = false;
+      if (!error) {
+        input.value = '';
+        loadComments();
+        // Increment count
+        await supabase.rpc('increment_post_comments', { p_post_id: targetPostId }).catch(() => {});
+      }
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    loadPostDetails();
+  </script>
+</body>
+</html>
