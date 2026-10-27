@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Conversation | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .chat-wrap { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; min-height: 70vh; }
+    .chat-header {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+    }
+    .messages-thread {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .msg-bubble {
+      max-width: 82%;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      line-height: 1.45;
+      position: relative;
+      word-break: break-word;
+    }
+    .msg-bubble.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
+      color: var(--white);
+      border-bottom-right-radius: 2px;
+    }
+    .msg-bubble.staff {
+      align-self: flex-start;
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: var(--primary-text);
+      border-bottom-left-radius: 2px;
+      box-shadow: var(--shadow-sm);
+    }
+    .msg-meta {
+      font-size: 0.7rem;
+      opacity: 0.75;
+      margin-top: 4px;
+      display: block;
+      text-align: right;
+    }
+    .chat-input-bar {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="chat-wrap">
+        <a href="customer-service.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; margin-bottom: 12px; display: inline-block;">
+          ← Back to All Tickets
+        </a>
+
+        <!-- Header Summary -->
+        <div class="chat-header" id="ticketSummary">
+          <p style="color: var(--secondary-text);">Loading ticket information...</p>
+        </div>
+
+        <!-- Conversation Thread -->
+        <div class="messages-thread" id="chatThread">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading conversation...</p>
+        </div>
+
+        <!-- Reply Input Bar -->
+        <form class="chat-input-bar" id="replyForm">
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="replyMsg" class="form-control" style="flex: 1; padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm);" placeholder="Type your reply to the support team..." required autocomplete="off">
+            <button type="submit" id="sendBtn" class="btn-gold" style="padding: 10px 20px; font-size: 0.88rem;">Send</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatDate } from './shared/formatters.js';
+
+    let currentUserId = null;
+    let targetTicketId = null;
+
+    async function loadConversation() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+      currentUserId = session.user.id;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      targetTicketId = urlParams.get('id');
+
+      if (!targetTicketId) {
+        document.getElementById('ticketSummary').innerHTML = `<p style="color: var(--error-red);">No ticket specified.</p>`;
+        return;
+      }
+
+      // 1. Fetch Ticket
+      const { data: ticket, error: tErr } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .eq('id', targetTicketId)
+        .maybeSingle();
+
+      if (tErr || !ticket) {
+        document.getElementById('ticketSummary').innerHTML = `<p style="color: var(--error-red);">Ticket not found or unauthorized.</p>`;
+        return;
+      }
+
+      document.getElementById('ticketSummary').innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold);">${ticket.ticket_ref}</span>
+          <span class="badge-status ${ticket.status === 'resolved' ? 'badge-completed' : 'badge-pending'}">${ticket.status.replace(/_/g, ' ')}</span>
+        </div>
+        <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 4px;">${escapeHtml(ticket.subject)}</h2>
+        <span style="font-size: 0.75rem; color: var(--secondary-text);">Category: <strong>${ticket.category}</strong> | Opened: ${formatDate(ticket.created_at)}</span>
+      `;
+
+      // 2. Fetch Messages
+      const { data: messages } = await supabase
+        .from('support_messages')
+        .select('*')
+        .eq('ticket_id', targetTicketId)
+        .order('created_at', { ascending: true });
+
+      const thread = document.getElementById('chatThread');
+      if (!messages || messages.length === 0) {
+        thread.innerHTML = `<p style="text-align: center; color: var(--secondary-text);">No messages recorded.</p>`;
+        return;
+      }
+
+      thread.innerHTML = messages.map(m => {
+        const isUser = m.sender_id === currentUserId && !m.is_staff;
+        return `
+          <div class="msg-bubble ${isUser ? 'user' : 'staff'}">
+            <span style="font-size: 0.72rem; font-weight: 700; color: ${isUser ? 'var(--soft-gold)' : 'var(--primary-green)'}; display: block; margin-bottom: 2px;">
+              ${isUser ? 'You' : '✦ Support Desk Officer'}
+            </span>
+            <div>${escapeHtml(m.message)}</div>
+            ${m.attachment_url ? `
+              <div style="margin-top: 6px; font-size: 0.75rem; text-decoration: underline; opacity: 0.9;">[Attachment on file]</div>
+            ` : ''}
+            <span class="msg-meta">${formatDate(m.created_at)}</span>
+          </div>
+        `;
+      }).join('');
+
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    document.getElementById('replyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('replyMsg');
+      const btn = document.getElementById('sendBtn');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      btn.disabled = true;
+
+      const { data, error } = await supabase.rpc('reply_support_ticket', {
+        p_ticket_id: targetTicketId,
+        p_sender_id: currentUserId,
+        p_message: msg,
+        p_attachment_url: null
+      });
+
+      btn.disabled = false;
+      if (error || !data.success) {
+        alert(data?.error || error?.message || 'Failed to send reply');
+      } else {
+        input.value = '';
+        loadConversation();
+      }
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    loadConversation();
+  </script>
+</body>
+</html>
