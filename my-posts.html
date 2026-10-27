@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Submissions | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active { background: var(--dark-emerald); color: var(--bright-gold); border-color: var(--bright-gold); }
+    .my-post-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Member Moderation</span>
+          <h1 class="font-heading" style="font-size: 1.8rem;">My Submissions</h1>
+        </div>
+        <a href="create-post.html" class="btn-gold" style="padding: 10px 16px; font-size: 0.85rem;">+ Create New Post</a>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All Posts</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="approved">Approved</button>
+        <button class="filter-btn" data-filter="rejected">Rejected</button>
+      </div>
+
+      <div id="myPostsList">
+        <div class="astra-card" style="text-align: center; padding: 40px; color: var(--secondary-text);">Loading your submissions...</div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatDate } from './shared/formatters.js';
+
+    let allPosts = [];
+
+    async function loadMyPosts() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data: posts, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      const container = document.getElementById('myPostsList');
+
+      if (error || !posts || posts.length === 0) {
+        container.innerHTML = `
+          <div class="astra-card" style="text-align: center; padding: 40px;">
+            <p style="color: var(--secondary-text); margin-bottom: 12px;">You haven't submitted any posts yet.</p>
+            <a href="create-post.html" class="btn-gold">Create Post</a>
+          </div>
+        `;
+        return;
+      }
+
+      allPosts = posts;
+      render(allPosts);
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const filter = btn.dataset.filter;
+          render(filter === 'all' ? allPosts : allPosts.filter(p => p.status === filter));
+        });
+      });
+    }
+
+    function render(list) {
+      const container = document.getElementById('myPostsList');
+      if (list.length === 0) {
+        container.innerHTML = `<div class="astra-card" style="text-align: center; padding: 30px; color: var(--secondary-text);">No posts in this category.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(p => `
+        <div class="my-post-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h3 style="font-size: 1.1rem; color: var(--deep-forest);">${escapeHtml(p.title)}</h3>
+            <span class="badge-status ${p.status === 'approved' ? 'badge-completed' : (p.status === 'pending' ? 'badge-pending' : 'badge-failed')}">
+              ${p.status}
+            </span>
+          </div>
+
+          <p style="font-size: 0.88rem; color: var(--secondary-text); margin-bottom: 10px; line-height: 1.4;">
+            ${escapeHtml(p.content.substring(0, 140))}${p.content.length > 140 ? '...' : ''}
+          </p>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: var(--secondary-text);">
+            <span>Submitted: ${formatDate(p.created_at)}</span>
+            ${p.status === 'approved' ? `
+              <a href="post-details.html?id=${p.id}" style="color: var(--primary-green); font-weight: 700; text-decoration: none;">View Live Post →</a>
+            ` : ''}
+          </div>
+
+          ${p.status === 'rejected' && p.rejection_reason ? `
+            <div style="background: #FDE8E8; color: var(--error-red); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; margin-top: 10px;">
+              <strong>Moderator Note:</strong> ${escapeHtml(p.rejection_reason)}
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    loadMyPosts();
+  </script>
+</body>
+</html>
