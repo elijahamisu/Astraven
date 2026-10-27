@@ -6,86 +6,40 @@
   <title>User Profile | ASTRAVEN</title>
   <link rel="stylesheet" href="shared/theme.css">
   <style>
-    .profile-header-banner {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid #ECECEC;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-    .avatar-large {
-      width: 64px;
-      height: 64px;
+    .profile-box { max-width: 640px; margin: 0 auto; }
+    .avatar-crest {
+      width: 68px;
+      height: 68px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
+      background: linear-gradient(135deg, var(--card-green) 0%, var(--primary-green) 100%);
       border: 2px solid var(--metallic-gold);
       color: var(--bright-gold);
+      font-size: 1.8rem;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
-      font-weight: 700;
-      font-family: var(--font-heading);
       flex-shrink: 0;
     }
-    .profile-meta-text {
-      min-width: 0;
-      flex: 1;
-    }
-    .profile-badges {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-      flex-wrap: wrap;
-    }
-    .form-grid-2 {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 16px;
-    }
-    @media (min-width: 650px) {
-      .form-grid-2 {
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-      }
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 0;
-    }
-    .form-group label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--deep-forest);
-    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--deep-forest); }
     .form-control {
-      width: 100%;
-      max-width: 100%;
       padding: 12px 14px;
       border: 1px solid #D1D5DB;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-sm);
       font-size: 0.95rem;
       background: var(--cream-white);
-      box-sizing: border-box;
     }
-    .form-control[readonly] {
-      background: #F3F4F6;
-      color: var(--secondary-text);
-      cursor: not-allowed;
-    }
+    .form-control[readonly] { background: #F3F4F6; color: var(--secondary-text); cursor: not-allowed; }
     .alert-banner {
       padding: 12px 16px;
-      border-radius: var(--radius-md);
-      margin-bottom: 20px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
       font-size: 0.9rem;
       display: none;
     }
-    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
     .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
   </style>
 </head>
 <body>
@@ -93,31 +47,31 @@
     <div id="navigationContainer"></div>
 
     <main class="main-content">
-      <h1 class="font-heading" style="margin-bottom: 20px; font-size: clamp(1.4rem, 4vw, 2rem);">Personal Profile</h1>
+      <div class="profile-box">
+        <h1 class="font-heading" style="font-size: 1.8rem; margin-bottom: 20px;">Investor Profile</h1>
 
-      <div id="alertBox" class="alert-banner"></div>
+        <div id="alertBanner" class="alert-banner"></div>
 
-      <div class="astra-card">
-        <div class="profile-header-banner">
-          <div class="avatar-large" id="avatarDisplay">U</div>
-          <div class="profile-meta-text">
-            <h2 id="nameDisplay" style="font-size: 1.3rem; color: var(--deep-forest); word-break: break-word;">Loading...</h2>
-            <div class="profile-badges">
-              <span class="badge-status badge-completed" id="vipDisplay">Standard Member</span>
-              <span class="badge-status badge-pending" id="statusDisplay">Active Account</span>
+        <div class="astra-card">
+          <div style="display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #ECECEC; padding-bottom: 20px; margin-bottom: 20px;">
+            <div class="avatar-crest" id="avatarDisplay">A</div>
+            <div>
+              <h2 id="nameHeading" style="font-size: 1.3rem; color: var(--deep-forest);">Loading...</h2>
+              <div style="display: flex; gap: 8px; margin-top: 4px;">
+                <span class="badge-status badge-completed" id="vipDisplay">Standard Member</span>
+                <span class="badge-status badge-pending">Active Account</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <form id="profileForm">
-          <div class="form-grid-2">
+          <form id="profileForm">
             <div class="form-group">
               <label for="fullName">Full Name</label>
-              <input type="text" id="fullName" class="form-control" required>
+              <input type="text" id="fullName" class="form-control" required maxlength="120">
             </div>
 
             <div class="form-group">
-              <label for="username">Username (Permanent)</label>
+              <label for="username">Username (Immutable)</label>
               <input type="text" id="username" class="form-control" readonly>
             </div>
 
@@ -128,7 +82,7 @@
 
             <div class="form-group">
               <label for="phone">Phone Number</label>
-              <input type="tel" id="phone" class="form-control" required>
+              <input type="tel" id="phone" class="form-control" required maxlength="20">
             </div>
 
             <div class="form-group">
@@ -137,15 +91,15 @@
             </div>
 
             <div class="form-group">
-              <label for="createdAt">Member Since</label>
-              <input type="text" id="createdAt" class="form-control" readonly>
+              <label for="joinedDate">Member Since</label>
+              <input type="text" id="joinedDate" class="form-control" readonly>
             </div>
-          </div>
 
-          <div style="margin-top: 24px;">
-            <button type="submit" id="saveBtn" class="btn-gold" style="width: auto;">Save Changes</button>
-          </div>
-        </form>
+            <button type="submit" id="saveBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 8px;">
+              Save Profile Changes
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   </div>
@@ -153,12 +107,11 @@
   <script type="module">
     import { initUserNavigation } from './shared/user-navigation.js';
     import { requireAuth, supabase } from './shared/supabase-client.js';
-    import { isValidNigerianPhone } from './shared/validation.js';
     import { formatDate } from './shared/formatters.js';
 
     let currentUserId = null;
 
-    async function initProfile() {
+    async function loadProfile() {
       await initUserNavigation({ requireSession: true });
       const session = await requireAuth();
       if (!session) return;
@@ -168,7 +121,7 @@
         .from('profiles')
         .select('*')
         .eq('id', currentUserId)
-        .maybeSingle();
+        .single();
 
       if (profile) {
         document.getElementById('fullName').value = profile.full_name || '';
@@ -176,63 +129,50 @@
         document.getElementById('email').value = session.user.email || '';
         document.getElementById('phone').value = profile.phone || '';
         document.getElementById('refCode').value = profile.referral_code || '';
-        document.getElementById('createdAt').value = formatDate(profile.created_at, { includeTime: false });
-        
+        document.getElementById('joinedDate').value = formatDate(profile.created_at, { includeTime: false });
+
         const displayName = profile.full_name || profile.username || 'Investor';
-        document.getElementById('nameDisplay').textContent = displayName;
+        document.getElementById('nameHeading').textContent = displayName;
         document.getElementById('avatarDisplay').textContent = displayName.charAt(0).toUpperCase();
+
         if (profile.astra_vip_level > 0) {
-          document.getElementById('vipDisplay').textContent = `VIP ${profile.astra_vip_level}`;
+          document.getElementById('vipDisplay').textContent = `✦ VIP ${profile.astra_vip_level}`;
         }
       }
     }
 
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const alertBox = document.getElementById('alertBox');
-      alertBox.style.display = 'none';
+      const alertBanner = document.getElementById('alertBanner');
+      const saveBtn = document.getElementById('saveBtn');
+      alertBanner.style.display = 'none';
 
       const fullName = document.getElementById('fullName').value.trim();
       const phone = document.getElementById('phone').value.trim();
 
-      if (!fullName) {
-        alertBox.textContent = 'Full name cannot be blank.';
-        alertBox.className = 'alert-banner error';
-        return;
-      }
-      if (!isValidNigerianPhone(phone)) {
-        alertBox.textContent = 'Please enter a valid Nigerian phone number.';
-        alertBox.className = 'alert-banner error';
-        return;
-      }
-
-      const saveBtn = document.getElementById('saveBtn');
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: fullName,
-          phone: phone,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentUserId);
+      const { data, error } = await supabase.rpc('update_user_profile', {
+        p_user_id: currentUserId,
+        p_full_name: fullName,
+        p_phone: phone
+      });
 
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Save Changes';
+      saveBtn.textContent = 'Save Profile Changes';
 
-      if (error) {
-        alertBox.textContent = error.message;
-        alertBox.className = 'alert-banner error';
+      if (error || !data.success) {
+        alertBanner.textContent = data?.error || error?.message || 'Profile update failed.';
+        alertBanner.className = 'alert-banner error';
       } else {
-        alertBox.textContent = 'Profile updated successfully!';
-        alertBox.className = 'alert-banner success';
-        document.getElementById('nameDisplay').textContent = fullName;
+        alertBanner.textContent = 'Profile updated successfully!';
+        alertBanner.className = 'alert-banner success';
+        document.getElementById('nameHeading').textContent = fullName;
       }
     });
 
-    initProfile();
+    loadProfile();
   </script>
 </body>
 </html>
