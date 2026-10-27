@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Investments | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active {
+      background: var(--dark-emerald);
+      color: var(--bright-gold);
+      border-color: var(--bright-gold);
+    }
+    .investments-list {
+      display: grid;
+      gap: 14px;
+    }
+    .inv-item-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Aviation Holdings</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">My Investments</h1>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All Packages</button>
+        <button class="filter-btn" data-filter="active">Active</button>
+        <button class="filter-btn" data-filter="matured">Matured</button>
+      </div>
+
+      <div class="investments-list" id="invContainer">
+        <div class="astra-card" style="text-align: center; padding: 40px;">Loading investment holdings...</div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency, formatDate } from './shared/formatters.js';
+
+    let allInvestments = [];
+
+    async function loadInvestments() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data: invs, error } = await supabase
+        .from('investments')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      const container = document.getElementById('invContainer');
+
+      if (error || !invs || invs.length === 0) {
+        container.innerHTML = `
+          <div class="astra-card" style="text-align: center; padding: 48px 16px;">
+            <div style="font-size: 2.4rem; margin-bottom: 10px; opacity: 0.6;">🛫</div>
+            <h3 style="margin-bottom: 6px;">No Active Investments Found</h3>
+            <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 18px;">
+              You do not currently possess any active flight revenue packages.
+            </p>
+            <a href="vip.html" class="btn-gold">Explore ASTRA-VIP Packages</a>
+          </div>
+        `;
+        return;
+      }
+
+      allInvestments = invs;
+      renderList('all');
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderList(btn.dataset.filter);
+        });
+      });
+    }
+
+    function renderList(filter) {
+      const container = document.getElementById('invContainer');
+      const filtered = allInvestments.filter(inv => filter === 'all' || inv.status === filter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="astra-card" style="text-align: center; padding: 30px;"><p style="color: var(--secondary-text);">No investments found for selected filter.</p></div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(inv => `
+        <div class="inv-item-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div>
+              <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--metallic-gold); font-weight: 700;">${inv.category_slug.toUpperCase()}</span>
+              <h3 style="font-size: 1.15rem; color: var(--deep-forest);">${inv.product_name}</h3>
+            </div>
+            <span class="badge-status ${inv.status === 'active' ? 'badge-completed' : 'badge-pending'}">
+              ${inv.status}
+            </span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.85rem; margin-bottom: 14px; background: var(--light-gold-bg); padding: 10px; border-radius: var(--radius-sm);">
+            <div>
+              <span style="color: var(--secondary-text); font-size: 0.75rem;">Invested Capital:</span>
+              <div style="font-weight: 700; color: var(--deep-forest);">${formatCurrency(inv.purchase_price)}</div>
+            </div>
+            <div>
+              <span style="color: var(--secondary-text); font-size: 0.75rem;">Total Expected:</span>
+              <div style="font-weight: 700; color: var(--primary-green);">${formatCurrency(inv.total_payout)}</div>
+            </div>
+            <div>
+              <span style="color: var(--secondary-text); font-size: 0.75rem;">Maturity Date:</span>
+              <div style="font-weight: 600;">${formatDate(inv.maturity_date, { includeTime: false })}</div>
+            </div>
+            <div>
+              <span style="color: var(--secondary-text); font-size: 0.75rem;">Payouts Credited:</span>
+              <div style="font-weight: 700; color: var(--success-green);">${formatCurrency(inv.total_paid_out)}</div>
+            </div>
+          </div>
+
+          <div style="text-align: right;">
+            <a href="investment-details.html?id=${inv.id}" class="btn-emerald" style="padding: 8px 16px; font-size: 0.82rem;">View Full Details →</a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    loadInvestments();
+  </script>
+</body>
+</html>
