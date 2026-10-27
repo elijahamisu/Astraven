@@ -3,73 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Notifications | ASTRAVEN</title>
+  <title>Notification Centre | ASTRAVEN</title>
   <link rel="stylesheet" href="shared/theme.css">
   <style>
-    .notif-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .notif-item {
+    .notif-wrap { max-width: 680px; margin: 0 auto; }
+    .notif-card-item {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-sm);
       padding: 16px;
-      border-bottom: 1px solid #ECECEC;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 12px;
-      min-width: 0;
+      gap: 14px;
+      box-shadow: var(--shadow-sm);
     }
-    .notif-item.unread {
-      background: #FBF9F1;
-      border-left: 4px solid var(--metallic-gold);
-    }
-    .notif-item:last-child { border-bottom: none; }
-    .notif-body-wrap {
-      flex: 1;
-      min-width: 0;
-    }
-    .notif-title {
-      font-weight: 700;
-      color: var(--deep-forest);
-      font-size: 0.95rem;
-      margin-bottom: 4px;
-      word-break: break-word;
-    }
-    .notif-msg {
-      font-size: 0.88rem;
-      color: var(--primary-text);
-      line-height: 1.4;
-      word-break: break-word;
-    }
-    .notif-meta {
-      font-size: 0.75rem;
-      color: var(--secondary-text);
-      margin-top: 6px;
-    }
-    .btn-mark {
-      background: none;
-      border: 1px solid #D1D5DB;
-      padding: 6px 10px;
-      border-radius: var(--radius-sm);
-      font-size: 0.75rem;
-      cursor: pointer;
-      color: var(--secondary-text);
-      white-space: nowrap;
-      flex-shrink: 0;
-      touch-action: manipulation;
-    }
-    .btn-mark:hover {
-      border-color: var(--primary-green);
-      color: var(--primary-green);
-    }
-    .empty-state {
-      padding: 40px 16px;
-      text-align: center;
-      color: var(--secondary-text);
+    .notif-card-item.unread {
+      background: #FFFDF5;
+      border-left: 4px solid var(--bright-gold);
     }
   </style>
 </head>
@@ -78,15 +30,20 @@
     <div id="navigationContainer"></div>
 
     <main class="main-content">
-      <div class="notif-header">
-        <h1 class="font-heading" style="font-size: clamp(1.4rem, 4vw, 2rem);">Notification Centre</h1>
-        <button id="markAllBtn" class="btn-emerald" style="padding: 8px 14px; font-size: 0.85rem;">
-          Mark All Read
-        </button>
-      </div>
+      <div class="notif-wrap">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Member Activity</span>
+            <h1 class="font-heading" style="font-size: 1.8rem;">Notifications</h1>
+          </div>
+          <button id="markAllBtn" class="btn-emerald" style="padding: 8px 16px; font-size: 0.82rem;">
+            Mark All as Read
+          </button>
+        </div>
 
-      <div class="astra-card" style="padding: 0; overflow: hidden;" id="notifListContainer">
-        <div class="empty-state">Loading your notifications...</div>
+        <div id="notifsContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading alerts...</p>
+        </div>
       </div>
     </main>
   </div>
@@ -109,35 +66,43 @@
         .select('*')
         .eq('user_id', currentUserId)
         .order('created_at', { ascending: false })
-        .limit(30);
+        .limit(50);
 
-      const container = document.getElementById('notifListContainer');
+      const container = document.getElementById('notifsContainer');
 
       if (error || !notifs || notifs.length === 0) {
         container.innerHTML = `
-          <div class="empty-state">
-            <div style="font-size: 2.2rem; margin-bottom: 8px; opacity: 0.6;">🔔</div>
-            <p>You have no notifications at this time.</p>
+          <div class="astra-card" style="text-align: center; padding: 40px;">
+            <p style="color: var(--secondary-text);">You have no notifications on file.</p>
           </div>
         `;
         return;
       }
 
       container.innerHTML = notifs.map(n => `
-        <div class="notif-item ${!n.is_read ? 'unread' : ''}" id="notif-${n.id}">
-          <div class="notif-body-wrap">
-            <div class="notif-title">${n.title}</div>
-            <div class="notif-msg">${n.message}</div>
-            <div class="notif-meta">${formatDate(n.created_at)}</div>
+        <div class="notif-card-item ${!n.is_read ? 'unread' : ''}" id="notif-${n.id}">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span class="badge-status ${n.type === 'wallet' ? 'badge-completed' : (n.type === 'security' ? 'badge-failed' : 'badge-pending')}" style="font-size: 0.68rem;">
+                ${n.type.toUpperCase()}
+              </span>
+              <strong style="color: var(--deep-forest); font-size: 0.95rem;">${escapeHtml(n.title)}</strong>
+            </div>
+            <p style="font-size: 0.88rem; color: var(--primary-text); line-height: 1.45; margin-bottom: 6px;">
+              ${escapeHtml(n.message)}
+            </p>
+            <span style="font-size: 0.75rem; color: var(--secondary-text);">${formatDate(n.created_at)}</span>
           </div>
           ${!n.is_read ? `
-            <button class="btn-mark" onclick="markAsRead('${n.id}')">Mark Read</button>
+            <button class="btn-emerald" style="padding: 4px 10px; font-size: 0.75rem; white-space: nowrap;" onclick="markRead('${n.id}')">
+              Mark Read
+            </button>
           ` : ''}
         </div>
       `).join('');
     }
 
-    window.markAsRead = async function(id) {
+    window.markRead = async function(id) {
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
@@ -145,24 +110,27 @@
         .eq('user_id', currentUserId);
 
       if (!error) {
-        const el = document.getElementById(`notif-${id}`);
-        if (el) {
-          el.classList.remove('unread');
-          const btn = el.querySelector('.btn-mark');
-          if (btn) btn.remove();
+        const item = document.getElementById(`notif-${id}`);
+        if (item) {
+          item.classList.remove('unread');
+          item.querySelector('button')?.remove();
         }
       }
     };
 
     document.getElementById('markAllBtn').addEventListener('click', async () => {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', currentUserId)
-        .eq('is_read', false);
-
-      if (!error) loadNotifications();
+      const { data, error } = await supabase.rpc('mark_all_notifications_read', {
+        p_user_id: currentUserId
+      });
+      if (!error && data.success) {
+        loadNotifications();
+      }
     });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
 
     loadNotifications();
   </script>
