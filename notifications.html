@@ -10,39 +10,40 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
-    }
-    .notif-card {
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(212, 175, 55, 0.25);
-      box-shadow: var(--shadow-sm);
-      overflow: hidden;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
     .notif-item {
-      padding: 18px 20px;
+      padding: 16px;
       border-bottom: 1px solid #ECECEC;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 16px;
-      transition: background 0.2s;
+      gap: 12px;
+      min-width: 0;
     }
     .notif-item.unread {
       background: #FBF9F1;
       border-left: 4px solid var(--metallic-gold);
     }
     .notif-item:last-child { border-bottom: none; }
+    .notif-body-wrap {
+      flex: 1;
+      min-width: 0;
+    }
     .notif-title {
       font-weight: 700;
       color: var(--deep-forest);
       font-size: 0.95rem;
       margin-bottom: 4px;
+      word-break: break-word;
     }
     .notif-msg {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       color: var(--primary-text);
       line-height: 1.4;
+      word-break: break-word;
     }
     .notif-meta {
       font-size: 0.75rem;
@@ -52,23 +53,24 @@
     .btn-mark {
       background: none;
       border: 1px solid #D1D5DB;
-      padding: 4px 10px;
+      padding: 6px 10px;
       border-radius: var(--radius-sm);
       font-size: 0.75rem;
       cursor: pointer;
       color: var(--secondary-text);
       white-space: nowrap;
+      flex-shrink: 0;
+      touch-action: manipulation;
     }
     .btn-mark:hover {
       border-color: var(--primary-green);
       color: var(--primary-green);
     }
     .empty-state {
-      padding: 48px 16px;
+      padding: 40px 16px;
       text-align: center;
       color: var(--secondary-text);
     }
-    .empty-icon { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.6; }
   </style>
 </head>
 <body>
@@ -77,13 +79,13 @@
 
     <main class="main-content">
       <div class="notif-header">
-        <h1 class="font-heading">Notification Centre</h1>
-        <button id="markAllBtn" class="btn-emerald" style="padding: 8px 16px; font-size: 0.85rem;">
-          Mark All as Read
+        <h1 class="font-heading" style="font-size: clamp(1.4rem, 4vw, 2rem);">Notification Centre</h1>
+        <button id="markAllBtn" class="btn-emerald" style="padding: 8px 14px; font-size: 0.85rem;">
+          Mark All Read
         </button>
       </div>
 
-      <div class="notif-card" id="notifListContainer">
+      <div class="astra-card" style="padding: 0; overflow: hidden;" id="notifListContainer">
         <div class="empty-state">Loading your notifications...</div>
       </div>
     </main>
@@ -114,7 +116,7 @@
       if (error || !notifs || notifs.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
-            <div class="empty-icon">🔔</div>
+            <div style="font-size: 2.2rem; margin-bottom: 8px; opacity: 0.6;">🔔</div>
             <p>You have no notifications at this time.</p>
           </div>
         `;
@@ -123,7 +125,7 @@
 
       container.innerHTML = notifs.map(n => `
         <div class="notif-item ${!n.is_read ? 'unread' : ''}" id="notif-${n.id}">
-          <div>
+          <div class="notif-body-wrap">
             <div class="notif-title">${n.title}</div>
             <div class="notif-msg">${n.message}</div>
             <div class="notif-meta">${formatDate(n.created_at)}</div>
@@ -159,9 +161,7 @@
         .eq('user_id', currentUserId)
         .eq('is_read', false);
 
-      if (!error) {
-        loadNotifications();
-      }
+      if (!error) loadNotifications();
     });
 
     loadNotifications();
