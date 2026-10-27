@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASTRAVEN | Premier Capital & Wealth Generation</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .landing-header {
+      background: var(--deep-forest);
+      border-bottom: 1px solid var(--metallic-gold);
+      padding: 18px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .landing-brand {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      color: var(--bright-gold);
+      text-decoration: none;
+      letter-spacing: 2px;
+    }
+    .landing-nav {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .hero-section {
+      min-height: calc(85vh - 70px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 20px;
+      background: radial-gradient(circle at center, #003D24 0%, #001A10 100%);
+      color: var(--white);
+    }
+    .hero-content {
+      max-width: 760px;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border: 1px solid var(--metallic-gold);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      color: var(--soft-gold);
+      margin-bottom: 20px;
+      letter-spacing: 0.05em;
+    }
+    .hero-title {
+      font-size: 3rem;
+      line-height: 1.2;
+      color: var(--white);
+      margin-bottom: 20px;
+    }
+    .hero-desc {
+      font-size: 1.15rem;
+      color: #E2E8F0;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+    @media (max-width: 650px) {
+      .hero-title { font-size: 2.2rem; }
+      .hero-cta { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="landing-header">
+    <a href="index.html" class="landing-brand">ASTRAVEN</a>
+    <nav class="landing-nav" id="publicNav">
+      <a href="login.html" class="btn-emerald" style="padding: 8px 18px;">Sign In</a>
+      <a href="register.html" class="btn-gold" style="padding: 8px 18px;">Get Started</a>
+    </nav>
+  </header>
+
+  <section class="hero-section">
+    <div class="hero-content">
+      <div class="hero-badge">✦ PREMIER WEALTH & ASSET MANAGEMENT</div>
+      <h1 class="hero-title font-heading">Empowering Verified Financial Growth</h1>
+      <p class="hero-desc">
+        ASTRAVEN delivers structured VIP investment tiers, transparent daily income settlements, and elite affiliate rewards backed by bank-grade security.
+      </p>
+      <div class="hero-cta" id="ctaContainer">
+        <a href="register.html" class="btn-gold" style="font-size: 1.05rem; padding: 14px 32px;">Open Investor Account</a>
+        <a href="login.html" class="btn-emerald" style="font-size: 1.05rem; padding: 14px 32px;">Access Portfolio</a>
+      </div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { supabase } from './shared/supabase-client.js';
+
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          const nav = document.getElementById('publicNav');
+          const cta = document.getElementById('ctaContainer');
+          nav.innerHTML = `<a href="dashboard.html" class="btn-gold" style="padding: 8px 20px;">My Dashboard</a>`;
+          cta.innerHTML = `<a href="dashboard.html" class="btn-gold" style="font-size: 1.1rem; padding: 14px 36px;">Go to Dashboard →</a>`;
+        }
+      });
+    }
+  </script>
+</body>
+</html>
