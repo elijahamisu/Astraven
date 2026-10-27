@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Withdrawal History | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active { background: var(--dark-emerald); color: var(--bright-gold); border-color: var(--bright-gold); }
+    .with-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Settlement Log</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Withdrawal History</h1>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="paid">Paid</button>
+        <button class="filter-btn" data-filter="rejected">Rejected</button>
+      </div>
+
+      <div id="withList">
+        <div class="astra-card" style="text-align: center; padding: 40px; color: var(--secondary-text);">Loading withdrawals...</div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency, formatDate } from './shared/formatters.js';
+
+    let allWithdrawals = [];
+
+    async function loadWithdrawals() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data: withdrawals, error } = await supabase
+        .from('withdrawals')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      const container = document.getElementById('withList');
+
+      if (error || !withdrawals || withdrawals.length === 0) {
+        container.innerHTML = `
+          <div class="astra-card" style="text-align: center; padding: 40px;">
+            <p style="color: var(--secondary-text); margin-bottom: 12px;">No withdrawal requests recorded.</p>
+            <a href="withdraw.html" class="btn-gold">Request Withdrawal</a>
+          </div>
+        `;
+        return;
+      }
+
+      allWithdrawals = withdrawals;
+      render(allWithdrawals);
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const filter = btn.dataset.filter;
+          render(filter === 'all' ? allWithdrawals : allWithdrawals.filter(w => w.status === filter));
+        });
+      });
+    }
+
+    function render(list) {
+      const container = document.getElementById('withList');
+      if (list.length === 0) {
+        container.innerHTML = `<div class="astra-card" style="text-align: center; padding: 30px; color: var(--secondary-text);">No withdrawals found for this filter.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(w => {
+        const maskedAcc = w.account_number ? '••••••' + w.account_number.slice(-4) : '••••';
+        return `
+          <div class="with-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-family: monospace; font-size: 0.82rem; font-weight: 700; color: var(--deep-forest);">${w.reference}</span>
+              <span class="badge-status ${w.status === 'paid' ? 'badge-completed' : (w.status === 'pending' ? 'badge-pending' : 'badge-failed')}">
+                ${w.status}
+              </span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+              <div>
+                <span style="font-size: 0.72rem; color: var(--secondary-text);">NET PAYOUT:</span>
+                <div style="font-size: 1.35rem; font-family: var(--font-heading); color: var(--primary-green); font-weight: 700;">
+                  ${formatCurrency(w.net_amount)}
+                </div>
+              </div>
+              <div style="text-align: right; font-size: 0.82rem; color: var(--secondary-text);">
+                Gross: ${formatCurrency(w.amount)} | Fee: ${formatCurrency(w.fee)}
+              </div>
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--secondary-text); background: var(--light-gold-bg); padding: 8px 12px; border-radius: var(--radius-sm);">
+              <div>Bank: <strong>${w.bank_name} (${maskedAcc})</strong></div>
+              <div>Name: <strong>${w.account_name}</strong></div>
+              <div>Date: ${formatDate(w.created_at)}</div>
+              ${w.status === 'rejected' && w.rejection_reason ? `
+                <div style="color: var(--error-red); margin-top: 4px;">Reason: ${w.rejection_reason}</div>
+              ` : ''}
+              ${w.payment_reference ? `
+                <div style="color: var(--success-green); margin-top: 4px;">Bank Ref: ${w.payment_reference}</div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    loadWithdrawals();
+  </script>
+</body>
+</html>
