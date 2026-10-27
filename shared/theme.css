@@ -86,12 +86,12 @@ h1, h2, h3, h4, .font-heading {
   min-width: 0;
   max-width: 100%;
   padding: 16px;
-  padding-bottom: calc(var(--bottom-nav-height) + 32px); /* Reserve room for mobile bottom bar */
+  padding-bottom: calc(var(--bottom-nav-height) + 32px);
   transition: padding 0.2s ease;
 }
 
 /* ==========================================================================
-   NAVIGATION: MOBILE HEADER & DESKTOP SIDEBAR
+   NAVIGATION: MOBILE HEADER & SIDEBAR BUTTON
    ========================================================================== */
 
 .mobile-top-header {
@@ -116,16 +116,38 @@ h1, h2, h3, h4, .font-heading {
   gap: 12px;
 }
 
+/* Styled Gold Sidebar Toggle Button */
 .header-hamburger-btn {
-  background: none;
-  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(255, 215, 0, 0.15) 100%);
+  border: 1.5px solid var(--metallic-gold);
   color: var(--bright-gold);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 8px;
+  padding: 0;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
   touch-action: manipulation;
+}
+
+.header-hamburger-btn:hover,
+.header-hamburger-btn:active {
+  background: linear-gradient(135deg, var(--bright-gold) 0%, var(--metallic-gold) 100%);
+  color: var(--deep-forest);
+  transform: scale(0.96);
+  border-color: var(--bright-gold);
+}
+
+.header-hamburger-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  display: block;
 }
 
 .header-brand {
@@ -139,6 +161,15 @@ h1, h2, h3, h4, .font-heading {
   width: 26px;
   height: 26px;
   fill: var(--bright-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-crest-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
 }
 
 .brand-wordmark {
@@ -194,7 +225,10 @@ h1, h2, h3, h4, .font-heading {
   border: 1.5px solid var(--deep-forest);
 }
 
-/* Sidebar (Off-canvas drawer on mobile, fixed docked column on desktop) */
+/* ==========================================================================
+   NAVIGATION: SIDEBAR DRAWER (DESKTOP & MOBILE)
+   ========================================================================== */
+
 .astra-sidebar {
   width: var(--sidebar-width);
   background: linear-gradient(180deg, var(--deep-forest) 0%, #001F13 100%);
@@ -299,9 +333,9 @@ h1, h2, h3, h4, .font-heading {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: var(--radius-sm);
-  color: #D1D5DB;
+  color: #E2E8F0;
   text-decoration: none !important;
   font-size: 0.88rem;
   font-weight: 500;
@@ -316,15 +350,15 @@ h1, h2, h3, h4, .font-heading {
 }
 
 .nav-link:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--white);
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--bright-gold);
 }
 
 .nav-link.active {
   background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(0, 107, 60, 0.35) 100%);
   color: var(--bright-gold);
-  font-weight: 600;
-  border-left: 3px solid var(--bright-gold);
+  font-weight: 700;
+  border-left: 3.5px solid var(--bright-gold);
 }
 
 .sidebar-footer {
@@ -334,7 +368,7 @@ h1, h2, h3, h4, .font-heading {
 
 .btn-sidebar-logout {
   width: 100%;
-  padding: 10px 14px;
+  padding: 11px 14px;
   background: rgba(215, 25, 32, 0.15);
   border: 1px solid rgba(215, 25, 32, 0.4);
   color: #FFA4A4;
@@ -346,6 +380,7 @@ h1, h2, h3, h4, .font-heading {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  transition: all 0.2s ease;
 }
 
 .btn-sidebar-logout:hover {
@@ -431,7 +466,7 @@ h1, h2, h3, h4, .font-heading {
 }
 
 /* ==========================================================================
-   DESKTOP VS MOBILE MEDIA QUERIES (Threshold: 900px)
+   MEDIA QUERIES (Threshold: 900px)
    ========================================================================== */
 
 @media (min-width: 901px) {
@@ -449,7 +484,7 @@ h1, h2, h3, h4, .font-heading {
     width: calc(100% - var(--sidebar-width));
     max-width: calc(100% - var(--sidebar-width));
     padding: 32px 40px;
-    padding-bottom: 40px; /* Reset on desktop */
+    padding-bottom: 40px;
   }
   .mobile-bottom-nav {
     display: none !important;
@@ -486,7 +521,6 @@ h1, h2, h3, h4, .font-heading {
    SIGNATURE AVIATION CARD & REUSABLE CARD SYSTEM
    ========================================================================== */
 
-/* 1. Signature Emerald Balance Card (With Aircraft Silhouette Watermark) */
 .astra-card-signature {
   position: relative;
   background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 60%, var(--dark-emerald) 100%);
@@ -585,7 +619,6 @@ h1, h2, h3, h4, .font-heading {
   flex-wrap: wrap;
 }
 
-/* 2. Secondary Information Card */
 .astra-card-secondary {
   background: var(--white);
   border: 1px solid rgba(212, 175, 55, 0.3);
@@ -614,7 +647,23 @@ h1, h2, h3, h4, .font-heading {
   text-overflow: ellipsis;
 }
 
-/* 3. Action Card & Buttons */
+.astra-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  margin-bottom: 20px;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .astra-card {
+    padding: 28px;
+  }
+}
+
 .btn-gold {
   background: linear-gradient(135deg, var(--bright-gold) 0%, var(--metallic-gold) 100%);
   color: var(--deep-forest);
@@ -662,7 +711,35 @@ h1, h2, h3, h4, .font-heading {
   border-color: var(--bright-gold);
 }
 
-/* Responsive Table Wrapper */
+.badge-status {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.badge-pending {
+  background: #FFF4D9;
+  color: #B27B00;
+  border: 1px solid var(--pending-orange);
+}
+
+.badge-completed {
+  background: #E6F8EF;
+  color: var(--success-green);
+  border: 1px solid var(--success-green);
+}
+
+.badge-failed {
+  background: #FDE8E8;
+  color: var(--error-red);
+  border: 1px solid var(--error-red);
+}
+
 .table-responsive {
   width: 100%;
   overflow-x: auto;
