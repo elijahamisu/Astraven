@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Announcements | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .notice-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .notice-card.urgent {
+      border-left: 5px solid var(--error-red);
+      background: #FFFDFD;
+    }
+    .notice-card.maintenance {
+      border-left: 5px solid var(--pending-orange);
+    }
+    .notice-card.general {
+      border-left: 5px solid var(--primary-green);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Operational Notices</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Official Announcements</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-top: 4px;">
+          Real-time updates regarding aviation contracts, banking rails, and corporate milestones.
+        </p>
+      </div>
+
+      <div id="announcementsList">
+        <div class="astra-card" style="text-align: center; padding: 40px; color: var(--secondary-text);">Loading official broadcasts...</div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatDate } from './shared/formatters.js';
+
+    async function loadAnnouncements() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data: notices, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('is_active', true)
+        .order('priority', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      const container = document.getElementById('announcementsList');
+
+      if (error || !notices || notices.length === 0) {
+        container.innerHTML = `
+          <div class="astra-card" style="text-align: center; padding: 40px;">
+            <p style="color: var(--secondary-text);">No active announcements at this time.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Filter out expired notices client-side if expires_at is past
+      const now = new Date();
+      const activeNotices = notices.filter(n => !n.expires_at || new Date(n.expires_at) > now);
+
+      container.innerHTML = activeNotices.map(n => `
+        <div class="notice-card ${n.type || 'general'}">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span class="badge-status ${n.type === 'urgent' ? 'badge-failed' : (n.type === 'maintenance' ? 'badge-pending' : 'badge-completed')}">
+              ${n.category || n.type || 'Notice'}
+            </span>
+            <span style="font-size: 0.75rem; color: var(--secondary-text);">${formatDate(n.created_at)}</span>
+          </div>
+
+          <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 8px;">${escapeHtml(n.title)}</h2>
+          <p style="font-size: 0.9rem; color: var(--primary-text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(n.content)}</p>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    loadAnnouncements();
+  </script>
+</body>
+</html>
