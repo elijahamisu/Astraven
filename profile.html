@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .profile-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .profile-header-banner {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #ECECEC;
+      margin-bottom: 24px;
+    }
+    .avatar-large {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
+      border: 2px solid var(--metallic-gold);
+      color: var(--bright-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: var(--font-heading);
+    }
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--deep-forest);
+    }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-family: var(--font-body);
+      background: var(--cream-white);
+    }
+    .form-control[readonly] {
+      background: #F3F4F6;
+      color: var(--secondary-text);
+      cursor: not-allowed;
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    @media (max-width: 650px) {
+      .form-grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <h1 class="font-heading" style="margin-bottom: 24px;">Personal Profile</h1>
+
+      <div id="alertBox" class="alert-banner"></div>
+
+      <div class="profile-card">
+        <div class="profile-header-banner">
+          <div class="avatar-large" id="avatarDisplay">U</div>
+          <div>
+            <h2 id="nameDisplay" style="font-size: 1.4rem; color: var(--deep-forest);">Loading...</h2>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+              <span class="badge-status badge-completed" id="vipDisplay">Standard Member</span>
+              <span class="badge-status badge-pending" id="statusDisplay">Active Account</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="profileForm">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="fullName">Full Name</label>
+              <input type="text" id="fullName" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="username">Username (Permanent)</label>
+              <input type="text" id="username" class="form-control" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" class="form-control" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" id="phone" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="refCode">Referral Code</label>
+              <input type="text" id="refCode" class="form-control" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="createdAt">Member Since</label>
+              <input type="text" id="createdAt" class="form-control" readonly>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <button type="submit" id="saveBtn" class="btn-gold">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { isValidNigerianPhone } from './shared/validation.js';
+    import { formatDate } from './shared/formatters.js';
+
+    let currentUserId = null;
+
+    async function initProfile() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+      currentUserId = session.user.id;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUserId)
+        .single();
+
+      if (profile) {
+        document.getElementById('fullName').value = profile.full_name || '';
+        document.getElementById('username').value = profile.username || '';
+        document.getElementById('email').value = session.user.email || '';
+        document.getElementById('phone').value = profile.phone || '';
+        document.getElementById('refCode').value = profile.referral_code || '';
+        document.getElementById('createdAt').value = formatDate(profile.created_at, { includeTime: false });
+        
+        document.getElementById('nameDisplay').textContent = profile.full_name || profile.username;
+        document.getElementById('avatarDisplay').textContent = (profile.full_name || profile.username || 'U').charAt(0).toUpperCase();
+        if (profile.astra_vip_level > 0) {
+          document.getElementById('vipDisplay').textContent = `VIP ${profile.astra_vip_level}`;
+        }
+      }
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('alertBox');
+      alertBox.style.display = 'none';
+
+      const fullName = document.getElementById('fullName').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+
+      if (!fullName) {
+        alertBox.textContent = 'Full name cannot be blank.';
+        alertBox.className = 'alert-banner error';
+        return;
+      }
+      if (!isValidNigerianPhone(phone)) {
+        alertBox.textContent = 'Please enter a valid Nigerian phone number.';
+        alertBox.className = 'alert-banner error';
+        return;
+      }
+
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: fullName,
+          phone: phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUserId);
+
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Changes';
+
+      if (error) {
+        alertBox.textContent = error.message;
+        alertBox.className = 'alert-banner error';
+      } else {
+        alertBox.textContent = 'Profile updated successfully!';
+        alertBox.className = 'alert-banner success';
+        document.getElementById('nameDisplay').textContent = fullName;
+      }
+    });
+
+    initProfile();
+  </script>
+</body>
+</html>
