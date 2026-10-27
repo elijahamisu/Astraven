@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Proofs & Blog | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .blog-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .post-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .post-author-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .author-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--deep-forest);
+      color: var(--bright-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      border: 1px solid var(--metallic-gold);
+    }
+    .post-image-preview {
+      width: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      border: 1px solid #E5E7EB;
+      margin: 14px 0;
+      background: #F3F4F6;
+    }
+    .post-actions-bar {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid #ECECEC;
+      margin-top: 14px;
+    }
+    .action-interactive-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--secondary-text);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+    .action-interactive-btn:hover {
+      background: var(--light-gold-bg);
+      color: var(--deep-forest);
+    }
+    .action-interactive-btn.liked {
+      color: var(--error-red);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="blog-header-row">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Investor Community</span>
+          <h1 class="font-heading" style="font-size: 1.8rem;">Proof & Discussion Feed</h1>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <a href="my-posts.html" class="btn-emerald" style="padding: 10px 14px; font-size: 0.85rem;">My Submissions</a>
+          <a href="create-post.html" class="btn-gold" style="padding: 10px 16px; font-size: 0.85rem;">+ Create Post</a>
+        </div>
+      </div>
+
+      <div id="postsFeedContainer">
+        <div class="astra-card" style="text-align: center; padding: 40px; color: var(--secondary-text);">
+          Loading community posts...
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatDate } from './shared/formatters.js';
+
+    let currentUserId = null;
+
+    async function loadFeed() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+      currentUserId = session.user.id;
+
+      const { data: posts, error } = await supabase
+        .from('blog_posts')
+        .select(`
+          id, title, content, caption, image_url, likes_count, comments_count, bonus_awarded, created_at,
+          profiles!blog_posts_user_id_fkey(username, full_name)
+        `)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      const container = document.getElementById('postsFeedContainer');
+
+      if (error || !posts || posts.length === 0) {
+        container.innerHTML = `
+          <div class="astra-card" style="text-align: center; padding: 48px 16px;">
+            <div style="font-size: 2.2rem; margin-bottom: 8px; opacity: 0.6;">📰</div>
+            <h3 style="margin-bottom: 6px;">No Community Posts Yet</h3>
+            <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 16px;">
+              Be the first investor to share your withdrawal receipt or operational milestone!
+            </p>
+            <a href="create-post.html" class="btn-gold">Create Community Post</a>
+          </div>
+        `;
+        return;
+      }
+
+      // Check which posts the current user liked
+      const { data: userLikes } = await supabase
+        .from('blog_likes')
+        .select('post_id')
+        .eq('user_id', currentUserId);
+
+      const likedSet = new Set((userLikes || []).map(l => l.post_id));
+
+      container.innerHTML = posts.map(p => {
+        const author = p.profiles?.full_name || p.profiles?.username || 'Investor';
+        const isLiked = likedSet.has(p.id);
+
+        return `
+          <div class="post-card" id="post-${p.id}">
+            <div class="post-author-row">
+              <div class="author-avatar">${author.charAt(0).toUpperCase()}</div>
+              <div>
+                <strong style="font-size: 0.95rem; color: var(--deep-forest); display: block;">${escapeHtml(author)}</strong>
+                <span style="font-size: 0.75rem; color: var(--secondary-text);">${formatDate(p.created_at)}</span>
+              </div>
+              ${p.bonus_awarded ? `
+                <span class="badge-status badge-completed" style="margin-left: auto;">✦ Verified Bonus Awarded</span>
+              ` : ''}
+            </div>
+
+            <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 8px;">${escapeHtml(p.title)}</h2>
+            <p style="font-size: 0.9rem; color: var(--primary-text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(p.content)}</p>
+
+            ${p.image_url ? `
+              <img src="${p.image_url}" alt="Proof attachment" class="post-image-preview" loading="lazy">
+            ` : ''}
+
+            ${p.caption ? `
+              <p style="font-size: 0.85rem; color: var(--secondary-text); font-style: italic; margin-top: 6px;">
+                "${escapeHtml(p.caption)}"
+              </p>
+            ` : ''}
+
+            <div class="post-actions-bar">
+              <button class="action-interactive-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${p.id}')">
+                <span>${isLiked ? '❤️' : '🤍'}</span>
+                <span id="like-count-${p.id}">${p.likes_count}</span>
+              </button>
+              <a href="post-details.html?id=${p.id}" class="action-interactive-btn" style="text-decoration: none;">
+                <span>💬</span>
+                <span>${p.comments_count} Comments</span>
+              </a>
+              <a href="post-details.html?id=${p.id}" style="margin-left: auto; font-size: 0.85rem; color: var(--primary-green); font-weight: 700; text-decoration: none;">
+                View Post →
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.toggleLike = async function(postId) {
+      const { data, error } = await supabase.rpc('toggle_blog_like', {
+        p_post_id: postId,
+        p_user_id: currentUserId
+      });
+
+      if (!error && data.success) {
+        const countSpan = document.getElementById(`like-count-${postId}`);
+        if (countSpan) countSpan.textContent = data.likes_count;
+        const postCard = document.getElementById(`post-${postId}`);
+        const likeBtn = postCard?.querySelector('.action-interactive-btn');
+        if (likeBtn) {
+          likeBtn.classList.toggle('liked', data.liked);
+          likeBtn.querySelector('span').textContent = data.liked ? '❤️' : '🤍';
+        }
+      }
+    };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    loadFeed();
+  </script>
+</body>
+</html>
