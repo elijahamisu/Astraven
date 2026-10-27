@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Withdraw Funds | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .with-wrap { max-width: 580px; margin: 0 auto; }
+    .breakdown-box {
+      background: var(--light-gold-bg);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin: 18px 0;
+    }
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 0.88rem;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="with-wrap">
+        <h1 class="font-heading" style="margin-bottom: 6px; font-size: 1.8rem;">Withdraw Funds</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+          Direct bank settlement to your designated Nigerian commercial account.
+        </p>
+
+        <div id="alertBanner" class="alert-banner"></div>
+
+        <form class="astra-card" id="withForm">
+          <div style="background: var(--deep-forest); color: var(--white); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.85rem; opacity: 0.9;">Available Balance:</span>
+            <strong id="availBal" style="font-size: 1.3rem; color: var(--bright-gold); font-family: var(--font-heading);">₦0.00</strong>
+          </div>
+
+          <div class="form-group">
+            <label for="amount">Withdrawal Amount (₦)</label>
+            <input type="number" id="amount" class="form-control" placeholder="Min. ₦3,000" min="1000" step="100" required>
+            <small id="minNotice" style="color: var(--secondary-text); font-size: 0.78rem;">Loading limits...</small>
+          </div>
+
+          <div class="form-group">
+            <label for="bankName">Bank Name</label>
+            <input type="text" id="bankName" class="form-control" placeholder="e.g. Access Bank, GTBank, Zenith" required>
+          </div>
+
+          <div class="form-group">
+            <label for="accountName">Account Name</label>
+            <input type="text" id="accountName" class="form-control" placeholder="Full name registered on account" required>
+          </div>
+
+          <div class="form-group">
+            <label for="accountNumber">Account Number (10 Digits)</label>
+            <input type="text" id="accountNumber" class="form-control" maxlength="10" placeholder="0123456789" required>
+          </div>
+
+          <!-- Dynamic Fee Breakdown -->
+          <div class="breakdown-box">
+            <div class="breakdown-row">
+              <span style="color: var(--secondary-text);">Gross Amount:</span>
+              <strong id="bkGross">₦0.00</strong>
+            </div>
+            <div class="breakdown-row">
+              <span style="color: var(--secondary-text);">Processing Fee (<span id="feePercent">5</span>%):</span>
+              <strong id="bkFee" style="color: var(--error-red);">- ₦0.00</strong>
+            </div>
+            <div class="breakdown-row" style="border-top: 1px solid rgba(212, 175, 55, 0.4); padding-top: 6px; margin-top: 6px;">
+              <span>Net Settlement to Bank:</span>
+              <strong id="bkNet" style="color: var(--primary-green); font-size: 1.1rem; font-family: var(--font-heading);">₦0.00</strong>
+            </div>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 14px;">
+            Confirm Withdrawal Request
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency } from './shared/formatters.js';
+
+    let currentSession = null;
+    let minWithdrawal = 3000;
+    let feeRate = 5;
+    let currentBalance = 0;
+
+    async function initWithdraw() {
+      await initUserNavigation({ requireSession: true });
+      currentSession = await requireAuth();
+      if (!currentSession) return;
+
+      const { data: wallet } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', currentSession.user.id)
+        .single();
+
+      if (wallet) {
+        currentBalance = Number(wallet.balance);
+        document.getElementById('availBal').textContent = formatCurrency(currentBalance);
+      }
+
+      const { data: cfg } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'withdrawal_config')
+        .single();
+
+      if (cfg && cfg.value) {
+        minWithdrawal = Number(cfg.value.min_withdrawal || 3000);
+        feeRate = Number(cfg.value.fee_value || 5);
+        document.getElementById('minNotice').textContent = `Minimum withdrawal: ${formatCurrency(minWithdrawal)}. Fee: ${feeRate}%.`;
+        document.getElementById('feePercent').textContent = feeRate;
+        document.getElementById('amount').min = minWithdrawal;
+      }
+
+      document.getElementById('amount').addEventListener('input', updateCalc);
+    }
+
+    function updateCalc() {
+      const amt = Number(document.getElementById('amount').value) || 0;
+      const fee = Math.round((amt * (feeRate / 100)) * 100) / 100;
+      const net = Math.max(0, amt - fee);
+
+      document.getElementById('bkGross').textContent = formatCurrency(amt);
+      document.getElementById('bkFee').textContent = `- ${formatCurrency(fee)}`;
+      document.getElementById('bkNet').textContent = formatCurrency(net);
+    }
+
+    document.getElementById('withForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBanner = document.getElementById('alertBanner');
+      const submitBtn = document.getElementById('submitBtn');
+      alertBanner.style.display = 'none';
+
+      const amount = Number(document.getElementById('amount').value);
+      const bankName = document.getElementById('bankName').value.trim();
+      const accountName = document.getElementById('accountName').value.trim();
+      const accountNumber = document.getElementById('accountNumber').value.trim();
+
+      if (amount < minWithdrawal) {
+        alertBanner.textContent = `Minimum withdrawal amount is ${formatCurrency(minWithdrawal)}.`;
+        alertBanner.className = 'alert-banner error';
+        return;
+      }
+
+      if (amount > currentBalance) {
+        alertBanner.textContent = 'Insufficient balance to fulfill withdrawal request.';
+        alertBanner.className = 'alert-banner error';
+        return;
+      }
+
+      if (!/^\d{10}$/.test(accountNumber)) {
+        alertBanner.textContent = 'Account number must be exactly 10 digits.';
+        alertBanner.className = 'alert-banner error';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Reserving Funds...';
+
+      try {
+        const res = await fetch('/api/withdrawals/request', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({
+            amount,
+            bankName,
+            accountName,
+            accountNumber,
+            idempotencyKey: 'WTH-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
+          })
+        });
+
+        const result = await res.json();
+
+        if (!result.success) {
+          alertBanner.textContent = result.error || 'Failed to submit withdrawal.';
+          alertBanner.className = 'alert-banner error';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Confirm Withdrawal Request';
+          return;
+        }
+
+        alertBanner.textContent = `Withdrawal request ${result.reference} accepted! Funds reserved. Redirecting...`;
+        alertBanner.className = 'alert-banner success';
+
+        setTimeout(() => {
+          window.location.href = 'withdrawal-history.html';
+        }, 1500);
+
+      } catch (err) {
+        alertBanner.textContent = 'Network error while processing withdrawal.';
+        alertBanner.className = 'alert-banner error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm Withdrawal Request';
+      }
+    });
+
+    initWithdraw();
+  </script>
+</body>
+</html>
