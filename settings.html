@@ -6,39 +6,37 @@
   <title>Account Settings | ASTRAVEN</title>
   <link rel="stylesheet" href="shared/theme.css">
   <style>
-    .settings-section {
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      padding: 28px;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-sm);
-    }
-    .section-title {
-      font-size: 1.25rem;
-      color: var(--deep-forest);
-      margin-bottom: 6px;
-    }
-    .section-desc {
-      color: var(--secondary-text);
-      font-size: 0.9rem;
-      margin-bottom: 20px;
-    }
     .pref-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 14px 0;
+      gap: 16px;
+      padding: 16px 0;
       border-bottom: 1px solid #ECECEC;
     }
     .pref-item:last-child { border-bottom: none; }
-    .pref-info h4 { font-size: 0.95rem; color: var(--deep-forest); margin-bottom: 2px; }
-    .pref-info p { font-size: 0.85rem; color: var(--secondary-text); }
+    .pref-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .pref-info h4 {
+      font-size: 0.95rem;
+      color: var(--deep-forest);
+      margin-bottom: 2px;
+      word-break: break-word;
+    }
+    .pref-info p {
+      font-size: 0.85rem;
+      color: var(--secondary-text);
+      line-height: 1.35;
+      word-break: break-word;
+    }
     .switch {
       position: relative;
       display: inline-block;
       width: 48px;
       height: 26px;
+      flex-shrink: 0;
     }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
@@ -62,15 +60,28 @@
     }
     input:checked + .slider { background-color: var(--primary-green); }
     input:checked + .slider:before { transform: translateX(22px); }
-    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--deep-forest); }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--deep-forest);
+    }
     .form-control {
+      width: 100%;
+      max-width: 440px;
       padding: 12px 14px;
       border: 1px solid #D1D5DB;
       border-radius: var(--radius-md);
       font-size: 0.95rem;
       background: var(--cream-white);
-      max-width: 400px;
+      box-sizing: border-box;
     }
     .alert-banner {
       padding: 12px 16px;
@@ -88,14 +99,16 @@
     <div id="navigationContainer"></div>
 
     <main class="main-content">
-      <h1 class="font-heading" style="margin-bottom: 24px;">Account Settings</h1>
+      <h1 class="font-heading" style="margin-bottom: 20px; font-size: clamp(1.4rem, 4vw, 2rem);">Account Settings</h1>
 
       <div id="alertBox" class="alert-banner"></div>
 
       <!-- Notification Preferences -->
-      <div class="settings-section">
-        <h2 class="section-title">Notification Preferences</h2>
-        <p class="section-desc">Manage how ASTRAVEN communicates portfolio activity and updates.</p>
+      <div class="astra-card">
+        <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 6px;">Notification Preferences</h2>
+        <p style="color: var(--secondary-text); font-size: 0.88rem; margin-bottom: 16px;">
+          Manage how ASTRAVEN communicates portfolio activity and updates.
+        </p>
 
         <div class="pref-item">
           <div class="pref-info">
@@ -130,15 +143,17 @@
           </label>
         </div>
 
-        <button type="button" id="savePrefsBtn" class="btn-gold" style="margin-top: 18px;">
+        <button type="button" id="savePrefsBtn" class="btn-gold" style="margin-top: 20px;">
           Save Preferences
         </button>
       </div>
 
-      <!-- Change Password -->
-      <div class="settings-section">
-        <h2 class="section-title">Security & Password</h2>
-        <p class="section-desc">Update your login password to ensure continued account protection.</p>
+      <!-- Password Security -->
+      <div class="astra-card">
+        <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 6px;">Security & Password</h2>
+        <p style="color: var(--secondary-text); font-size: 0.88rem; margin-bottom: 16px;">
+          Update your login password to ensure continued account protection.
+        </p>
 
         <form id="pwdForm">
           <div class="form-group">
@@ -171,7 +186,6 @@
       if (!session) return;
       currentUserId = session.user.id;
 
-      // Load user preferences
       const { data: prefs } = await supabase
         .from('user_preferences')
         .select('*')
@@ -192,7 +206,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Save preferences
     document.getElementById('savePrefsBtn').addEventListener('click', async () => {
       const emailNotifs = document.getElementById('emailNotifs').checked;
       const pushNotifs = document.getElementById('pushNotifs').checked;
@@ -212,7 +225,6 @@
       else showAlert('Preferences saved successfully!');
     });
 
-    // Change password
     document.getElementById('pwdForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const newPwd = document.getElementById('newPwd').value;
