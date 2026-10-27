@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Investment | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .invest-wrap {
+      max-width: 580px;
+      margin: 0 auto;
+    }
+    .balance-check-box {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin: 18px 0;
+    }
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="invest-wrap">
+        <h1 class="font-heading" style="margin-bottom: 8px; font-size: 1.8rem;">Confirm Investment</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+          Review the portfolio terms before executing funds deduction.
+        </p>
+
+        <div id="alertBanner" class="alert-banner"></div>
+
+        <div class="astra-card" id="purchaseCard">
+          <p style="text-align: center; color: var(--secondary-text);">Loading investment details...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency } from './shared/formatters.js';
+
+    let currentSession = null;
+    let targetProduct = null;
+    let userWallet = null;
+
+    async function loadPurchaseFlow() {
+      await initUserNavigation({ requireSession: true });
+      currentSession = await requireAuth();
+      if (!currentSession) return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const productId = urlParams.get('product_id');
+
+      const card = document.getElementById('purchaseCard');
+
+      if (!productId) {
+        card.innerHTML = `<p style="color: var(--error-red);">Missing product identifier. Return to catalog.</p>`;
+        return;
+      }
+
+      // Load Product
+      const { data: prod, error: pErr } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .maybeSingle();
+
+      if (pErr || !prod || !prod.is_active) {
+        card.innerHTML = `<p style="color: var(--error-red);">Package unavailable or closed.</p>`;
+        return;
+      }
+      targetProduct = prod;
+
+      // Load Wallet
+      const { data: wallet } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', currentSession.user.id)
+        .single();
+
+      userWallet = wallet;
+
+      const hasSufficient = Number(wallet?.balance || 0) >= Number(prod.price);
+      const remainingBalance = Number(wallet?.balance || 0) - Number(prod.price);
+
+      card.innerHTML = `
+        <div style="border-bottom: 1px solid #ECECEC; padding-bottom: 14px; margin-bottom: 14px;">
+          <span style="font-size: 0.75rem; font-weight: 700; color: var(--metallic-gold);">${prod.code}</span>
+          <h2 style="font-size: 1.4rem; color: var(--deep-forest); margin-top: 2px;">${prod.name}</h2>
+          <div style="font-size: 1.8rem; font-family: var(--font-heading); color: var(--primary-green); font-weight: 700;">
+            ${formatCurrency(prod.price)}
+          </div>
+        </div>
+
+        <div class="balance-check-box">
+          <div class="calc-row">
+            <span style="color: var(--secondary-text);">Available Wallet Balance:</span>
+            <strong>${formatCurrency(wallet?.balance || 0)}</strong>
+          </div>
+          <div class="calc-row">
+            <span style="color: var(--secondary-text);">Investment Purchase Price:</span>
+            <strong style="color: var(--error-red);">- ${formatCurrency(prod.price)}</strong>
+          </div>
+          <div class="calc-row" style="border-top: 1px solid #CBD5E1; padding-top: 8px; margin-top: 8px;">
+            <span>Projected Balance After:</span>
+            <strong style="color: ${hasSufficient ? 'var(--deep-forest)' : 'var(--error-red)'};">
+              ${formatCurrency(Math.max(0, remainingBalance))}
+            </strong>
+          </div>
+        </div>
+
+        ${!hasSufficient ? `
+          <div style="background: #FFF4D9; border: 1px solid var(--pending-orange); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #8A5B00;">
+            ⚠️ Insufficient balance to activate this package. Please deposit at least ${formatCurrency(prod.price - (wallet?.balance || 0))} to proceed.
+          </div>
+          <a href="deposit.html" class="btn-gold" style="width: 100%; margin-bottom: 8px;">Deposit Funds Now</a>
+        ` : `
+          <div style="margin-bottom: 18px;">
+            <label style="display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-size: 0.85rem; color: var(--primary-text);">
+              <input type="checkbox" id="termsCheck" style="margin-top: 3px;">
+              <span>I confirm and authorize the deduction of ${formatCurrency(prod.price)} from my available balance for the ${prod.name} contract.</span>
+            </label>
+          </div>
+
+          <button id="confirmBtn" class="btn-gold" style="width: 100%; padding: 14px;" disabled>
+            Execute Investment
+          </button>
+        `}
+      `;
+
+      if (hasSufficient) {
+        const termsCheck = document.getElementById('termsCheck');
+        const confirmBtn = document.getElementById('confirmBtn');
+
+        termsCheck?.addEventListener('change', () => {
+          confirmBtn.disabled = !termsCheck.checked;
+        });
+
+        confirmBtn?.addEventListener('click', handlePurchase);
+      }
+    }
+
+    async function handlePurchase() {
+      const confirmBtn = document.getElementById('confirmBtn');
+      const alertBanner = document.getElementById('alertBanner');
+      alertBanner.style.display = 'none';
+
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Processing Transaction...';
+
+      const idempotencyKey = 'INV-REQ-' + currentSession.user.id.substring(0, 8) + '-' + targetProduct.id.substring(0, 8) + '-' + Date.now();
+
+      try {
+        const res = await fetch('/api/investments/purchase', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({
+            productId: targetProduct.id,
+            idempotencyKey
+          })
+        });
+
+        const result = await res.json();
+
+        if (!result.success) {
+          alertBanner.textContent = result.error || 'Investment purchase failed.';
+          alertBanner.className = 'alert-banner error';
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Execute Investment';
+          return;
+        }
+
+        alertBanner.textContent = 'Investment successfully activated! Redirecting to portfolio...';
+        alertBanner.className = 'alert-banner success';
+
+        setTimeout(() => {
+          window.location.href = `investment-details.html?id=${result.investment_id}`;
+        }, 1500);
+
+      } catch (err) {
+        alertBanner.textContent = 'Network or processor timeout. Please check your portfolio.';
+        alertBanner.className = 'alert-banner error';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Execute Investment';
+      }
+    }
+
+    loadPurchaseFlow();
+  </script>
+</body>
+</html>
