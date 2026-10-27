@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Influencer Leaderboard | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .podium-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+      align-items: flex-end;
+    }
+    .podium-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: 16px 8px;
+      text-align: center;
+      border: 1.5px solid #E5E7EB;
+      box-shadow: var(--shadow-sm);
+    }
+    .podium-card.rank-1 {
+      border-color: var(--bright-gold);
+      background: linear-gradient(180deg, #FFFDF5 0%, #FFF8E5 100%);
+      transform: translateY(-8px);
+    }
+    .podium-card.rank-2 { border-color: #94A3B8; }
+    .podium-card.rank-3 { border-color: #D97706; }
+    .podium-crest {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      margin: 0 auto 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+    .rank-1 .podium-crest { background: var(--bright-gold); color: var(--deep-forest); }
+    .rank-2 .podium-crest { background: #CBD5E1; color: #1E293B; }
+    .rank-3 .podium-crest { background: #FDE68A; color: #78350F; }
+    .leader-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #ECECEC;
+    }
+    .leader-row:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Aviation Hall of Fame</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Top 10 Influencers</h1>
+        <p style="color: var(--secondary-text); font-size: 0.88rem; margin-top: 4px;">
+          Rankings are calculated dynamically from verified qualifying team deposits.
+        </p>
+      </div>
+
+      <!-- Top 3 Podium (Rank 2, Rank 1, Rank 3) -->
+      <div class="podium-grid" id="podiumContainer">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Remaining Rankings 4 - 10 -->
+      <div class="astra-card" style="padding: 0; overflow: hidden;" id="rankingTableContainer">
+        <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Calculating ranking metrics...</p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency } from './shared/formatters.js';
+
+    async function loadLeaderboard() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data: leaders } = await supabase.rpc('get_leaderboard_top10');
+
+      const podium = document.getElementById('podiumContainer');
+      const table = document.getElementById('rankingTableContainer');
+
+      if (!leaders || leaders.length === 0) {
+        podium.style.display = 'none';
+        table.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No qualified team deposits recorded yet. Be the first to claim Rank #1!</p>`;
+        return;
+      }
+
+      // Podium Top 3 Render: order 2nd, 1st, 3rd visually
+      const first = leaders.find(l => l.rank === 1);
+      const second = leaders.find(l => l.rank === 2);
+      const third = leaders.find(l => l.rank === 3);
+
+      podium.innerHTML = `
+        <div class="podium-card rank-2">
+          <div class="podium-crest">🥈</div>
+          <div style="font-weight: 700; font-size: 0.85rem; color: var(--deep-forest); overflow: hidden; text-overflow: ellipsis;">@${second?.username || '—'}</div>
+          <div style="color: var(--primary-green); font-size: 0.8rem; font-weight: 700; margin-top: 4px;">${second ? formatCurrency(second.qualifying_team_deposits) : '₦0'}</div>
+          <div style="font-size: 0.7rem; color: var(--secondary-text);">${second?.total_downlines || 0} downlines</div>
+        </div>
+
+        <div class="podium-card rank-1">
+          <div class="podium-crest">👑</div>
+          <div style="font-weight: 700; font-size: 0.95rem; color: var(--deep-forest); overflow: hidden; text-overflow: ellipsis;">@${first?.username || '—'}</div>
+          <div style="color: var(--primary-green); font-size: 0.95rem; font-weight: 700; font-family: var(--font-heading); margin-top: 4px;">${first ? formatCurrency(first.qualifying_team_deposits) : '₦0'}</div>
+          <div style="font-size: 0.75rem; color: var(--secondary-text);">${first?.total_downlines || 0} downlines</div>
+        </div>
+
+        <div class="podium-card rank-3">
+          <div class="podium-crest">🥉</div>
+          <div style="font-weight: 700; font-size: 0.85rem; color: var(--deep-forest); overflow: hidden; text-overflow: ellipsis;">@${third?.username || '—'}</div>
+          <div style="color: var(--primary-green); font-size: 0.8rem; font-weight: 700; margin-top: 4px;">${third ? formatCurrency(third.qualifying_team_deposits) : '₦0'}</div>
+          <div style="font-size: 0.7rem; color: var(--secondary-text);">${third?.total_downlines || 0} downlines</div>
+        </div>
+      `;
+
+      // Positions 4 to 10
+      const rest = leaders.filter(l => l.rank > 3);
+      if (rest.length === 0) {
+        table.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 20px;">Positions 4 through 10 are open for qualification.</p>`;
+        return;
+      }
+
+      table.innerHTML = rest.map(l => `
+        <div class="leader-row">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <strong style="font-size: 0.95rem; color: var(--secondary-text); width: 24px;">#${l.rank}</strong>
+            <div>
+              <div style="font-weight: 700; color: var(--deep-forest); font-size: 0.9rem;">@${l.username}</div>
+              <div style="font-size: 0.75rem; color: var(--secondary-text);">${l.total_downlines} direct & indirect downlines</div>
+            </div>
+          </div>
+          <div style="font-weight: 700; color: var(--primary-green); font-family: var(--font-heading); font-size: 1rem;">
+            ${formatCurrency(l.qualifying_team_deposits)}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    loadLeaderboard();
+  </script>
+</body>
+</html>
