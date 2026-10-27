@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referral VIP Salary Club | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .vip-card {
+      background: var(--white);
+      border: 1.5px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+    .vip-card.unlocked {
+      background: linear-gradient(135deg, #FFFDF5 0%, #FFF8E5 100%);
+      border-color: var(--bright-gold);
+    }
+    .progress-bar-wrap {
+      width: 100%;
+      height: 8px;
+      background: #E5E7EB;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin: 4px 0 12px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary-green);
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+    }
+    .salary-box {
+      background: var(--deep-forest);
+      color: var(--white);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Leadership Career Club</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Referral VIP Rewards</h1>
+        <p style="color: var(--secondary-text); font-size: 0.88rem; margin-top: 4px;">
+          Meet active downline, team deposit, and personal deposit benchmarks to unlock automated daily and monthly executive salaries.
+        </p>
+      </div>
+
+      <div id="vipLevelsContainer">
+        <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Calculating leadership benchmarks...</p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency } from './shared/formatters.js';
+
+    let currentUserId = null;
+
+    async function loadReferralVip() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+      currentUserId = session.user.id;
+
+      // 1. Fetch Tiers
+      const { data: levels } = await supabase
+        .from('referral_vip_levels')
+        .select('*')
+        .order('level', { ascending: true });
+
+      // 2. Fetch User Verified Benchmark Status
+      const { data: status } = await supabase.rpc('get_user_referral_vip_status', { p_user_id: currentUserId });
+
+      const container = document.getElementById('vipLevelsContainer');
+      if (!levels || levels.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text);">No Referral VIP tiers configured.</p>`;
+        return;
+      }
+
+      const activeDownlines = status?.active_downlines || 0;
+      const teamDeposits = Number(status?.team_deposits || 0);
+      const personalDeposits = Number(status?.personal_deposits || 0);
+      const unlockedLvl = status?.unlocked_level || 0;
+
+      container.innerHTML = levels.map(lvl => {
+        const isUnlocked = unlockedLvl >= lvl.level;
+
+        const downlinesPct = Math.min(100, Math.round((activeDownlines / lvl.required_active_downlines) * 100));
+        const teamPct = Math.min(100, Math.round((teamDeposits / lvl.required_team_deposits) * 100));
+        const personalPct = Math.min(100, Math.round((personalDeposits / lvl.required_personal_deposit) * 100));
+
+        return `
+          <div class="vip-card ${isUnlocked ? 'unlocked' : ''}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <h2 style="font-size: 1.3rem; color: var(--deep-forest); font-family: var(--font-heading);">${lvl.name}</h2>
+              <span class="badge-status ${isUnlocked ? 'badge-completed' : 'badge-pending'}">
+                ${isUnlocked ? 'Unlocked & Active' : 'Locked'}
+              </span>
+            </div>
+
+            <div class="salary-box">
+              <div>
+                <span style="font-size: 0.72rem; color: var(--soft-gold); text-transform: uppercase;">DAILY SALARY</span>
+                <div style="font-size: 1.25rem; font-family: var(--font-heading); font-weight: 700; color: var(--bright-gold);">${formatCurrency(lvl.daily_salary)}</div>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 0.72rem; color: var(--soft-gold); text-transform: uppercase;">MONTHLY SALARY</span>
+                <div style="font-size: 1.25rem; font-family: var(--font-heading); font-weight: 700; color: var(--white);">${formatCurrency(lvl.monthly_salary)}</div>
+              </div>
+            </div>
+
+            <!-- Progress 1: Active Downlines -->
+            <div style="font-size: 0.8rem; color: var(--secondary-text); display: flex; justify-content: space-between;">
+              <span>Active Downlines</span>
+              <strong>${activeDownlines} / ${lvl.required_active_downlines}</strong>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" style="width: ${downlinesPct}%;"></div>
+            </div>
+
+            <!-- Progress 2: Team Deposits -->
+            <div style="font-size: 0.8rem; color: var(--secondary-text); display: flex; justify-content: space-between;">
+              <span>Qualifying Team Deposits</span>
+              <strong>${formatCurrency(teamDeposits)} / ${formatCurrency(lvl.required_team_deposits)}</strong>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" style="width: ${teamPct}%;"></div>
+            </div>
+
+            <!-- Progress 3: Personal Deposit -->
+            <div style="font-size: 0.8rem; color: var(--secondary-text); display: flex; justify-content: space-between;">
+              <span>Personal Deposit</span>
+              <strong>${formatCurrency(personalDeposits)} / ${formatCurrency(lvl.required_personal_deposit)}</strong>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" style="width: ${personalPct}%;"></div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 14px;">
+              ${isUnlocked ? `
+                <button class="btn-gold" style="flex: 1; padding: 10px;" onclick="claimReward(${lvl.level}, 'daily')">Claim Daily (${formatCurrency(lvl.daily_salary)})</button>
+                <button class="btn-emerald" style="flex: 1; padding: 10px;" onclick="claimReward(${lvl.level}, 'monthly')">Claim Monthly</button>
+              ` : `
+                <button class="btn-emerald" disabled style="width: 100%; opacity: 0.6; cursor: not-allowed; padding: 10px;">Requirements Incomplete</button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.claimReward = async function(level, type) {
+      const { data, error } = await supabase.rpc('claim_referral_vip_reward', {
+        p_user_id: currentUserId,
+        p_level: level,
+        p_reward_type: type
+      });
+
+      if (error || !data.success) {
+        alert(data?.error || error?.message || 'Claim failed');
+      } else {
+        alert(`Success! ₦${data.amount} credited to your available balance.`);
+        window.location.reload();
+      }
+    };
+
+    loadReferralVip();
+  </script>
+</body>
+</html>
