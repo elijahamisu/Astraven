@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .notif-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .notif-item {
+      padding: 18px 20px;
+      border-bottom: 1px solid #ECECEC;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      transition: background 0.2s;
+    }
+    .notif-item.unread {
+      background: #FBF9F1;
+      border-left: 4px solid var(--metallic-gold);
+    }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-title {
+      font-weight: 700;
+      color: var(--deep-forest);
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+    .notif-msg {
+      font-size: 0.9rem;
+      color: var(--primary-text);
+      line-height: 1.4;
+    }
+    .notif-meta {
+      font-size: 0.75rem;
+      color: var(--secondary-text);
+      margin-top: 6px;
+    }
+    .btn-mark {
+      background: none;
+      border: 1px solid #D1D5DB;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      cursor: pointer;
+      color: var(--secondary-text);
+      white-space: nowrap;
+    }
+    .btn-mark:hover {
+      border-color: var(--primary-green);
+      color: var(--primary-green);
+    }
+    .empty-state {
+      padding: 48px 16px;
+      text-align: center;
+      color: var(--secondary-text);
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="notif-header">
+        <h1 class="font-heading">Notification Centre</h1>
+        <button id="markAllBtn" class="btn-emerald" style="padding: 8px 16px; font-size: 0.85rem;">
+          Mark All as Read
+        </button>
+      </div>
+
+      <div class="notif-card" id="notifListContainer">
+        <div class="empty-state">Loading your notifications...</div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatDate } from './shared/formatters.js';
+
+    let currentUserId = null;
+
+    async function loadNotifications() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+      currentUserId = session.user.id;
+
+      const { data: notifs, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      const container = document.getElementById('notifListContainer');
+
+      if (error || !notifs || notifs.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔔</div>
+            <p>You have no notifications at this time.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = notifs.map(n => `
+        <div class="notif-item ${!n.is_read ? 'unread' : ''}" id="notif-${n.id}">
+          <div>
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-msg">${n.message}</div>
+            <div class="notif-meta">${formatDate(n.created_at)}</div>
+          </div>
+          ${!n.is_read ? `
+            <button class="btn-mark" onclick="markAsRead('${n.id}')">Mark Read</button>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    window.markAsRead = async function(id) {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id)
+        .eq('user_id', currentUserId);
+
+      if (!error) {
+        const el = document.getElementById(`notif-${id}`);
+        if (el) {
+          el.classList.remove('unread');
+          const btn = el.querySelector('.btn-mark');
+          if (btn) btn.remove();
+        }
+      }
+    };
+
+    document.getElementById('markAllBtn').addEventListener('click', async () => {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', currentUserId)
+        .eq('is_read', false);
+
+      if (!error) {
+        loadNotifications();
+      }
+    });
+
+    loadNotifications();
+  </script>
+</body>
+</html>
