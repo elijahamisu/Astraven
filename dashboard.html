@@ -6,49 +6,52 @@
   <title>Dashboard | ASTRAVEN</title>
   <link rel="stylesheet" href="shared/theme.css">
   <style>
-    /* Dashboard specific grid and cards */
+    /* Dashboard Responsive Layout */
     .dashboard-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .header-text {
+      flex: 1;
+      min-width: 200px;
     }
     .welcome-title {
-      font-size: 1.8rem;
-      color: var(--deep-forest);
+      font-size: clamp(1.4rem, 4vw, 1.9rem);
       margin-bottom: 4px;
     }
     .welcome-subtitle {
       color: var(--secondary-text);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
     .header-actions {
       display: flex;
-      gap: 12px;
+      gap: 8px;
+      flex-shrink: 0;
     }
-    .btn-icon {
+    .btn-header-action {
       background: var(--white);
       border: 1px solid rgba(212, 175, 55, 0.4);
-      padding: 10px 14px;
+      padding: 8px 14px;
       border-radius: var(--radius-md);
       color: var(--deep-forest);
       text-decoration: none;
       font-weight: 600;
+      font-size: 0.85rem;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: background 0.2s;
     }
-    .btn-icon:hover {
-      background: var(--light-gold-bg);
-    }
-    
-    /* Announcement Banner */
+
+    /* Broadcast Announcement */
     .announcement-card {
       background: linear-gradient(135deg, #003D24 0%, #064E32 100%);
       border: 1px solid var(--metallic-gold);
       color: var(--white);
-      padding: 16px 20px;
+      padding: 16px;
       border-radius: var(--radius-lg);
       margin-bottom: 24px;
       display: none;
@@ -57,26 +60,39 @@
       font-weight: 700;
       color: var(--bright-gold);
       margin-bottom: 4px;
-      font-size: 1rem;
+      font-size: 0.95rem;
     }
     .announcement-body {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       opacity: 0.95;
+      line-height: 1.4;
     }
 
-    /* Financial Overview */
+    /* Wallet Summary Grid: 1 col on <600px, 2 col on >=600px, 4 col on >=1100px */
     .wallet-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
       margin-bottom: 28px;
     }
+    @media (min-width: 600px) {
+      .wallet-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (min-width: 1100px) {
+      .wallet-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
     .wallet-stat-card {
       background: var(--white);
       border: 1px solid rgba(212, 175, 55, 0.3);
       border-radius: var(--radius-lg);
-      padding: 22px;
+      padding: 18px;
       box-shadow: var(--shadow-sm);
+      min-width: 0;
     }
     .wallet-stat-card.primary {
       background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
@@ -84,113 +100,115 @@
       border: 1px solid var(--metallic-gold);
     }
     .stat-label {
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       opacity: 0.85;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .stat-amount {
-      font-size: 1.8rem;
+      font-size: clamp(1.4rem, 3.5vw, 1.8rem);
       font-weight: 700;
       font-family: var(--font-heading);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .wallet-stat-card.primary .stat-amount {
       color: var(--bright-gold);
     }
 
-    /* Action Grid */
+    /* Quick Actions */
     .section-title {
-      font-size: 1.25rem;
-      color: var(--deep-forest);
-      margin-bottom: 16px;
+      font-size: 1.15rem;
+      margin-bottom: 14px;
     }
     .quick-actions-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 12px;
-      margin-bottom: 32px;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    @media (min-width: 480px) {
+      .quick-actions-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+      }
     }
     .action-button-tile {
       background: var(--white);
       border: 1px solid rgba(212, 175, 55, 0.25);
       border-radius: var(--radius-md);
-      padding: 16px 10px;
+      padding: 14px 8px;
       text-align: center;
       text-decoration: none;
       color: var(--deep-forest);
-      transition: all 0.2s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      touch-action: manipulation;
     }
     .action-button-tile:hover {
       border-color: var(--metallic-gold);
       transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
       background: var(--light-gold-bg);
     }
-    .action-tile-icon {
-      font-size: 1.5rem;
-    }
-    .action-tile-label {
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
+    .action-tile-icon { font-size: 1.4rem; }
+    .action-tile-label { font-size: 0.8rem; font-weight: 600; }
 
-    /* Content two-column section */
+    /* Investment, Affiliate & Ledger Grid */
     .dashboard-split {
       display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 24px;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 20px;
     }
-    .card-empty-state {
-      text-align: center;
-      padding: 36px 16px;
-      color: var(--secondary-text);
-    }
-    .empty-state-icon {
-      font-size: 2.2rem;
-      margin-bottom: 12px;
-      opacity: 0.6;
+    @media (min-width: 992px) {
+      .dashboard-split {
+        grid-template-columns: 3fr 2fr;
+      }
     }
 
-    /* Table */
-    .tx-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-    .tx-table th, .tx-table td {
-      padding: 12px 14px;
-      text-align: left;
-      border-bottom: 1px solid #ECECEC;
-    }
-    .tx-table th {
-      background: #FAFAFA;
-      color: var(--secondary-text);
-      font-weight: 600;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-    }
     .copy-box {
       display: flex;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 8px;
+      width: 100%;
     }
     .copy-input {
       flex: 1;
-      padding: 10px 12px;
+      min-width: 0;
+      padding: 8px 12px;
       border: 1px solid #D1D5DB;
       border-radius: var(--radius-md);
       background: var(--cream-white);
       font-size: 0.85rem;
+      font-family: monospace;
     }
-    @media (max-width: 900px) {
-      .dashboard-split { grid-template-columns: 1fr; }
-      .dashboard-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+
+    .tx-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      min-width: 440px; /* guarantees layout readability inside .table-responsive */
+    }
+    .tx-table th, .tx-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #F0F0F0;
+    }
+    .tx-table th {
+      background: #FAFAFA;
+      color: var(--secondary-text);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+    .card-empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--secondary-text);
     }
   </style>
 </head>
@@ -199,27 +217,22 @@
     <div id="navigationContainer"></div>
 
     <main class="main-content">
+      <!-- 1. Header & Welcome -->
       <div class="dashboard-header">
-        <div>
-          <h1 class="welcome-title" id="welcomeUser">Welcome back</h1>
+        <div class="header-text">
+          <h1 class="welcome-title" id="welcomeUser">Welcome</h1>
           <p class="welcome-subtitle">Here is your portfolio summary and financial performance.</p>
         </div>
         <div class="header-actions">
-          <a href="notifications.html" class="btn-icon">
+          <a href="notifications.html" class="btn-header-action">
             <span>Notifications</span>
             <span id="unreadCounter" class="badge-status badge-pending" style="display: none;">0</span>
           </a>
-          <a href="profile.html" class="btn-icon">My Profile</a>
+          <a href="profile.html" class="btn-header-action">Profile</a>
         </div>
       </div>
 
-      <!-- Live Broadcast Announcement -->
-      <div id="announcementBox" class="announcement-card">
-        <div id="announcementTitle" class="announcement-title"></div>
-        <div id="announcementBody" class="announcement-body"></div>
-      </div>
-
-      <!-- Financial Overview -->
+      <!-- 2. Wallet Overview Cards -->
       <div class="wallet-grid">
         <div class="wallet-stat-card primary">
           <div class="stat-label">Available Balance</div>
@@ -239,7 +252,7 @@
         </div>
       </div>
 
-      <!-- Quick Actions Grid -->
+      <!-- 3. Quick Action Buttons -->
       <h2 class="section-title">Quick Actions</h2>
       <div class="quick-actions-grid">
         <a href="deposit.html" class="action-button-tile">
@@ -249,6 +262,10 @@
         <a href="withdraw.html" class="action-button-tile">
           <span class="action-tile-icon">💸</span>
           <span class="action-tile-label">Withdraw</span>
+        </a>
+        <a href="wallet.html" class="action-button-tile">
+          <span class="action-tile-icon">👛</span>
+          <span class="action-tile-label">My Wallet</span>
         </a>
         <a href="vip.html" class="action-button-tile">
           <span class="action-tile-icon">👑</span>
@@ -272,11 +289,11 @@
         </a>
         <a href="referral-vip.html" class="action-button-tile">
           <span class="action-tile-icon">🎖️</span>
-          <span class="action-tile-label">Referral VIP</span>
+          <span class="action-tile-label">Ref-VIP</span>
         </a>
         <a href="lucky-wheel.html" class="action-button-tile">
           <span class="action-tile-icon">🎡</span>
-          <span class="action-tile-label">Lucky Wheel</span>
+          <span class="action-tile-label">Wheel</span>
         </a>
         <a href="gift-code.html" class="action-button-tile">
           <span class="action-tile-icon">🎁</span>
@@ -288,47 +305,65 @@
         </a>
       </div>
 
-      <!-- Split Layout: Recent Ledger & Referral Portal -->
-      <div class="dashboard-split">
-        <!-- Recent Transactions -->
-        <div class="astra-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h2 class="section-title" style="margin-bottom: 0;">Recent Transactions</h2>
-            <a href="transactions.html" style="font-size: 0.85rem; color: var(--primary-green); font-weight: 600; text-decoration: none;">View Ledger →</a>
-          </div>
-          
-          <div id="txContainer">
-            <div class="card-empty-state">
-              <div class="empty-state-icon">📋</div>
-              <p>No transactions recorded yet.</p>
-            </div>
-          </div>
+      <!-- 4. Investment Overview Card -->
+      <div class="astra-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <h2 class="section-title" style="margin-bottom: 0;">Investment Overview</h2>
+          <a href="vip.html" style="font-size: 0.85rem; color: var(--primary-green); font-weight: 600; text-decoration: none;">Explore VIP Packages →</a>
         </div>
+        <div class="card-empty-state">
+          <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.7;">📈</div>
+          <p style="font-size: 0.9rem;">No active investments yet. Start generating verified daily income by investing in our premier VIP tiers.</p>
+        </div>
+      </div>
 
-        <!-- Referral Overview -->
+      <!-- 5. Split: Referral Summary & Recent Transactions -->
+      <div class="dashboard-split">
+        <!-- Referral Summary -->
         <div class="astra-card">
           <h2 class="section-title">Affiliate Program</h2>
           <p style="font-size: 0.85rem; color: var(--secondary-text); margin-bottom: 14px;">
-            Share your exclusive link to earn 10% direct referral commission on qualifying deposits.
+            Receive 10% direct commission on verified downline deposits.
           </p>
 
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--deep-forest);">Your Referral Code</label>
+          <label style="font-size: 0.8rem; font-weight: 600;">Your Referral Code</label>
           <div class="copy-box">
             <input type="text" id="refCodeDisplay" class="copy-input" readonly value="Loading...">
-            <button type="button" class="btn-emerald" id="copyCodeBtn" style="padding: 8px 14px;">Copy</button>
+            <button type="button" class="btn-emerald" id="copyCodeBtn" style="padding: 8px 14px; font-size: 0.85rem;">Copy</button>
           </div>
 
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--deep-forest); margin-top: 14px; display: block;">Your Referral Link</label>
+          <label style="font-size: 0.8rem; font-weight: 600; margin-top: 12px; display: block;">Your Referral Link</label>
           <div class="copy-box">
             <input type="text" id="refLinkDisplay" class="copy-input" readonly value="Loading...">
-            <button type="button" class="btn-gold" id="copyLinkBtn" style="padding: 8px 14px;">Copy</button>
+            <button type="button" class="btn-gold" id="copyLinkBtn" style="padding: 8px 14px; font-size: 0.85rem;">Copy</button>
           </div>
 
-          <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between;">
-            <span style="font-size: 0.85rem; color: var(--secondary-text);">Active Downlines</span>
+          <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid #ECECEC; display: flex; justify-content: space-between; font-size: 0.85rem;">
+            <span style="color: var(--secondary-text);">Active Downlines</span>
             <strong id="downlineCount" style="color: var(--deep-forest);">0</strong>
           </div>
         </div>
+
+        <!-- Recent Transactions -->
+        <div class="astra-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h2 class="section-title" style="margin-bottom: 0;">Recent Transactions</h2>
+            <a href="transactions.html" style="font-size: 0.85rem; color: var(--primary-green); font-weight: 600; text-decoration: none;">View Ledger →</a>
+          </div>
+
+          <div class="table-responsive" id="txContainer">
+            <div class="card-empty-state">
+              <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.7;">📋</div>
+              <p style="font-size: 0.9rem;">No transactions recorded yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Broadcast Announcements (Ordered at bottom) -->
+      <div id="announcementBox" class="announcement-card" style="margin-top: 24px;">
+        <div id="announcementTitle" class="announcement-title"></div>
+        <div id="announcementBody" class="announcement-body"></div>
       </div>
     </main>
   </div>
@@ -339,19 +374,17 @@
     import { formatCurrency, formatDate } from './shared/formatters.js';
 
     async function loadDashboard() {
-      // 1. Initialize user navigation with authentication guard
       await initUserNavigation({ requireSession: true });
       const session = await requireAuth();
       if (!session) return;
-
       const userId = session.user.id;
 
-      // 2. Load Profile
+      // 1. Profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, username, referral_code, astra_vip_level')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (profile) {
         const name = profile.full_name || profile.username || 'Investor';
@@ -360,12 +393,12 @@
         document.getElementById('refLinkDisplay').value = `${window.location.origin}/register.html?ref=${profile.referral_code}`;
       }
 
-      // 3. Load Real Wallet
+      // 2. Wallet
       const { data: wallet } = await supabase
         .from('wallets')
         .select('balance, reserved_balance, total_deposited, total_withdrawn')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (wallet) {
         document.getElementById('statBalance').textContent = formatCurrency(wallet.balance);
@@ -374,29 +407,15 @@
         document.getElementById('statWithdrawn').textContent = formatCurrency(wallet.total_withdrawn);
       }
 
-      // 4. Load Active Broadcast Announcement
-      const { data: announcements } = await supabase
-        .from('announcements')
-        .select('title, content')
-        .eq('is_active', true)
-        .order('priority', { ascending: false })
-        .limit(1);
-
-      if (announcements && announcements.length > 0) {
-        document.getElementById('announcementTitle').textContent = announcements[0].title;
-        document.getElementById('announcementBody').textContent = announcements[0].content;
-        document.getElementById('announcementBox').style.display = 'block';
-      }
-
-      // 5. Load Downline Count
-      const { count } = await supabase
+      // 3. Downlines Count
+      const { count: downlines } = await supabase
         .from('referrals')
         .select('*', { count: 'exact', head: true })
         .eq('referrer_id', userId);
 
-      document.getElementById('downlineCount').textContent = count || 0;
+      document.getElementById('downlineCount').textContent = downlines || 0;
 
-      // 6. Check Unread Notifications
+      // 4. Notifications Badge
       const { count: unreadCount } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
@@ -409,7 +428,7 @@
         badge.style.display = 'inline-block';
       }
 
-      // 7. Load Recent Ledger Transactions (Bounded limit 5)
+      // 5. Recent Transactions
       const { data: txs } = await supabase
         .from('transactions')
         .select('type, amount, status, created_at')
@@ -418,7 +437,7 @@
         .limit(5);
 
       if (txs && txs.length > 0) {
-        const html = `
+        document.getElementById('txContainer').innerHTML = `
           <table class="tx-table">
             <thead>
               <tr>
@@ -446,16 +465,28 @@
             </tbody>
           </table>
         `;
-        document.getElementById('txContainer').innerHTML = html;
       }
 
-      // Clipboard copy actions
-      document.getElementById('copyCodeBtn').addEventListener('click', () => {
+      // 6. Announcements
+      const { data: announcements } = await supabase
+        .from('announcements')
+        .select('title, content')
+        .eq('is_active', true)
+        .order('priority', { ascending: false })
+        .limit(1);
+
+      if (announcements && announcements.length > 0) {
+        document.getElementById('announcementTitle').textContent = announcements[0].title;
+        document.getElementById('announcementBody').textContent = announcements[0].content;
+        document.getElementById('announcementBox').style.display = 'block';
+      }
+
+      // Clipboard Actions
+      document.getElementById('copyCodeBtn')?.addEventListener('click', () => {
         navigator.clipboard.writeText(document.getElementById('refCodeDisplay').value);
         alert('Referral code copied to clipboard!');
       });
-
-      document.getElementById('copyLinkBtn').addEventListener('click', () => {
+      document.getElementById('copyLinkBtn')?.addEventListener('click', () => {
         navigator.clipboard.writeText(document.getElementById('refLinkDisplay').value);
         alert('Referral link copied to clipboard!');
       });
