@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deposit History | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active { background: var(--dark-emerald); color: var(--bright-gold); border-color: var(--bright-gold); }
+    .dep-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Audit Records</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Deposit History</h1>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All Deposits</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="approved">Approved</button>
+        <button class="filter-btn" data-filter="rejected">Rejected</button>
+      </div>
+
+      <div id="historyList">
+        <div class="astra-card" style="text-align: center; padding: 40px; color: var(--secondary-text);">Loading deposit history...</div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency, formatDate } from './shared/formatters.js';
+
+    let allDeposits = [];
+
+    async function loadDeposits() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data: deposits, error } = await supabase
+        .from('deposits')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      const container = document.getElementById('historyList');
+
+      if (error || !deposits || deposits.length === 0) {
+        container.innerHTML = `
+          <div class="astra-card" style="text-align: center; padding: 40px;">
+            <p style="color: var(--secondary-text); margin-bottom: 12px;">No deposit requests found.</p>
+            <a href="deposit.html" class="btn-gold">Make a Deposit</a>
+          </div>
+        `;
+        return;
+      }
+
+      allDeposits = deposits;
+      render(allDeposits);
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const filter = btn.dataset.filter;
+          render(filter === 'all' ? allDeposits : allDeposits.filter(d => d.status === filter));
+        });
+      });
+    }
+
+    function render(list) {
+      const container = document.getElementById('historyList');
+      if (list.length === 0) {
+        container.innerHTML = `<div class="astra-card" style="text-align: center; padding: 30px; color: var(--secondary-text);">No deposits match this filter.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(dep => `
+        <div class="dep-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-family: monospace; font-size: 0.82rem; font-weight: 700; color: var(--deep-forest);">${dep.reference}</span>
+            <span class="badge-status ${dep.status === 'approved' ? 'badge-completed' : (dep.status === 'pending' ? 'badge-pending' : 'badge-failed')}">
+              ${dep.status}
+            </span>
+          </div>
+
+          <div style="font-size: 1.4rem; font-family: var(--font-heading); color: var(--primary-green); font-weight: 700; margin-bottom: 6px;">
+            ${formatCurrency(dep.amount)}
+          </div>
+
+          <div style="font-size: 0.82rem; color: var(--secondary-text); line-height: 1.4;">
+            <div>Sender: <strong>${dep.sender_name || '—'}</strong></div>
+            <div>Ref: <strong>${dep.transfer_reference || '—'}</strong></div>
+            <div>Date: ${formatDate(dep.created_at)}</div>
+            ${dep.status === 'rejected' && dep.rejection_reason ? `
+              <div style="color: var(--error-red); margin-top: 4px;">Reason: ${dep.rejection_reason}</div>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    loadDeposits();
+  </script>
+</body>
+</html>
