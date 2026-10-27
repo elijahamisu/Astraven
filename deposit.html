@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deposit Funds | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .deposit-wrap { max-width: 580px; margin: 0 auto; }
+    .bank-card {
+      background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      color: var(--white);
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+    }
+    .bank-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    }
+    .bank-row:last-child { border-bottom: none; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="deposit-wrap">
+        <h1 class="font-heading" style="margin-bottom: 6px; font-size: 1.8rem;">Bank Transfer Deposit</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+          Direct electronic wire transfer to our corporate aviation custody account.
+        </p>
+
+        <div id="alertBanner" class="alert-banner"></div>
+
+        <!-- Bank Details Box Loaded from Site Settings -->
+        <div class="bank-card">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--soft-gold); letter-spacing: 0.08em; margin-bottom: 8px;">
+            ASTRAVEN SETTLEMENT ACCOUNT
+          </div>
+          <div class="bank-row">
+            <span style="color: #D1D5DB;">Bank Name:</span>
+            <strong id="displayBank" style="color: var(--white);">Loading...</strong>
+          </div>
+          <div class="bank-row">
+            <span style="color: #D1D5DB;">Account Name:</span>
+            <strong id="displayAccName" style="color: var(--white); text-align: right;">Loading...</strong>
+          </div>
+          <div class="bank-row">
+            <span style="color: #D1D5DB;">Account Number:</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <strong id="displayAccNum" style="font-family: monospace; font-size: 1.15rem; color: var(--bright-gold);">Loading...</strong>
+              <button id="copyAccBtn" type="button" class="btn-emerald" style="padding: 4px 10px; font-size: 0.75rem;">Copy</button>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 0.8rem; color: #CBD5E1; line-height: 1.4;" id="displayInstructions"></div>
+        </div>
+
+        <!-- Deposit Proof Submission Form -->
+        <form class="astra-card" id="depositForm">
+          <div class="form-group">
+            <label for="amount">Deposit Amount (₦)</label>
+            <input type="number" id="amount" class="form-control" placeholder="Min. ₦5,000" min="1000" step="100" required>
+            <small id="minDepositNotice" style="color: var(--secondary-text); font-size: 0.78rem;">Minimum deposit applies.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="senderName">Sender Name</label>
+            <input type="text" id="senderName" class="form-control" placeholder="Name as seen on your bank account" required>
+          </div>
+
+          <div class="form-group">
+            <label for="transferRef">Bank Transaction Reference / Narration</label>
+            <input type="text" id="transferRef" class="form-control" placeholder="Session ID or reference" required>
+          </div>
+
+          <div class="form-group">
+            <label for="receiptFile">Upload Payment Receipt / Screenshot (Optional)</label>
+            <input type="file" id="receiptFile" class="form-control" accept="image/*,.pdf">
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 14px; margin-top: 8px;">
+            Submit Deposit Request
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency } from './shared/formatters.js';
+
+    let currentSession = null;
+    let minDeposit = 5000;
+
+    async function loadDepositConfig() {
+      await initUserNavigation({ requireSession: true });
+      currentSession = await requireAuth();
+      if (!currentSession) return;
+
+      const { data: cfg } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'deposit_config')
+        .single();
+
+      if (cfg && cfg.value) {
+        const val = cfg.value;
+        document.getElementById('displayBank').textContent = val.bank_name || 'Zenith Bank PLC';
+        document.getElementById('displayAccName').textContent = val.account_name || 'Astraven Aviation Ltd';
+        document.getElementById('displayAccNum').textContent = val.account_number || '1228493012';
+        document.getElementById('displayInstructions').textContent = val.instructions || '';
+        minDeposit = Number(val.min_deposit || 5000);
+        document.getElementById('minDepositNotice').textContent = `Minimum deposit is ${formatCurrency(minDeposit)}.`;
+        document.getElementById('amount').min = minDeposit;
+      }
+
+      document.getElementById('copyAccBtn').addEventListener('click', () => {
+        const acc = document.getElementById('displayAccNum').textContent;
+        navigator.clipboard.writeText(acc);
+        alert('Account number copied to clipboard!');
+      });
+    }
+
+    document.getElementById('depositForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBanner = document.getElementById('alertBanner');
+      const submitBtn = document.getElementById('submitBtn');
+      alertBanner.style.display = 'none';
+
+      const amount = Number(document.getElementById('amount').value);
+      const senderName = document.getElementById('senderName').value.trim();
+      const transferRef = document.getElementById('transferRef').value.trim();
+      const receiptFile = document.getElementById('receiptFile').files[0];
+
+      if (amount < minDeposit) {
+        alertBanner.textContent = `Amount is below the minimum required deposit of ${formatCurrency(minDeposit)}.`;
+        alertBanner.className = 'alert-banner error';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting Proof...';
+
+      let receiptUrl = null;
+
+      try {
+        if (receiptFile) {
+          const fileExt = receiptFile.name.split('.').pop();
+          const filePath = `${currentSession.user.id}/${Date.now()}_receipt.${fileExt}`;
+          const { error: uploadErr } = await supabase.storage
+            .from('deposit-receipts')
+            .upload(filePath, receiptFile);
+
+          if (!uploadErr) {
+            receiptUrl = filePath;
+          }
+        }
+
+        const res = await fetch('/api/deposits/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({
+            amount,
+            senderName,
+            transferRef,
+            receiptUrl,
+            idempotencyKey: 'DEP-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
+          })
+        });
+
+        const result = await res.json();
+
+        if (!result.success) {
+          alertBanner.textContent = result.error || 'Failed to submit deposit.';
+          alertBanner.className = 'alert-banner error';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Deposit Request';
+          return;
+        }
+
+        alertBanner.textContent = `Deposit request ${result.reference} registered! Awaiting verification. Redirecting...`;
+        alertBanner.className = 'alert-banner success';
+
+        setTimeout(() => {
+          window.location.href = 'deposit-history.html';
+        }, 1500);
+
+      } catch (err) {
+        alertBanner.textContent = 'Network or submission error. Please check your history.';
+        alertBanner.className = 'alert-banner error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Deposit Request';
+      }
+    });
+
+    loadDepositConfig();
+  </script>
+</body>
+</html>
