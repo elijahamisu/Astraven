@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .auth-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      background: radial-gradient(circle at center, var(--cream-white) 0%, #F5EEDB 100%);
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--metallic-gold);
+      box-shadow: var(--shadow-lg);
+      padding: 40px 32px;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .auth-brand {
+      font-family: var(--font-heading);
+      font-size: 2.2rem;
+      color: var(--deep-forest);
+      letter-spacing: 2px;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .auth-subtitle {
+      color: var(--secondary-text);
+      font-size: 0.95rem;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .col-full { grid-column: span 2; }
+    .form-group {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--deep-forest);
+    }
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-family: var(--font-body);
+      color: var(--primary-text);
+      background: var(--cream-white);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary-green);
+      box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.15);
+    }
+    .toggle-pwd {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--secondary-text);
+      cursor: pointer;
+      font-size: 0.9rem;
+      user-select: none;
+    }
+    .referral-badge {
+      font-size: 0.8rem;
+      color: var(--success-green);
+      font-weight: 600;
+      margin-top: 4px;
+      display: none;
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-banner.error {
+      background: #FDE8E8;
+      border: 1px solid var(--error-red);
+      color: var(--error-red);
+      display: block;
+    }
+    .alert-banner.success {
+      background: #E6F8EF;
+      border: 1px solid var(--success-green);
+      color: var(--success-green);
+      display: block;
+    }
+    .auth-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.9rem;
+      color: var(--secondary-text);
+    }
+    .auth-footer a {
+      color: var(--primary-green);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .col-full { grid-column: span 1; }
+      .auth-card { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <a href="index.html" class="auth-brand">ASTRAVEN</a>
+        <p class="auth-subtitle">Create your personal investment account</p>
+      </div>
+
+      <div id="alertBanner" class="alert-banner"></div>
+
+      <form id="registerForm" novalidate>
+        <div class="form-grid">
+          <div class="form-group col-full">
+            <label for="fullName">Full Name</label>
+            <input type="text" id="fullName" class="form-control" placeholder="John Doe" required>
+          </div>
+
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" class="form-control" placeholder="johndoe" required autocomplete="username">
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" class="form-control" placeholder="08012345678" required>
+          </div>
+
+          <div class="form-group col-full">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" class="form-control" placeholder="john@example.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="password" class="form-control" placeholder="Min. 8 characters" required autocomplete="new-password">
+              <button type="button" class="toggle-pwd" data-target="password">Show</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="confirmPassword" class="form-control" placeholder="Repeat password" required autocomplete="new-password">
+              <button type="button" class="toggle-pwd" data-target="confirmPassword">Show</button>
+            </div>
+          </div>
+
+          <div class="form-group col-full">
+            <label for="referralCode">Referral Code (Optional)</label>
+            <input type="text" id="referralCode" class="form-control" placeholder="e.g. ASTRA1234">
+            <div id="refBadge" class="referral-badge"></div>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; margin-top: 12px;">
+          Create Account
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Already have an account? <a href="login.html">Sign In</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from './shared/supabase-client.js';
+    import { isValidEmail, isValidNigerianPhone } from './shared/validation.js';
+
+    const form = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const alertBanner = document.getElementById('alertBanner');
+    const refInput = document.getElementById('referralCode');
+    const refBadge = document.getElementById('refBadge');
+
+    // Parse referral code from URL query parameter (?ref=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const refParam = urlParams.get('ref');
+    if (refParam) {
+      refInput.value = refParam.trim().toUpperCase();
+      validateReferral(refInput.value);
+    }
+
+    // Toggle password visibility
+    document.querySelectorAll('.toggle-pwd').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.getAttribute('data-target'));
+        if (target.type === 'password') {
+          target.type = 'text';
+          btn.textContent = 'Hide';
+        } else {
+          target.type = 'password';
+          btn.textContent = 'Show';
+        }
+      });
+    });
+
+    // Validate referral code on blur
+    refInput.addEventListener('blur', () => {
+      const code = refInput.value.trim();
+      if (code) validateReferral(code);
+      else refBadge.style.display = 'none';
+    });
+
+    async function validateReferral(code) {
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase.rpc('check_referral_code', { p_code: code });
+        if (!error && data && data.length > 0 && data[0].valid) {
+          refBadge.textContent = `✓ Referred by @${data[0].referrer_username}`;
+          refBadge.style.display = 'block';
+        } else {
+          refBadge.textContent = '✗ Referral code not found';
+          refBadge.style.color = 'var(--error-red)';
+          refBadge.style.display = 'block';
+        }
+      } catch (err) {
+        console.warn('Referral check non-critical failure', err);
+      }
+    }
+
+    function showAlert(msg, isError = true) {
+      alertBanner.textContent = msg;
+      alertBanner.className = `alert-banner ${isError ? 'error' : 'success'}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBanner.style.display = 'none';
+
+      const fullName = document.getElementById('fullName').value.trim();
+      const rawUsername = document.getElementById('username').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const referralCode = refInput.value.trim().toUpperCase();
+
+      // Front-end validations
+      if (!fullName || !rawUsername || !phone || !email || !password) {
+        return showAlert('Please fill in all required fields.');
+      }
+      if (!isValidEmail(email)) {
+        return showAlert('Please provide a valid email address.');
+      }
+      const cleanUsername = rawUsername.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      if (cleanUsername.length < 3 || cleanUsername.length > 20) {
+        return showAlert('Username must be 3–20 alphanumeric characters or underscores.');
+      }
+      if (!isValidNigerianPhone(phone)) {
+        return showAlert('Please enter a valid Nigerian phone number (e.g. 08012345678).');
+      }
+      if (password.length < 8) {
+        return showAlert('Password must be at least 8 characters long.');
+      }
+      if (password !== confirmPassword) {
+        return showAlert('Passwords do not match.');
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating Account...';
+
+      try {
+        // Pre-check username availability
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', cleanUsername)
+          .maybeSingle();
+
+        if (existingUser) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account';
+          return showAlert('This username is already taken. Please choose another.');
+        }
+
+        // Register user via Supabase Auth
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              username: cleanUsername,
+              phone: phone,
+              referral_code: referralCode
+            }
+          }
+        });
+
+        if (error) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account';
+          return showAlert(error.message);
+        }
+
+        // Handle auto-login vs email confirmation
+        if (data.session) {
+          showAlert('Registration successful! Redirecting to dashboard...', false);
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1200);
+        } else {
+          showAlert('Account registered! Please check your email inbox to confirm your account before logging in.', false);
+          form.reset();
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account';
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+        showAlert('An unexpected error occurred. Please try again later.');
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
