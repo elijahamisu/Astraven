@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Ledger | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active { background: var(--dark-emerald); color: var(--bright-gold); border-color: var(--bright-gold); }
+    .tx-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      min-width: 520px;
+    }
+    .tx-table th, .tx-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ECECEC;
+    }
+    .tx-table th {
+      background: #FAFAFA;
+      color: var(--secondary-text);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Financial Ledger</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">All Transactions</h1>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="deposit">Deposits</button>
+        <button class="filter-btn" data-filter="withdrawal">Withdrawals</button>
+        <button class="filter-btn" data-filter="investment">Investments</button>
+        <button class="filter-btn" data-filter="reward">Rewards</button>
+      </div>
+
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive" id="txContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading financial transactions...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency, formatDate } from './shared/formatters.js';
+
+    let allTxs = [];
+
+    async function loadTransactions() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data: txs, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      const container = document.getElementById('txContainer');
+
+      if (error || !txs || txs.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No transactions found on ledger.</p>`;
+        return;
+      }
+
+      allTxs = txs;
+      render(allTxs);
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const filter = btn.dataset.filter;
+          if (filter === 'all') render(allTxs);
+          else if (filter === 'deposit') render(allTxs.filter(t => t.type.includes('deposit')));
+          else if (filter === 'withdrawal') render(allTxs.filter(t => t.type.includes('withdrawal')));
+          else if (filter === 'investment') render(allTxs.filter(t => t.type.includes('investment')));
+          else if (filter === 'reward') render(allTxs.filter(t => t.type.includes('reward') || t.type.includes('commission') || t.type.includes('bonus')));
+        });
+      });
+    }
+
+    function render(list) {
+      const container = document.getElementById('txContainer');
+      if (list.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 30px;">No records match this filter.</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Ref</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(tx => {
+              const isPositive = Number(tx.amount) >= 0;
+              return `
+                <tr>
+                  <td style="font-family: monospace; font-size: 0.75rem; color: var(--secondary-text);">${tx.reference}</td>
+                  <td style="font-weight: 600;">
+                    ${tx.description || tx.type.replace(/_/g, ' ')}
+                  </td>
+                  <td style="font-weight: 700; color: ${isPositive ? 'var(--success-green)' : 'var(--error-red)'};">
+                    ${isPositive ? '+' : ''}${formatCurrency(tx.amount)}
+                  </td>
+                  <td>
+                    <span class="badge-status ${tx.status === 'completed' ? 'badge-completed' : (tx.status === 'pending' ? 'badge-pending' : 'badge-failed')}">
+                      ${tx.status}
+                    </span>
+                  </td>
+                  <td style="color: var(--secondary-text); font-size: 0.8rem;">${formatDate(tx.created_at)}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    loadTransactions();
+  </script>
+</body>
+</html>
