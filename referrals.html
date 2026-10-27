@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referral Network | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .ref-header-card {
+      background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      color: var(--white);
+      margin-bottom: 24px;
+    }
+    .ref-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .copy-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .copy-input {
+      flex: 1;
+      min-width: 180px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--metallic-gold);
+      border-radius: var(--radius-sm);
+      color: var(--bright-gold);
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+    .tx-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      min-width: 480px;
+    }
+    .tx-table th, .tx-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #ECECEC;
+    }
+    .tx-table th { background: #FAFAFA; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Aviation Partner Network</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Affiliate Dashboard</h1>
+      </div>
+
+      <!-- Referral Link & Code Box -->
+      <div class="ref-header-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--soft-gold);">DIRECT PARTNER PORTAL</span>
+          <span class="badge-status badge-completed">10% COMMISSION ACTIVE</span>
+        </div>
+
+        <p style="font-size: 0.88rem; color: #E5E7EB; margin-bottom: 16px;">
+          Share your elite affiliate link. Every verified deposit made by your referrals immediately awards you 10% direct cash commission.
+        </p>
+
+        <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--soft-gold); font-weight: 700;">Your Referral Code</label>
+        <div class="copy-group">
+          <input type="text" id="refCodeInput" class="copy-input" readonly value="Loading...">
+          <button id="copyCodeBtn" type="button" class="btn-emerald" style="padding: 8px 16px;">Copy Code</button>
+        </div>
+
+        <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--soft-gold); font-weight: 700;">Your Exclusive Invitation Link</label>
+        <div class="copy-group">
+          <input type="text" id="refLinkInput" class="copy-input" readonly value="Loading...">
+          <button id="copyLinkBtn" type="button" class="btn-gold" style="padding: 8px 16px;">Copy Link</button>
+          <button id="shareLinkBtn" type="button" class="btn-emerald" style="padding: 8px 16px;">Share</button>
+        </div>
+      </div>
+
+      <!-- Affiliate Performance Cards -->
+      <div class="ref-stats-grid">
+        <div class="astra-card-secondary">
+          <div class="secondary-stat-label">Total Referrals</div>
+          <div class="secondary-stat-value" id="statTotalRef">0</div>
+        </div>
+        <div class="astra-card-secondary">
+          <div class="secondary-stat-label">Active Downlines</div>
+          <div class="secondary-stat-value" id="statActiveRef">0</div>
+        </div>
+        <div class="astra-card-secondary">
+          <div class="secondary-stat-label">Team Deposits</div>
+          <div class="secondary-stat-value" id="statTeamDep">₦0.00</div>
+        </div>
+        <div class="astra-card-secondary">
+          <div class="secondary-stat-label">Commissions Earned</div>
+          <div class="secondary-stat-value" id="statTotalComm" style="color: var(--primary-green);">₦0.00</div>
+        </div>
+      </div>
+
+      <!-- Downlines List -->
+      <div class="astra-card">
+        <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 14px;">Referred Team Members</h2>
+        <div class="table-responsive" id="teamContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 30px;">Loading your affiliate network...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency, formatDate } from './shared/formatters.js';
+
+    async function loadReferrals() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+      const userId = session.user.id;
+
+      // 1. Profile Referral Info
+      const { data: profile } = await supabase.from('profiles').select('referral_code').eq('id', userId).single();
+      if (profile && profile.referral_code) {
+        document.getElementById('refCodeInput').value = profile.referral_code;
+        const link = `${window.location.origin}/register.html?ref=${profile.referral_code}`;
+        document.getElementById('refLinkInput').value = link;
+
+        document.getElementById('copyCodeBtn').addEventListener('click', () => {
+          navigator.clipboard.writeText(profile.referral_code);
+          alert('Referral code copied!');
+        });
+        document.getElementById('copyLinkBtn').addEventListener('click', () => {
+          navigator.clipboard.writeText(link);
+          alert('Referral link copied!');
+        });
+        document.getElementById('shareLinkBtn').addEventListener('click', async () => {
+          if (navigator.share) {
+            await navigator.share({
+              title: 'ASTRAVEN Aviation Wealth',
+              text: 'Join my investment flight syndicate on ASTRAVEN.',
+              url: link
+            });
+          } else {
+            navigator.clipboard.writeText(link);
+            alert('Referral link copied to clipboard!');
+          }
+        });
+      }
+
+      // 2. Fetch Commissions & Stats
+      const { data: comms } = await supabase
+        .from('referral_commissions')
+        .select('commission_amount')
+        .eq('referrer_id', userId);
+
+      const totalComm = (comms || []).reduce((acc, c) => acc + Number(c.commission_amount), 0);
+      document.getElementById('statTotalComm').textContent = formatCurrency(totalComm);
+
+      // 3. Fetch Direct Downlines
+      const { data: downlines } = await supabase
+        .from('referrals')
+        .select('referred_id, created_at, profiles!referrals_referred_id_fkey(username, full_name)')
+        .eq('referrer_id', userId)
+        .order('created_at', { ascending: false });
+
+      const totalRef = downlines ? downlines.length : 0;
+      document.getElementById('statTotalRef').textContent = totalRef;
+
+      // 4. Fetch VIP status RPC for team deposits and active members
+      const { data: vipStatus } = await supabase.rpc('get_user_referral_vip_status', { p_user_id: userId });
+      if (vipStatus) {
+        document.getElementById('statActiveRef').textContent = vipStatus.active_downlines || 0;
+        document.getElementById('statTeamDep').textContent = formatCurrency(vipStatus.team_deposits || 0);
+      }
+
+      // 5. Render Team Members Table
+      const container = document.getElementById('teamContainer');
+      if (!downlines || downlines.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 30px;">You have no registered downlines yet. Share your referral link to begin earning.</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="tx-table">
+          <thead>
+            <tr><th>Member</th><th>Joined</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            ${downlines.map(d => {
+              const name = d.profiles?.username || 'Investor_' + d.referred_id.substring(0, 6);
+              return `
+                <tr>
+                  <td style="font-weight: 600;">@${name}</td>
+                  <td style="color: var(--secondary-text); font-size: 0.8rem;">${formatDate(d.created_at, { includeTime: false })}</td>
+                  <td><span class="badge-status badge-completed">Verified</span></td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    loadReferrals();
+  </script>
+</body>
+</html>
