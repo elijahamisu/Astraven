@@ -6,43 +6,28 @@
   <title>Account Settings | ASTRAVEN</title>
   <link rel="stylesheet" href="shared/theme.css">
   <style>
-    .pref-item {
+    .settings-wrap { max-width: 640px; margin: 0 auto; }
+    .pref-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 16px;
-      padding: 16px 0;
+      padding: 14px 0;
       border-bottom: 1px solid #ECECEC;
     }
-    .pref-item:last-child { border-bottom: none; }
-    .pref-info {
-      flex: 1;
-      min-width: 0;
-    }
-    .pref-info h4 {
-      font-size: 0.95rem;
-      color: var(--deep-forest);
-      margin-bottom: 2px;
-      word-break: break-word;
-    }
-    .pref-info p {
-      font-size: 0.85rem;
-      color: var(--secondary-text);
-      line-height: 1.35;
-      word-break: break-word;
-    }
+    .pref-row:last-child { border-bottom: none; }
     .switch {
       position: relative;
       display: inline-block;
-      width: 48px;
-      height: 26px;
+      width: 46px;
+      height: 24px;
       flex-shrink: 0;
     }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
       position: absolute;
       cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
+      inset: 0;
       background-color: #CBD5E1;
       transition: .3s;
       border-radius: 34px;
@@ -50,8 +35,8 @@
     .slider:before {
       position: absolute;
       content: "";
-      height: 20px;
-      width: 20px;
+      height: 18px;
+      width: 18px;
       left: 3px;
       bottom: 3px;
       background-color: white;
@@ -60,38 +45,24 @@
     }
     input:checked + .slider { background-color: var(--primary-green); }
     input:checked + .slider:before { transform: translateX(22px); }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 16px;
-      width: 100%;
-    }
-    .form-group label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--deep-forest);
-    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--deep-forest); }
     .form-control {
-      width: 100%;
-      max-width: 440px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       border: 1px solid #D1D5DB;
-      border-radius: var(--radius-md);
-      font-size: 0.95rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
       background: var(--cream-white);
-      box-sizing: border-box;
     }
     .alert-banner {
       padding: 12px 16px;
-      border-radius: var(--radius-md);
-      margin-bottom: 20px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
       font-size: 0.9rem;
       display: none;
     }
-    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
     .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
   </style>
 </head>
 <body>
@@ -99,84 +70,104 @@
     <div id="navigationContainer"></div>
 
     <main class="main-content">
-      <h1 class="font-heading" style="margin-bottom: 20px; font-size: clamp(1.4rem, 4vw, 2rem);">Account Settings</h1>
+      <div class="settings-wrap">
+        <h1 class="font-heading" style="font-size: 1.8rem; margin-bottom: 20px;">Settings &amp; Security</h1>
 
-      <div id="alertBox" class="alert-banner"></div>
+        <div id="alertBanner" class="alert-banner"></div>
 
-      <!-- Notification Preferences -->
-      <div class="astra-card">
-        <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 6px;">Notification Preferences</h2>
-        <p style="color: var(--secondary-text); font-size: 0.88rem; margin-bottom: 16px;">
-          Manage how ASTRAVEN communicates portfolio activity and updates.
-        </p>
+        <!-- Notification Toggles -->
+        <div class="astra-card" style="margin-bottom: 24px;">
+          <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 6px;">Notification Preferences</h2>
+          <p style="color: var(--secondary-text); font-size: 0.85rem; margin-bottom: 16px;">
+            Configure which category notifications trigger in-app and email alerts.
+          </p>
 
-        <div class="pref-item">
-          <div class="pref-info">
-            <h4>Email Notifications</h4>
-            <p>Receive transaction receipts and security confirmations by email.</p>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="emailNotifs">
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="pref-item">
-          <div class="pref-info">
-            <h4>Push Notifications</h4>
-            <p>Get instant updates on daily income payouts and withdrawal updates.</p>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="pushNotifs">
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="pref-item">
-          <div class="pref-info">
-            <h4>Marketing & Promos</h4>
-            <p>Periodic announcements regarding limited-capacity VIP packages.</p>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="marketingNotifs">
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <button type="button" id="savePrefsBtn" class="btn-gold" style="margin-top: 20px;">
-          Save Preferences
-        </button>
-      </div>
-
-      <!-- Password Security -->
-      <div class="astra-card">
-        <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 6px;">Security & Password</h2>
-        <p style="color: var(--secondary-text); font-size: 0.88rem; margin-bottom: 16px;">
-          Update your login password to ensure continued account protection.
-        </p>
-
-        <form id="pwdForm">
-          <div class="form-group">
-            <label for="newPwd">New Password</label>
-            <input type="password" id="newPwd" class="form-control" placeholder="Min. 8 characters" required>
+          <div class="pref-row">
+            <div>
+              <strong style="font-size: 0.9rem; color: var(--deep-forest);">Deposit Updates</strong>
+              <p style="font-size: 0.8rem; color: var(--secondary-text);">Alerts upon bank deposit verification and wallet credits.</p>
+            </div>
+            <label class="switch"><input type="checkbox" id="prefDeposits" checked><span class="slider"></span></label>
           </div>
 
-          <div class="form-group">
-            <label for="confirmPwd">Confirm New Password</label>
-            <input type="password" id="confirmPwd" class="form-control" placeholder="Repeat new password" required>
+          <div class="pref-row">
+            <div>
+              <strong style="font-size: 0.9rem; color: var(--deep-forest);">Withdrawal Payouts</strong>
+              <p style="font-size: 0.8rem; color: var(--secondary-text);">Alerts on reservation status, bank disbursement, and completions.</p>
+            </div>
+            <label class="switch"><input type="checkbox" id="prefWithdrawals" checked><span class="slider"></span></label>
           </div>
 
-          <button type="submit" id="pwdSubmitBtn" class="btn-emerald">
-            Change Password
+          <div class="pref-row">
+            <div>
+              <strong style="font-size: 0.9rem; color: var(--deep-forest);">Investment Settlements</strong>
+              <p style="font-size: 0.8rem; color: var(--secondary-text);">Daily aviation income distributions and maturity payouts.</p>
+            </div>
+            <label class="switch"><input type="checkbox" id="prefInvestments" checked><span class="slider"></span></label>
+          </div>
+
+          <div class="pref-row">
+            <div>
+              <strong style="font-size: 0.9rem; color: var(--deep-forest);">Affiliate &amp; VIP Commissions</strong>
+              <p style="font-size: 0.8rem; color: var(--secondary-text);">10% direct commissions and Referral VIP rank updates.</p>
+            </div>
+            <label class="switch"><input type="checkbox" id="prefReferrals" checked><span class="slider"></span></label>
+          </div>
+
+          <div class="pref-row">
+            <div>
+              <strong style="font-size: 0.9rem; color: var(--deep-forest);">Support Desk Replies</strong>
+              <p style="font-size: 0.8rem; color: var(--secondary-text);">Concierge updates when an officer replies to your ticket.</p>
+            </div>
+            <label class="switch"><input type="checkbox" id="prefSupport" checked><span class="slider"></span></label>
+          </div>
+
+          <button type="button" id="savePrefsBtn" class="btn-gold" style="margin-top: 18px; width: 100%; padding: 11px;">
+            Save Notification Settings
           </button>
-        </form>
+        </div>
+
+        <!-- Password Change -->
+        <div class="astra-card" style="margin-bottom: 24px;">
+          <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 6px;">Update Password</h2>
+          <p style="color: var(--secondary-text); font-size: 0.85rem; margin-bottom: 16px;">
+            Enhance account protection with a strong 8+ character password.
+          </p>
+
+          <form id="pwdChangeForm">
+            <div class="form-group">
+              <label for="newPassword">New Password</label>
+              <input type="password" id="newPassword" class="form-control" placeholder="Min. 8 characters" required minlength="8">
+            </div>
+
+            <div class="form-group">
+              <label for="confirmNewPassword">Confirm New Password</label>
+              <input type="password" id="confirmNewPassword" class="form-control" placeholder="Repeat new password" required minlength="8">
+            </div>
+
+            <button type="submit" id="pwdBtn" class="btn-emerald" style="width: 100%; padding: 11px;">
+              Change Password
+            </button>
+          </form>
+        </div>
+
+        <!-- Global Sign Out -->
+        <div class="astra-card">
+          <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 6px;">Session Security</h2>
+          <p style="color: var(--secondary-text); font-size: 0.85rem; margin-bottom: 16px;">
+            Sign out of your active session on this device.
+          </p>
+          <button type="button" id="signOutDeviceBtn" class="btn-logout" style="width: 100%; padding: 12px;">
+            Terminate Active Session
+          </button>
+        </div>
       </div>
     </main>
   </div>
 
   <script type="module">
     import { initUserNavigation } from './shared/user-navigation.js';
-    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { requireAuth, signOutUser, supabase } from './shared/supabase-client.js';
 
     let currentUserId = null;
 
@@ -193,60 +184,72 @@
         .maybeSingle();
 
       if (prefs) {
-        document.getElementById('emailNotifs').checked = prefs.email_notifications;
-        document.getElementById('pushNotifs').checked = prefs.push_notifications;
-        document.getElementById('marketingNotifs').checked = prefs.marketing_emails;
+        document.getElementById('prefDeposits').checked = prefs.notify_deposits ?? true;
+        document.getElementById('prefWithdrawals').checked = prefs.notify_withdrawals ?? true;
+        document.getElementById('prefInvestments').checked = prefs.notify_investments ?? true;
+        document.getElementById('prefReferrals').checked = prefs.notify_referrals ?? true;
+        document.getElementById('prefSupport').checked = prefs.notify_support ?? true;
       }
-    }
-
-    function showAlert(msg, isError = false) {
-      const box = document.getElementById('alertBox');
-      box.textContent = msg;
-      box.className = `alert-banner ${isError ? 'error' : 'success'}`;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     document.getElementById('savePrefsBtn').addEventListener('click', async () => {
-      const emailNotifs = document.getElementById('emailNotifs').checked;
-      const pushNotifs = document.getElementById('pushNotifs').checked;
-      const marketingNotifs = document.getElementById('marketingNotifs').checked;
+      const alertBanner = document.getElementById('alertBanner');
+      const payload = {
+        user_id: currentUserId,
+        notify_deposits: document.getElementById('prefDeposits').checked,
+        notify_withdrawals: document.getElementById('prefWithdrawals').checked,
+        notify_investments: document.getElementById('prefInvestments').checked,
+        notify_referrals: document.getElementById('prefReferrals').checked,
+        notify_support: document.getElementById('prefSupport').checked,
+        updated_at: new Date().toISOString()
+      };
 
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: currentUserId,
-          email_notifications: emailNotifs,
-          push_notifications: pushNotifs,
-          marketing_emails: marketingNotifs,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) showAlert(error.message, true);
-      else showAlert('Preferences saved successfully!');
+      const { error } = await supabase.from('user_preferences').upsert(payload);
+      if (error) {
+        alertBanner.textContent = error.message;
+        alertBanner.className = 'alert-banner error';
+      } else {
+        alertBanner.textContent = 'Notification preferences updated!';
+        alertBanner.className = 'alert-banner success';
+      }
     });
 
-    document.getElementById('pwdForm').addEventListener('submit', async (e) => {
+    document.getElementById('pwdChangeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const newPwd = document.getElementById('newPwd').value;
-      const confirmPwd = document.getElementById('confirmPwd').value;
+      const alertBanner = document.getElementById('alertBanner');
+      const newPwd = document.getElementById('newPassword').value;
+      const confPwd = document.getElementById('confirmNewPassword').value;
 
-      if (newPwd.length < 8) return showAlert('Password must be at least 8 characters long.', true);
-      if (newPwd !== confirmPwd) return showAlert('Passwords do not match.', true);
+      if (newPwd.length < 8) {
+        alertBanner.textContent = 'Password must be at least 8 characters long.';
+        alertBanner.className = 'alert-banner error';
+        return;
+      }
 
-      const btn = document.getElementById('pwdSubmitBtn');
+      if (newPwd !== confPwd) {
+        alertBanner.textContent = 'Passwords do not match.';
+        alertBanner.className = 'alert-banner error';
+        return;
+      }
+
+      const btn = document.getElementById('pwdBtn');
       btn.disabled = true;
-      btn.textContent = 'Updating...';
 
       const { error } = await supabase.auth.updateUser({ password: newPwd });
-
       btn.disabled = false;
-      btn.textContent = 'Change Password';
 
-      if (error) showAlert(error.message, true);
-      else {
-        showAlert('Password changed successfully!');
-        document.getElementById('pwdForm').reset();
+      if (error) {
+        alertBanner.textContent = error.message;
+        alertBanner.className = 'alert-banner error';
+      } else {
+        alertBanner.textContent = 'Password updated successfully!';
+        alertBanner.className = 'alert-banner success';
+        document.getElementById('pwdChangeForm').reset();
       }
+    });
+
+    document.getElementById('signOutDeviceBtn').addEventListener('click', async () => {
+      await signOutUser();
     });
 
     loadSettings();
