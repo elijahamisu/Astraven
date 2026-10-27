@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <g opacity="0.12">
+    <!-- Fuselage -->
+    <path d="M120 250 C120 220 280 200 480 200 C620 200 740 225 780 245 C790 250 790 255 780 260 C740 278 620 300 480 300 C280 300 120 280 120 250 Z" fill="#D4AF37"/>
+    <!-- Cockpit Window -->
+    <path d="M720 235 C740 240 760 245 770 248 C760 250 740 252 720 252 Z" fill="#FFD700"/>
+    <!-- Swept Wings -->
+    <path d="M380 205 L260 40 C250 25 270 20 290 35 L480 205 Z" fill="#D4AF37"/>
+    <path d="M380 295 L260 460 C250 475 270 480 290 465 L480 295 Z" fill="#D4AF37"/>
+    <!-- Jet Engines -->
+    <ellipse cx="360" cy="130" rx="45" ry="16" fill="#D4AF37"/>
+    <ellipse cx="360" cy="370" rx="45" ry="16" fill="#D4AF37"/>
+    <!-- Tail Fin & Stabilizers -->
+    <path d="M160 220 L70 80 C60 65 80 65 100 80 L210 220 Z" fill="#D4AF37"/>
+    <path d="M150 250 L80 190 C70 180 85 180 100 190 L180 250 Z" fill="#D4AF37"/>
+    <path d="M150 250 L80 310 C70 320 85 320 100 310 L180 250 Z" fill="#D4AF37"/>
+  </g>
+</svg>
