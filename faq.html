@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frequently Asked Questions | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .faq-wrap { max-width: 680px; margin: 0 auto; }
+    .search-box {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--white);
+      margin-bottom: 20px;
+    }
+    .accordion-item {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .accordion-trigger {
+      width: 100%;
+      padding: 16px;
+      text-align: left;
+      background: none;
+      border: none;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--deep-forest);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .accordion-trigger:hover { background: var(--light-gold-bg); }
+    .accordion-body {
+      display: none;
+      padding: 0 16px 16px;
+      font-size: 0.88rem;
+      color: var(--primary-text);
+      line-height: 1.5;
+      border-top: 1px solid #F3F4F6;
+    }
+    .accordion-item.active .accordion-body { display: block; }
+    .accordion-item.active .chevron { transform: rotate(180deg); }
+    .chevron { transition: transform 0.2s; font-size: 0.8rem; color: var(--metallic-gold); }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="faq-wrap">
+        <div style="margin-bottom: 20px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Knowledge Base</span>
+          <h1 class="font-heading" style="font-size: 1.8rem;">Frequently Asked Questions</h1>
+          <p style="color: var(--secondary-text); font-size: 0.88rem; margin-top: 4px;">
+            Instant answers regarding our aviation investment cycles, bank deposits, withdrawals, and affiliate rules.
+          </p>
+        </div>
+
+        <input type="text" id="faqSearch" class="search-box" placeholder="Search questions (e.g. withdrawal, VIP, deposit)...">
+
+        <div id="faqList">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading knowledge base...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+
+    let allFaqs = [];
+
+    async function loadFaqs() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data: faqs, error } = await supabase
+        .from('faqs')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      const container = document.getElementById('faqList');
+
+      if (error || !faqs || faqs.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text);">No FAQ entries found.</p>`;
+        return;
+      }
+
+      allFaqs = faqs;
+      render(allFaqs);
+
+      document.getElementById('faqSearch').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = allFaqs.filter(f => f.question.toLowerCase().includes(query) || f.answer.toLowerCase().includes(query) || f.category.toLowerCase().includes(query));
+        render(filtered);
+      });
+    }
+
+    function render(list) {
+      const container = document.getElementById('faqList');
+      if (list.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 20px;">No questions match your search.</p>`;
+        return;
+      }
+
+      container.innerHTML = list.map((f, i) => `
+        <div class="accordion-item" id="faq-${f.id}">
+          <button class="accordion-trigger" type="button" onclick="toggleFaq('${f.id}')">
+            <span>${escapeHtml(f.question)}</span>
+            <span class="chevron">▼</span>
+          </button>
+          <div class="accordion-body">
+            <div style="font-size: 0.72rem; color: var(--metallic-gold); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">
+              ${escapeHtml(f.category)}
+            </div>
+            ${escapeHtml(f.answer)}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.toggleFaq = function(id) {
+      const item = document.getElementById(`faq-${id}`);
+      if (item) item.classList.toggle('active');
+    };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    loadFaqs();
+  </script>
+</body>
+</html>
