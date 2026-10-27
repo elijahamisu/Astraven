@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Community Post | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .editor-wrap { max-width: 640px; margin: 0 auto; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+    textarea.form-control { min-height: 140px; resize: vertical; }
+    .proof-notice {
+      background: var(--light-gold-bg);
+      border-left: 4px solid var(--metallic-gold);
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      color: var(--deep-forest);
+      line-height: 1.4;
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="editor-wrap">
+        <a href="blog.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 16px;">
+          ← Back to Community Feed
+        </a>
+
+        <h1 class="font-heading" style="font-size: 1.8rem; margin-bottom: 6px;">Submit Proof & Post</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+          Publish your aviation returns, testimonial, or verified withdrawal receipts.
+        </p>
+
+        <div class="proof-notice">
+          <strong>Privacy Recommendation:</strong> Please mask or blur unrelated personal bank account numbers or phone numbers before uploading receipts. All submissions are moderated before appearing on the public feed.
+        </div>
+
+        <div id="alertBanner" class="alert-banner"></div>
+
+        <form class="astra-card" id="postForm">
+          <div class="form-group">
+            <label for="title">Post Title</label>
+            <input type="text" id="title" class="form-control" placeholder="e.g. Daily VIP 3 Settlement Confirmed!" required maxlength="180">
+          </div>
+
+          <div class="form-group">
+            <label for="content">Message / Testimonial</label>
+            <textarea id="content" class="form-control" placeholder="Write your community update or experience with ASTRAVEN..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="receiptImage">Withdrawal Receipt / Proof Image (Optional, Max 5MB)</label>
+            <input type="file" id="receiptImage" class="form-control" accept="image/png,image/jpeg,image/webp">
+          </div>
+
+          <div class="form-group">
+            <label for="caption">Short Caption / Highlight Tag (Optional)</label>
+            <input type="text" id="caption" class="form-control" placeholder="e.g. 50-day cycle paying smoothly on time">
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 14px;">
+            Submit Post for Review
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+
+    let currentSession = null;
+
+    async function initEditor() {
+      await initUserNavigation({ requireSession: true });
+      currentSession = await requireAuth();
+      if (!currentSession) return;
+
+      document.getElementById('postForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const alertBanner = document.getElementById('alertBanner');
+        const submitBtn = document.getElementById('submitBtn');
+        alertBanner.style.display = 'none';
+
+        const title = document.getElementById('title').value.trim();
+        const content = document.getElementById('content').value.trim();
+        const caption = document.getElementById('caption').value.trim();
+        const fileInput = document.getElementById('receiptImage');
+        const file = fileInput.files[0];
+
+        if (!title || !content) {
+          alertBanner.textContent = 'Please provide both a title and message.';
+          alertBanner.className = 'alert-banner error';
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Uploading & Submitting...';
+
+        let imageUrl = null;
+
+        try {
+          if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+              throw new Error('Image size exceeds maximum limit of 5MB.');
+            }
+            const ext = file.name.split('.').pop();
+            const filePath = `${currentSession.user.id}/${Date.now()}_proof.${ext}`;
+
+            const { error: uploadErr } = await supabase.storage
+              .from('blog-attachments')
+              .upload(filePath, file);
+
+            if (uploadErr) throw uploadErr;
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('blog-attachments')
+              .getPublicUrl(filePath);
+
+            imageUrl = publicUrl;
+          }
+
+          const { error: insertErr } = await supabase
+            .from('blog_posts')
+            .insert({
+              user_id: currentSession.user.id,
+              title: title,
+              content: content,
+              caption: caption || null,
+              image_url: imageUrl,
+              status: 'pending'
+            });
+
+          if (insertErr) throw insertErr;
+
+          alertBanner.textContent = 'Post submitted successfully! It will appear on the feed after moderator approval.';
+          alertBanner.className = 'alert-banner success';
+
+          setTimeout(() => {
+            window.location.href = 'my-posts.html';
+          }, 1500);
+
+        } catch (err) {
+          alertBanner.textContent = err.message || 'Failed to submit post.';
+          alertBanner.className = 'alert-banner error';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Post for Review';
+        }
+      });
+    }
+
+    initEditor();
+  </script>
+</body>
+</html>
