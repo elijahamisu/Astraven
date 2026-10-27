@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wheel Spin History | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Award Records</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Lucky Wheel History</h1>
+      </div>
+
+      <div class="astra-card" style="padding: 0; overflow: hidden;" id="historyCard">
+        <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading spin records...</p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { formatCurrency, formatDate } from './shared/formatters.js';
+
+    async function loadHistory() {
+      await initUserNavigation({ requireSession: true });
+      const session = await requireAuth();
+      if (!session) return;
+
+      const { data: spins } = await supabase
+        .from('lucky_wheel_spins')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      const card = document.getElementById('historyCard');
+      if (!spins || spins.length === 0) {
+        card.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No spins recorded yet. Go spin the Lucky Wheel!</p>`;
+        return;
+      }
+
+      card.innerHTML = `
+        <div class="table-responsive">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 440px;">
+            <thead>
+              <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
+                <th style="padding: 12px;">Reference</th>
+                <th style="padding: 12px;">Slot</th>
+                <th style="padding: 12px;">Prize Awarded</th>
+                <th style="padding: 12px;">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${spins.map(s => `
+                <tr style="border-bottom: 1px solid #ECECEC;">
+                  <td style="padding: 12px; font-family: monospace;">${s.reference}</td>
+                  <td style="padding: 12px;">Slot #${s.slot_won}</td>
+                  <td style="padding: 12px; font-weight: 700; color: var(--success-green);">${formatCurrency(s.prize_amount)}</td>
+                  <td style="padding: 12px; color: var(--secondary-text); font-size: 0.8rem;">${formatDate(s.created_at)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    loadHistory();
+  </script>
+</body>
+</html>
