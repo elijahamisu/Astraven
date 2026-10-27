@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviation Lucky Wheel | ASTRAVEN</title>
+  <link rel="stylesheet" href="shared/theme.css">
+  <style>
+    .wheel-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .wheel-stage {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      margin: 20px auto;
+    }
+    .wheel-canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 6px solid var(--metallic-gold);
+      box-shadow: 0 8px 24px rgba(0, 43, 26, 0.4);
+      transition: transform 4s cubic-bezier(0.15, 0.9, 0.2, 1);
+    }
+    .wheel-pointer {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 26px solid var(--bright-gold);
+      z-index: 10;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    }
+    .wheel-center-crest {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--deep-forest);
+      border: 3px solid var(--metallic-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bright-gold);
+      font-weight: 700;
+      font-size: 1.2rem;
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="wheel-wrap">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Daily Flight Roulette</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Astraven Lucky Wheel</h1>
+        <p style="color: var(--secondary-text); font-size: 0.88rem; margin-top: 4px;">
+          Verified aviation investors and active team referrers qualify for instant cash prize spins.
+        </p>
+
+        <div class="wheel-stage">
+          <div class="wheel-pointer"></div>
+          <canvas id="wheelCanvas" class="wheel-canvas" width="600" height="600"></canvas>
+          <div class="wheel-center-crest">✦</div>
+        </div>
+
+        <button id="spinBtn" class="btn-gold" style="width: 100%; max-width: 280px; padding: 14px; font-size: 1.05rem;">
+          SPIN LUCKY WHEEL
+        </button>
+
+        <div style="margin-top: 20px;">
+          <a href="lucky-wheel-history.html" style="font-size: 0.85rem; color: var(--primary-green); font-weight: 600; text-decoration: none;">
+            View My Spin History →
+          </a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUserNavigation } from './shared/user-navigation.js';
+    import { requireAuth, supabase } from './shared/supabase-client.js';
+
+    let currentSession = null;
+    let slots = [];
+    let isSpinning = false;
+    let currentRotation = 0;
+
+    async function initWheel() {
+      await initUserNavigation({ requireSession: true });
+      currentSession = await requireAuth();
+      if (!currentSession) return;
+
+      const { data: dbSlots } = await supabase
+        .from('lucky_wheel_config')
+        .select('*')
+        .order('slot_number', { ascending: true });
+
+      slots = dbSlots || [];
+      drawWheel();
+
+      document.getElementById('spinBtn').addEventListener('click', handleSpin);
+    }
+
+    function drawWheel() {
+      const canvas = document.getElementById('wheelCanvas');
+      const ctx = canvas.getContext('2d');
+      const numSlots = 6;
+      const arc = (2 * Math.PI) / numSlots;
+      const colors = ['#002B1A', '#064E32', '#003D24', '#002B1A', '#064E32', '#003D24'];
+
+      ctx.clearRect(0, 0, 600, 600);
+
+      for (let i = 0; i < numSlots; i++) {
+        const angle = i * arc;
+        ctx.beginPath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.moveTo(300, 300);
+        ctx.arc(300, 300, 290, angle, angle + arc);
+        ctx.lineTo(300, 300);
+        ctx.fill();
+
+        ctx.strokeStyle = '#D4AF37';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(300, 300);
+        ctx.rotate(angle + arc / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 30px Inter, sans-serif';
+        const label = slots[i]?.label || `Slot ${i + 1}`;
+        ctx.fillText(label, 260, 10);
+        ctx.restore();
+      }
+    }
+
+    async function handleSpin() {
+      if (isSpinning) return;
+      const spinBtn = document.getElementById('spinBtn');
+      spinBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/rewards/lucky-wheel', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({ idempotencyKey: 'SPIN-' + currentSession.user.id.substring(0, 8) + '-' + Date.now() })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert(data.error || 'Spin failed.');
+          spinBtn.disabled = false;
+          return;
+        }
+
+        isSpinning = true;
+        const slotWon = data.slot_won; // 1 to 6
+        const numSlots = 6;
+        const arcDeg = 360 / numSlots;
+
+        // Pointer is at the top (270 degrees). Compute exact target rotation.
+        const slotCenterDeg = (slotWon - 1) * arcDeg + (arcDeg / 2);
+        const targetDeg = 270 - slotCenterDeg;
+        const totalSpins = 360 * 5; // 5 full revolutions
+        const finalRotation = totalSpins + targetDeg;
+
+        const canvas = document.getElementById('wheelCanvas');
+        canvas.style.transform = `rotate(${finalRotation}deg)`;
+
+        setTimeout(() => {
+          alert(`🎉 Congratulations! You won ₦${data.prize_amount}! Credited directly to your wallet.`);
+          spinBtn.disabled = false;
+          isSpinning = false;
+        }, 4200);
+
+      } catch (err) {
+        alert('Communication error with serverless engine.');
+        spinBtn.disabled = false;
+      }
+    }
+
+    initWheel();
+  </script>
+</body>
+</html>
