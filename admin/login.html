@@ -40,6 +40,7 @@
       display: none;
     }
     .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
   </style>
 </head>
 <body>
@@ -77,41 +78,75 @@
   <script type="module">
     import { supabase } from '../shared/supabase-client.js';
 
-    document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+    const form = document.getElementById('adminLoginForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const alertBanner = document.getElementById('alertBanner');
+
+    function showError(msg) {
+      alertBanner.textContent = msg;
+      alertBanner.className = 'alert-banner error';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Authenticate Staff';
+    }
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const alertBanner = document.getElementById('alertBanner');
-      const submitBtn = document.getElementById('submitBtn');
       alertBanner.style.display = 'none';
 
-      const email = document.getElementById('adminEmail').value.trim();
+      const email = document.getElementById('adminEmail').value.trim().toLowerCase();
       const password = document.getElementById('adminPassword').value;
+
+      if (!email || !password) {
+        return showError('Please enter both email and password.');
+      }
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Verifying Permissions...';
 
+      // 12-second timeout to prevent indefinite hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Connection timed out. Please check your network and try again.')), 12000)
+      );
+
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const authPromise = (async () => {
+          // 1. Sign in through Supabase Auth
+          const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
 
-        // Verify Server-Side Role
-        const { data: roleRow, error: rErr } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .single();
+          if (authErr) throw authErr;
+          if (!authData?.user) throw new Error('Authentication succeeded but user data was missing.');
 
-        if (rErr || !roleRow || !['admin', 'superadmin', 'support_agent'].includes(roleRow.role)) {
-          await supabase.auth.signOut();
-          throw new Error('Access denied: You do not possess administrative clearance.');
-        }
+          // 2. Query user_roles table
+          const { data: roleRow, error: roleErr } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', authData.user.id)
+            .maybeSingle();
 
-        window.location.href = 'index.html';
+          if (roleErr) {
+            console.error('Role check error:', roleErr);
+            throw new Error(`Role verification query failed: ${roleErr.message}`);
+          }
+
+          if (!roleRow || !['admin', 'superadmin', 'support_agent'].includes(roleRow.role)) {
+            await supabase.auth.signOut();
+            throw new Error('Access denied: You do not possess administrative clearance.');
+          }
+
+          return roleRow.role;
+        })();
+
+        await Promise.race([authPromise, timeoutPromise]);
+
+        // Explicit absolute redirect to prevent Vercel cleanUrls subdirectory routing issues
+        window.location.href = '/admin/index.html';
 
       } catch (err) {
-        alertBanner.textContent = err.message || 'Authentication failed.';
-        alertBanner.className = 'alert-banner error';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Authenticate Staff';
+        console.error('Admin login failure:', err);
+        showError(err.message || 'Authentication failed.');
       }
     });
   </script>
