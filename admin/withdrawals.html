@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Withdrawals | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Settlement Rails</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Withdrawal Requests</h1>
+      </div>
+
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive" id="withTableContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading withdrawals...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+    import { formatCurrency, formatDate } from '../shared/formatters.js';
+
+    let currentSession = null;
+
+    async function loadWithdrawals() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+      currentSession = auth.session;
+
+      const { data: withdrawals, error } = await supabase
+        .from('withdrawals')
+        .select(`*, profiles(username, full_name)`)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      const container = document.getElementById('withTableContainer');
+      if (error || !withdrawals || withdrawals.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No withdrawal requests found.</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
+          <thead>
+            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
+              <th style="padding: 12px;">Ref / Date</th>
+              <th style="padding: 12px;">Investor</th>
+              <th style="padding: 12px;">Net Payout</th>
+              <th style="padding: 12px;">Bank Destination</th>
+              <th style="padding: 12px;">Status</th>
+              <th style="padding: 12px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${withdrawals.map(w => `
+              <tr style="border-bottom: 1px solid #ECECEC;">
+                <td style="padding: 12px;">
+                  <strong style="font-family: monospace;">${w.reference}</strong>
+                  <div style="font-size: 0.72rem; color: var(--secondary-text);">${formatDate(w.created_at)}</div>
+                </td>
+                <td style="padding: 12px;">@${w.profiles?.username || 'user'}</td>
+                <td style="padding: 12px; font-weight: 700; color: var(--primary-green); font-size: 1rem;">
+                  ${formatCurrency(w.net_amount)}
+                  <div style="font-size: 0.7rem; color: var(--secondary-text);">Gross: ${formatCurrency(w.amount)}</div>
+                </td>
+                <td style="padding: 12px; font-size: 0.8rem;">
+                  <strong>${w.bank_name}</strong> - ${w.account_number}
+                  <div>${w.account_name}</div>
+                </td>
+                <td style="padding: 12px;">
+                  <span class="badge-status ${w.status === 'paid' ? 'badge-completed' : (w.status === 'pending' ? 'badge-pending' : 'badge-failed')}">
+                    ${w.status}
+                  </span>
+                </td>
+                <td style="padding: 12px;">
+                  ${w.status === 'pending' ? `
+                    <button class="btn-gold" style="padding: 6px 12px; font-size: 0.75rem; margin-right: 6px;" onclick="reviewWith('${w.id}', 'paid')">Mark Paid</button>
+                    <button class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem;" onclick="reviewWith('${w.id}', 'rejected')">Reject</button>
+                  ` : `
+                    <span style="font-size: 0.75rem; color: var(--secondary-text);">${w.payment_reference || 'Closed'}</span>
+                  `}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    window.reviewWith = async function(id, action) {
+      let payRef = null;
+      let reason = null;
+
+      if (action === 'paid') {
+        payRef = prompt('Enter bank transfer payment reference / session ID:');
+        if (!payRef) return;
+      } else {
+        reason = prompt('Enter rejection reason (reserved funds will be returned to wallet):');
+        if (!reason) return;
+      }
+
+      const res = await fetch('/api/withdrawals/review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.access_token}`
+        },
+        body: JSON.stringify({ withdrawalId: id, action, paymentReference: payRef, rejectionReason: reason })
+      });
+
+      const data = await res.json();
+      if (!data.success) alert(data.error || 'Failed');
+      else {
+        alert(`Withdrawal marked ${action}.`);
+        loadWithdrawals();
+      }
+    };
+
+    loadWithdrawals();
+  </script>
+</body>
+</html>
