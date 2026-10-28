@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet Adjustments | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .adjust-wrap { max-width: 600px; margin: 0 auto; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div class="adjust-wrap">
+        <div style="margin-bottom: 24px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Custody Operations</span>
+          <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Manual Wallet Adjustment</h1>
+        </div>
+
+        <form class="astra-card" id="adjustForm">
+          <div class="form-group">
+            <label for="targetUser">User Identification (UUID)</label>
+            <input type="text" id="targetUser" class="form-control" placeholder="Paste user UUID" required>
+          </div>
+
+          <div class="form-group">
+            <label for="adjType">Adjustment Type</label>
+            <select id="adjType" class="form-control" required>
+              <option value="credit">Credit (Deposit / Bonus / Refund)</option>
+              <option value="debit">Debit (Clawback / Correction)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="amount">Amount (₦)</label>
+            <input type="number" id="amount" class="form-control" min="1" step="0.01" placeholder="1000" required>
+          </div>
+
+          <div class="form-group">
+            <label for="reason">Mandatory Audit Reason</label>
+            <input type="text" id="reason" class="form-control" placeholder="e.g. Reconciliation for uncredited bank wire ref #123" required>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 8px;">
+            Execute Ledger Adjustment
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+
+    let currentSession = null;
+
+    async function init() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+      currentSession = auth.session;
+
+      document.getElementById('adjustForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+
+        const targetUserId = document.getElementById('targetUser').value.trim();
+        const adjustmentType = document.getElementById('adjType').value;
+        const amount = Number(document.getElementById('amount').value);
+        const reason = document.getElementById('reason').value.trim();
+
+        try {
+          const res = await fetch('/api/admin/wallet-adjustment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentSession.access_token}`
+            },
+            body: JSON.stringify({ targetUserId, adjustmentType, amount, reason })
+          });
+
+          const data = await res.json();
+          if (!data.success) alert(data.error || 'Failed');
+          else {
+            alert(`Wallet adjusted successfully! Ref: ${data.reference}. New balance: ₦${data.new_balance}`);
+            document.getElementById('adjustForm').reset();
+          }
+        } catch (err) {
+          alert('Network or server error.');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
