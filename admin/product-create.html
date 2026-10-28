@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Product | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .form-wrap { max-width: 600px; margin: 0 auto; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control { padding: 10px 12px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm); font-size: 0.9rem; background: var(--cream-white); }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div class="form-wrap">
+        <a href="products.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none;">← Back to Products</a>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest); margin: 6px 0 20px;">Deploy New Package</h1>
+
+        <form class="astra-card" id="createProductForm">
+          <div class="form-group">
+            <label for="categorySlug">Category</label>
+            <select id="categorySlug" class="form-control" required>
+              <option value="vip">ASTRA-VIP (Daily Payout)</option>
+              <option value="ssvip">SSVIP (Maturity Payout)</option>
+              <option value="limited">Limited Capacity Flight Quota</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="code">Unique Code</label>
+            <input type="text" id="code" class="form-control" placeholder="e.g. VIP-9 or LTD-LAGOS" required>
+          </div>
+
+          <div class="form-group">
+            <label for="name">Product Name</label>
+            <input type="text" id="name" class="form-control" placeholder="ASTRA-VIP 9 Transcontinental" required>
+          </div>
+
+          <div class="form-group">
+            <label for="price">Price (₦)</label>
+            <input type="number" id="price" class="form-control" min="1000" step="100" required>
+          </div>
+
+          <div class="form-group">
+            <label for="duration">Cycle Duration (Days)</label>
+            <input type="number" id="duration" class="form-control" min="1" max="365" value="50" required>
+          </div>
+
+          <div class="form-group">
+            <label for="dailyIncome">Daily Settlement Amount (₦)</label>
+            <input type="number" id="dailyIncome" class="form-control" min="0" step="0.01" value="0">
+          </div>
+
+          <div class="form-group">
+            <label for="totalPayout">Total Projected Return (₦)</label>
+            <input type="number" id="totalPayout" class="form-control" min="1000" step="100" required>
+          </div>
+
+          <div class="form-group">
+            <label for="maxCapacity">Maximum Quota Capacity (Optional)</label>
+            <input type="number" id="maxCapacity" class="form-control" placeholder="Leave empty for unlimited">
+          </div>
+
+          <button type="submit" id="saveProdBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 10px;">
+            Deploy Product
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+
+    let currentAdmin = null;
+
+    async function init() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+      currentAdmin = auth.session.user;
+
+      document.getElementById('createProductForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('saveProdBtn');
+        btn.disabled = true;
+
+        const categorySlug = document.getElementById('categorySlug').value;
+        const code = document.getElementById('code').value.trim();
+        const name = document.getElementById('name').value.trim();
+        const price = Number(document.getElementById('price').value);
+        const duration = Number(document.getElementById('duration').value);
+        const dailyIncome = Number(document.getElementById('dailyIncome').value) || 0;
+        const totalPayout = Number(document.getElementById('totalPayout').value);
+        const capacityVal = document.getElementById('maxCapacity').value;
+        const maxCapacity = capacityVal ? Number(capacityVal) : null;
+        const isLimited = categorySlug === 'limited' || maxCapacity !== null;
+
+        const { data, error } = await supabase.rpc('admin_create_product', {
+          p_admin_id: currentAdmin.id,
+          p_category_slug: categorySlug,
+          p_code: code,
+          p_name: name,
+          p_description: `${name} investment portfolio.`,
+          p_price: price,
+          p_duration_days: duration,
+          p_daily_income: dailyIncome,
+          p_total_payout: totalPayout,
+          p_payout_type: categorySlug === 'vip' ? 'daily' : 'maturity',
+          p_is_limited: isLimited,
+          p_max_capacity: maxCapacity
+        });
+
+        btn.disabled = false;
+        if (error || !data.success) alert(data?.error || error?.message || 'Failed');
+        else {
+          alert('Product deployed successfully.');
+          window.location.href = 'products.html';
+        }
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
