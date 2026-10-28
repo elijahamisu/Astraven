@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrative Sign In | ASTRAVEN</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .admin-auth-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      background: radial-gradient(circle at center, #001F13 0%, var(--deep-forest) 100%);
+    }
+    .admin-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 2px solid var(--metallic-gold);
+      box-shadow: var(--shadow-lg);
+      padding: 40px 30px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+  </style>
+</head>
+<body>
+  <div class="admin-auth-wrap">
+    <div class="admin-card">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 0.75rem; letter-spacing: 0.12em; color: var(--metallic-gold); font-weight: 700; text-transform: uppercase;">ASTRAVEN EXECUTIVE CONSOLE</span>
+        <h1 class="font-heading" style="font-size: 1.8rem; color: var(--deep-forest); margin-top: 4px;">Staff Gateway</h1>
+      </div>
+
+      <div id="alertBanner" class="alert-banner"></div>
+
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label for="adminEmail">Staff Email</label>
+          <input type="email" id="adminEmail" class="form-control" placeholder="staff@astraven.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="adminPassword">Password</label>
+          <input type="password" id="adminPassword" class="form-control" placeholder="Enter password" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-emerald" style="width: 100%; padding: 13px; font-size: 1rem; margin-top: 8px;">
+          Authenticate Staff
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="../login.html" style="color: var(--secondary-text); font-size: 0.85rem; text-decoration: none;">← Return to Investor Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '../shared/supabase-client.js';
+
+    document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBanner = document.getElementById('alertBanner');
+      const submitBtn = document.getElementById('submitBtn');
+      alertBanner.style.display = 'none';
+
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying Permissions...';
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        // Verify Server-Side Role
+        const { data: roleRow, error: rErr } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (rErr || !roleRow || !['admin', 'superadmin', 'support_agent'].includes(roleRow.role)) {
+          await supabase.auth.signOut();
+          throw new Error('Access denied: You do not possess administrative clearance.');
+        }
+
+        window.location.href = 'index.html';
+
+      } catch (err) {
+        alertBanner.textContent = err.message || 'Authentication failed.';
+        alertBanner.className = 'alert-banner error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Authenticate Staff';
+      }
+    });
+  </script>
+</body>
+</html>
