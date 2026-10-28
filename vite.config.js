@@ -1,11 +1,11 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { readdirSync, statSync, existsSync } from 'fs';
+import { readdirSync, existsSync } from 'fs';
 
 function getHtmlInputs() {
   const inputs = {};
   
-  // Scan root directory for HTML files
+  // 1. Root directory HTML pages
   const rootFiles = readdirSync(__dirname);
   rootFiles.forEach(file => {
     if (file.endsWith('.html')) {
@@ -14,7 +14,7 @@ function getHtmlInputs() {
     }
   });
 
-  // Scan admin directory if present
+  // 2. Admin directory HTML pages
   const adminDir = resolve(__dirname, 'admin');
   if (existsSync(adminDir)) {
     const adminFiles = readdirSync(adminDir);
