@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Registry | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .search-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .search-input { flex: 1; min-width: 220px; padding: 10px 14px; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: var(--radius-sm); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Investor Registry</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Registered Users</h1>
+      </div>
+
+      <div class="search-row">
+        <input type="text" id="userSearch" class="search-input" placeholder="Search by username, full name, or referral code...">
+      </div>
+
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive" id="usersTableWrap">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading users...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+    import { formatDate } from '../shared/formatters.js';
+
+    let allUsers = [];
+
+    async function loadUsers() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+
+      const { data: users, error } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, phone, referral_code, astra_vip_level, is_suspended, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      const wrap = document.getElementById('usersTableWrap');
+      if (error || !users || users.length === 0) {
+        wrap.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No registered users found.</p>`;
+        return;
+      }
+
+      allUsers = users;
+      renderTable(allUsers);
+
+      document.getElementById('userSearch').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = allUsers.filter(u => 
+          (u.username || '').toLowerCase().includes(query) ||
+          (u.full_name || '').toLowerCase().includes(query) ||
+          (u.referral_code || '').toLowerCase().includes(query)
+        );
+        renderTable(filtered);
+      });
+    }
+
+    function renderTable(list) {
+      const wrap = document.getElementById('usersTableWrap');
+      wrap.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
+          <thead>
+            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
+              <th style="padding: 12px;">User</th>
+              <th style="padding: 12px;">Phone</th>
+              <th style="padding: 12px;">Ref Code</th>
+              <th style="padding: 12px;">VIP Rank</th>
+              <th style="padding: 12px;">Status</th>
+              <th style="padding: 12px;">Registered</th>
+              <th style="padding: 12px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(u => `
+              <tr style="border-bottom: 1px solid #ECECEC;">
+                <td style="padding: 12px;">
+                  <strong>@${u.username}</strong>
+                  <div style="font-size: 0.75rem; color: var(--secondary-text);">${u.full_name || '—'}</div>
+                </td>
+                <td style="padding: 12px; font-size: 0.8rem;">${u.phone || '—'}</td>
+                <td style="padding: 12px; font-family: monospace; font-size: 0.8rem; color: var(--metallic-gold);">${u.referral_code}</td>
+                <td style="padding: 12px;">VIP ${u.astra_vip_level}</td>
+                <td style="padding: 12px;">
+                  <span class="badge-status ${u.is_suspended ? 'badge-failed' : 'badge-completed'}">
+                    ${u.is_suspended ? 'Suspended' : 'Active'}
+                  </span>
+                </td>
+                <td style="padding: 12px; font-size: 0.75rem; color: var(--secondary-text);">${formatDate(u.created_at, { includeTime: false })}</td>
+                <td style="padding: 12px;">
+                  <a href="user-details.html?id=${u.id}" class="btn-emerald" style="padding: 5px 10px; font-size: 0.75rem; text-decoration: none;">Inspect</a>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>
