@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Overview | ASTRAVEN</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .metric-card {
+      background: var(--white);
+      border: 1.5px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .metric-val {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--deep-forest);
+      margin-top: 4px;
+    }
+    .quick-link-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Executive Control Console</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Platform Overview</h1>
+      </div>
+
+      <div class="quick-link-row">
+        <a href="deposits.html" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">Review Pending Deposits</a>
+        <a href="withdrawals.html" class="btn-emerald" style="padding: 10px 18px; font-size: 0.85rem;">Review Pending Withdrawals</a>
+        <a href="wallet-adjustments.html" class="btn-emerald" style="padding: 10px 18px; font-size: 0.85rem;">Manual Wallet Adjustment</a>
+        <a href="settings.html" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">Website Settings</a>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--secondary-text);">Total Registered Users</span>
+          <div class="metric-val" id="metricUsers">0</div>
+        </div>
+        <div class="metric-card">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--secondary-text);">Pending Deposits</span>
+          <div class="metric-val" id="metricPendingDep" style="color: var(--pending-orange);">0</div>
+        </div>
+        <div class="metric-card">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--secondary-text);">Pending Withdrawals</span>
+          <div class="metric-val" id="metricPendingWith" style="color: var(--error-red);">0</div>
+        </div>
+        <div class="metric-card">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--secondary-text);">Active Investments</span>
+          <div class="metric-val" id="metricActiveInvs" style="color: var(--primary-green);">0</div>
+        </div>
+      </div>
+
+      <div class="astra-card">
+        <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 12px;">Recent Automated Cron Runs</h2>
+        <div class="table-responsive" id="cronLogsContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 24px;">Loading settlement runs...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+    import { formatDate } from '../shared/formatters.js';
+
+    async function loadOverview() {
+      const authResult = await initAdminNavigation();
+      if (!authResult) return;
+
+      // 1. Metrics Lookups
+      const { count: userCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+      document.getElementById('metricUsers').textContent = userCount || 0;
+
+      const { count: depCount } = await supabase.from('deposits').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+      document.getElementById('metricPendingDep').textContent = depCount || 0;
+
+      const { count: withCount } = await supabase.from('withdrawals').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+      document.getElementById('metricPendingWith').textContent = withCount || 0;
+
+      const { count: invCount } = await supabase.from('investments').select('*', { count: 'exact', head: true }).eq('status', 'active');
+      document.getElementById('metricActiveInvs').textContent = invCount || 0;
+
+      // 2. Cron Runs
+      const { data: runs } = await supabase
+        .from('cron_runs')
+        .select('*')
+        .order('run_at', { ascending: false })
+        .limit(6);
+
+      const container = document.getElementById('cronLogsContainer');
+      if (!runs || runs.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 20px;">No income processing runs on record yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 480px;">
+          <thead>
+            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
+              <th style="padding: 10px;">Run Time</th>
+              <th style="padding: 10px;">Status</th>
+              <th style="padding: 10px;">VIP Payouts</th>
+              <th style="padding: 10px;">Maturity Payouts</th>
+              <th style="padding: 10px;">Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${runs.map(r => `
+              <tr style="border-bottom: 1px solid #ECECEC;">
+                <td style="padding: 10px;">${formatDate(r.run_at)}</td>
+                <td style="padding: 10px;"><span class="badge-status badge-completed">${r.status}</span></td>
+                <td style="padding: 10px;">${r.vip_payouts_count}</td>
+                <td style="padding: 10px;">${r.maturity_payouts_count}</td>
+                <td style="padding: 10px;">${r.execution_time_ms || 0} ms</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    loadOverview();
+  </script>
+</body>
+</html>
