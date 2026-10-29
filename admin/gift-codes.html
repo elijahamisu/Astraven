@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Gift Codes | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .create-box { background: var(--light-gold-bg); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--metallic-gold); margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Promotional Vouchers</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Gift Codes</h1>
+      </div>
+
+      <form class="create-box" id="newCodeForm">
+        <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 12px;">Issue New Gift Code</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px;">
+          <input type="text" id="codeName" class="form-control" placeholder="CODE (e.g. SKYLINE2026)" required style="text-transform: uppercase;">
+          <input type="number" id="codeAmount" class="form-control" placeholder="Amount (₦)" min="100" required>
+          <input type="number" id="codeCapacity" class="form-control" placeholder="Max Redemptions" min="1" value="100" required>
+        </div>
+        <button type="submit" class="btn-gold" style="padding: 10px 20px; font-size: 0.85rem;">Issue Code</button>
+      </form>
+
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive" id="codesTableContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading vouchers...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+    import { formatCurrency, formatDate } from '../shared/formatters.js';
+
+    async function loadCodes() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+
+      const { data: codes, error } = await supabase
+        .from('gift_codes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const container = document.getElementById('codesTableContainer');
+      if (error || !codes || codes.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No gift codes issued.</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px;">
+          <thead>
+            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
+              <th style="padding: 12px;">Code</th>
+              <th style="padding: 12px;">Reward</th>
+              <th style="padding: 12px;">Capacity Used</th>
+              <th style="padding: 12px;">Created</th>
+              <th style="padding: 12px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${codes.map(c => `
+              <tr style="border-bottom: 1px solid #ECECEC;">
+                <td style="padding: 12px; font-weight: 700; font-family: monospace; color: var(--metallic-gold); font-size: 1rem;">${c.code}</td>
+                <td style="padding: 12px; font-weight: 700; color: var(--primary-green);">${formatCurrency(c.amount)}</td>
+                <td style="padding: 12px;">${c.current_redemptions} / ${c.max_redemptions}</td>
+                <td style="padding: 12px; color: var(--secondary-text); font-size: 0.78rem;">${formatDate(c.created_at, { includeTime: false })}</td>
+                <td style="padding: 12px;"><span class="badge-status ${c.is_active ? 'badge-completed' : 'badge-failed'}">${c.is_active ? 'Active' : 'Expired'}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    document.getElementById('newCodeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = document.getElementById('codeName').value.trim().toUpperCase();
+      const amount = Number(document.getElementById('codeAmount').value);
+      const max_redemptions = Number(document.getElementById('codeCapacity').value);
+
+      const { error } = await supabase.from('gift_codes').insert({
+        code, amount, max_redemptions, reward_type: 'wallet', is_active: true
+      });
+
+      if (error) alert(error.message);
+      else {
+        alert('Gift code issued!');
+        document.getElementById('newCodeForm').reset();
+        loadCodes();
+      }
+    });
+
+    loadCodes();
+  </script>
+</body>
+</html>
