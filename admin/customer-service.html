@@ -121,7 +121,6 @@
       margin-bottom: 14px;
     }
 
-    /* Action Button (Large, touch-friendly) */
     .btn-open-ticket {
       width: 100%;
       background: linear-gradient(135deg, var(--bright-gold) 0%, var(--metallic-gold) 100%);
@@ -142,7 +141,7 @@
       filter: brightness(1.06);
     }
 
-    /* Conversation Modal for Mobile */
+    /* Conversation Modal */
     .chat-modal {
       display: none;
       position: fixed;
@@ -205,6 +204,26 @@
       color: var(--white);
       border-bottom-right-radius: 2px;
     }
+
+    /* Inline Image Preview in Chat Bubble */
+    .msg-inline-img {
+      width: 100%;
+      max-width: 280px;
+      max-height: 260px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid rgba(212, 175, 55, 0.4);
+      margin-top: 8px;
+      cursor: pointer;
+      display: block;
+      background: #F3F4F6;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+    .msg-inline-img:active {
+      transform: scale(0.98);
+    }
+
     .modal-reply-bar {
       padding: 14px;
       background: var(--white);
@@ -271,7 +290,7 @@
         <button id="closeModalBtn" type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary-text); padding: 4px;">&times;</button>
       </div>
 
-      <!-- Messages Thread -->
+      <!-- Messages Thread with Inline Images -->
       <div class="modal-messages-thread" id="modalThread">
         <p style="text-align: center; color: var(--secondary-text); padding: 20px;">Loading conversation...</p>
       </div>
@@ -352,7 +371,6 @@
 
         return `
           <div class="ticket-card" id="card-${t.id}">
-            <!-- Card Header -->
             <div class="card-top-bar">
               <div>
                 <span class="ref-code">${t.ticket_ref}</span>
@@ -361,7 +379,6 @@
               <span class="badge-status ${badgeClass}">${t.status.replace(/_/g, ' ')}</span>
             </div>
 
-            <!-- Card Body -->
             <div class="card-body">
               <h2 class="ticket-subject">${escapeHtml(t.subject)}</h2>
 
@@ -370,7 +387,6 @@
                 <span>${formatDate(t.last_message_at)}</span>
               </div>
 
-              <!-- Dedicated Touch-Friendly Action Button -->
               <button class="btn-open-ticket" onclick="openTicket('${t.id}')">
                 <span>💬</span>
                 <span>Open Conversation &amp; Reply</span>
@@ -381,7 +397,7 @@
       }).join('');
     }
 
-    // Modal Handlers & Conversation Thread
+    // Modal Handlers & Conversation Thread with Direct Image Previews
     window.openTicket = async function(ticketId) {
       activeTicketId = ticketId;
       const modal = document.getElementById('chatModal');
@@ -407,7 +423,23 @@
         return;
       }
 
-      thread.innerHTML = messages.map(m => {
+      // Generate signed URLs so images render inline automatically
+      const messagesWithImages = await Promise.all(messages.map(async m => {
+        let imageUrl = null;
+        if (m.attachment_url) {
+          try {
+            const { data: signed } = await supabase.storage
+              .from('support-attachments')
+              .createSignedUrl(m.attachment_url, 3600);
+            imageUrl = signed?.signedUrl || null;
+          } catch (e) {
+            console.warn('Failed to load image preview:', e);
+          }
+        }
+        return { ...m, imageUrl };
+      }));
+
+      thread.innerHTML = messagesWithImages.map(m => {
         const isStaff = m.is_staff;
         return `
           <div class="msg-bubble ${isStaff ? 'staff' : 'user'}">
@@ -415,11 +447,15 @@
               ${isStaff ? '✦ Staff Response' : 'Investor Message'}
             </span>
             <div>${escapeHtml(m.message)}</div>
-            ${m.attachment_url ? `
+
+            <!-- Inline Direct Image Display -->
+            ${m.imageUrl ? `
               <div style="margin-top: 6px;">
-                <button type="button" class="btn-receipt" onclick="viewAttachment('${m.attachment_url}')">📎 View Attachment</button>
+                <img src="${m.imageUrl}" alt="Attachment proof" class="msg-inline-img" onclick="window.open('${m.imageUrl}', '_blank')" title="Tap to view full screen">
+                <span style="font-size: 0.68rem; color: var(--secondary-text); display: block; margin-top: 3px;">(Tap image to view full screen)</span>
               </div>
             ` : ''}
+
             <span style="font-size: 0.68rem; opacity: 0.7; margin-top: 4px; display: block; text-align: right;">${formatDate(m.created_at)}</span>
           </div>
         `;
@@ -446,7 +482,6 @@
       btn.textContent = 'Sending...';
 
       try {
-        // 1. Post reply through RPC (which verifies staff role and dispatches user notification)
         const { data, error } = await supabase.rpc('reply_support_ticket', {
           p_ticket_id: activeTicketId,
           p_sender_id: currentSession.user.id,
@@ -458,7 +493,6 @@
           throw new Error(data?.error || error?.message || 'Failed to send reply');
         }
 
-        // 2. Update status if custom choice selected
         const chosenStatus = statusSelect.value;
         if (chosenStatus) {
           await supabase
@@ -479,12 +513,6 @@
         btn.textContent = 'Send Response';
       }
     });
-
-    window.viewAttachment = async function(path) {
-      const { data } = await supabase.storage.from('support-attachments').createSignedUrl(path, 600);
-      if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-      else alert('Could not load attachment.');
-    };
 
     function escapeHtml(str) {
       if (!str) return '';
