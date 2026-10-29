@@ -5,15 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Investments | ASTRAVEN Admin</title>
   <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .grant-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 43, 26, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .grant-modal.active { display: flex; }
+    .grant-modal-box {
+      background: var(--white);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
     <div id="adminNavigationContainer"></div>
 
     <main class="main-content">
-      <div style="margin-bottom: 24px;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Flight Syndicate Holdings</span>
-        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Active Investments</h1>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Flight Syndicate Holdings</span>
+          <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Active Investments</h1>
+        </div>
+        <button id="openGlobalGrantModalBtn" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">
+          + Grant User Package
+        </button>
       </div>
 
       <div class="astra-card" style="padding: 0; overflow: hidden;">
@@ -24,14 +61,50 @@
     </main>
   </div>
 
+  <!-- Global Grant Modal -->
+  <div class="grant-modal" id="globalGrantModal">
+    <div class="grant-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.3rem; color: var(--deep-forest);">Grant User Package</h2>
+        <button id="closeGlobalModalBtn" type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary-text);">&times;</button>
+      </div>
+
+      <form id="globalGrantForm">
+        <div class="form-group">
+          <label for="globalUserUuid">Investor Account UUID</label>
+          <input type="text" id="globalUserUuid" class="form-control" placeholder="Paste target user UUID" required>
+        </div>
+
+        <div class="form-group">
+          <label for="globalProductSelect">Select Flight Package</label>
+          <select id="globalProductSelect" class="form-control" required>
+            <option value="">-- Choose Package --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="globalGrantReason">Administrative Reason / Note</label>
+          <input type="text" id="globalGrantReason" class="form-control" placeholder="e.g. VIP Sponsorship, Promotional Award" required>
+        </div>
+
+        <button type="submit" id="submitGlobalGrantBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 8px;">
+          Execute Package Grant
+        </button>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
     import { initAdminNavigation } from '../shared/admin-navigation.js';
     import { supabase } from '../shared/supabase-client.js';
     import { formatCurrency, formatDate } from '../shared/formatters.js';
 
+    let currentSession = null;
+
     async function loadInvestments() {
       const auth = await initAdminNavigation();
       if (!auth) return;
+      currentSession = auth.session;
 
       const { data: invs, error } = await supabase
         .from('investments')
@@ -62,6 +135,7 @@
               <tr style="border-bottom: 1px solid #ECECEC;">
                 <td style="padding: 12px;">
                   <strong style="color: var(--deep-forest);">${i.product_name}</strong>
+                  ${i.metadata?.is_admin_grant ? `<span class="badge-status badge-completed" style="font-size:0.65rem; margin-left:4px;">ADMIN GRANT</span>` : ''}
                   <div style="font-size: 0.75rem; color: var(--secondary-text);">@${i.profiles?.username || 'user'}</div>
                 </td>
                 <td style="padding: 12px; font-weight: 700; color: var(--primary-green);">${formatCurrency(i.purchase_price)}</td>
@@ -74,7 +148,68 @@
           </tbody>
         </table>
       `;
+
+      loadProducts();
     }
+
+    async function loadProducts() {
+      const select = document.getElementById('globalProductSelect');
+      const { data: prods } = await supabase
+        .from('products')
+        .select(`id, name, price, duration_days, product_categories(name)`)
+        .order('price', { ascending: true });
+
+      if (prods) {
+        select.innerHTML = '<option value="">-- Choose Package --</option>' +
+          prods.map(p => `
+            <option value="${p.id}">
+              [${p.product_categories?.name || 'VIP'}] ${p.name} - ${formatCurrency(p.price)} (${p.duration_days} Days)
+            </option>
+          `).join('');
+      }
+    }
+
+    // Modal Handlers
+    const modal = document.getElementById('globalGrantModal');
+    document.getElementById('openGlobalGrantModalBtn').addEventListener('click', () => modal.classList.add('active'));
+    document.getElementById('closeGlobalModalBtn').addEventListener('click', () => modal.classList.remove('active'));
+
+    document.getElementById('globalGrantForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitGlobalGrantBtn');
+      const targetUserId = document.getElementById('globalUserUuid').value.trim();
+      const productId = document.getElementById('globalProductSelect').value;
+      const reason = document.getElementById('globalGrantReason').value.trim();
+
+      btn.disabled = true;
+      btn.textContent = 'Granting Package...';
+
+      try {
+        const res = await fetch('/api/admin/grant-product', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({ targetUserId, productId, reason })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert(data.error || 'Failed to grant package.');
+        } else {
+          alert(`Package "${data.product_name}" granted successfully! Ref: ${data.reference}`);
+          modal.classList.remove('active');
+          document.getElementById('globalGrantForm').reset();
+          loadInvestments();
+        }
+      } catch (err) {
+        alert('Communication error with serverless endpoint.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Execute Package Grant';
+      }
+    });
 
     loadInvestments();
   </script>
