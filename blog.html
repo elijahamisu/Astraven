@@ -39,6 +39,7 @@
       justify-content: center;
       font-weight: 700;
       border: 1px solid var(--metallic-gold);
+      flex-shrink: 0;
     }
     .post-image-preview {
       width: 100%;
@@ -48,6 +49,7 @@
       border: 1px solid #E5E7EB;
       margin: 14px 0;
       background: #F3F4F6;
+      cursor: pointer;
     }
     .post-actions-bar {
       display: flex;
@@ -88,7 +90,7 @@
       <div class="blog-header-row">
         <div>
           <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Investor Community</span>
-          <h1 class="font-heading" style="font-size: 1.8rem;">Proof & Discussion Feed</h1>
+          <h1 class="font-heading" style="font-size: 1.8rem;">Proof &amp; Discussion Feed</h1>
         </div>
         <div style="display: flex; gap: 8px;">
           <a href="my-posts.html" class="btn-emerald" style="padding: 10px 14px; font-size: 0.85rem;">My Submissions</a>
@@ -143,7 +145,7 @@
         return;
       }
 
-      // Check which posts the current user liked
+      // Check which posts current user liked
       const { data: userLikes } = await supabase
         .from('blog_likes')
         .select('post_id')
@@ -154,6 +156,7 @@
       container.innerHTML = posts.map(p => {
         const author = p.profiles?.full_name || p.profiles?.username || 'Investor';
         const isLiked = likedSet.has(p.id);
+        const commentCount = Number(p.comments_count) || 0;
 
         return `
           <div class="post-card" id="post-${p.id}">
@@ -172,7 +175,7 @@
             <p style="font-size: 0.9rem; color: var(--primary-text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(p.content)}</p>
 
             ${p.image_url ? `
-              <img src="${p.image_url}" alt="Proof attachment" class="post-image-preview" loading="lazy">
+              <img src="${p.image_url}" alt="Proof attachment" class="post-image-preview" loading="lazy" onclick="window.open('${p.image_url}', '_blank')">
             ` : ''}
 
             ${p.caption ? `
@@ -184,11 +187,11 @@
             <div class="post-actions-bar">
               <button class="action-interactive-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${p.id}')">
                 <span>${isLiked ? '❤️' : '🤍'}</span>
-                <span id="like-count-${p.id}">${p.likes_count}</span>
+                <span id="like-count-${p.id}">${p.likes_count || 0}</span>
               </button>
               <a href="post-details.html?id=${p.id}" class="action-interactive-btn" style="text-decoration: none;">
                 <span>💬</span>
-                <span>${p.comments_count} Comments</span>
+                <span>${commentCount} ${commentCount === 1 ? 'Comment' : 'Comments'}</span>
               </a>
               <a href="post-details.html?id=${p.id}" style="margin-left: auto; font-size: 0.85rem; color: var(--primary-green); font-weight: 700; text-decoration: none;">
                 View Post →
