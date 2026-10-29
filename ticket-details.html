@@ -57,6 +57,18 @@
       border-radius: var(--radius-md);
       padding: 12px;
     }
+    .msg-inline-img {
+      width: 100%;
+      max-width: 280px;
+      max-height: 240px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid rgba(212, 175, 55, 0.4);
+      margin-top: 8px;
+      cursor: pointer;
+      display: block;
+      background: #F3F4F6;
+    }
   </style>
 </head>
 <body>
@@ -112,7 +124,6 @@
         return;
       }
 
-      // 1. Fetch Ticket
       const { data: ticket, error: tErr } = await supabase
         .from('support_tickets')
         .select('*')
@@ -133,7 +144,6 @@
         <span style="font-size: 0.75rem; color: var(--secondary-text);">Category: <strong>${ticket.category}</strong> | Opened: ${formatDate(ticket.created_at)}</span>
       `;
 
-      // 2. Fetch Messages
       const { data: messages } = await supabase
         .from('support_messages')
         .select('*')
@@ -146,7 +156,23 @@
         return;
       }
 
-      thread.innerHTML = messages.map(m => {
+      // Generate signed URLs for user messages
+      const messagesWithImages = await Promise.all(messages.map(async m => {
+        let imageUrl = null;
+        if (m.attachment_url) {
+          try {
+            const { data: signed } = await supabase.storage
+              .from('support-attachments')
+              .createSignedUrl(m.attachment_url, 3600);
+            imageUrl = signed?.signedUrl || null;
+          } catch (e) {
+            console.warn('Failed to load image preview:', e);
+          }
+        }
+        return { ...m, imageUrl };
+      }));
+
+      thread.innerHTML = messagesWithImages.map(m => {
         const isUser = m.sender_id === currentUserId && !m.is_staff;
         return `
           <div class="msg-bubble ${isUser ? 'user' : 'staff'}">
@@ -154,9 +180,14 @@
               ${isUser ? 'You' : '✦ Support Desk Officer'}
             </span>
             <div>${escapeHtml(m.message)}</div>
-            ${m.attachment_url ? `
-              <div style="margin-top: 6px; font-size: 0.75rem; text-decoration: underline; opacity: 0.9;">[Attachment on file]</div>
+
+            <!-- Direct Image Display -->
+            ${m.imageUrl ? `
+              <div style="margin-top: 6px;">
+                <img src="${m.imageUrl}" alt="Attachment preview" class="msg-inline-img" onclick="window.open('${m.imageUrl}', '_blank')" title="Tap to view full screen">
+              </div>
             ` : ''}
+
             <span class="msg-meta">${formatDate(m.created_at)}</span>
           </div>
         `;
