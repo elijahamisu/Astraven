@@ -5,15 +5,54 @@ export const ADMIN_NAVIGATION_CONFIG = [
     group: 'EXECUTIVE OVERVIEW',
     items: [
       { label: 'Overview', href: 'index.html' },
+      { label: 'Reports & Analytics', href: 'reports.html' },
+      { label: 'Audit Logs', href: 'audit-logs.html' },
       { label: 'Website Settings', href: 'settings.html' }
     ]
   },
   {
-    group: 'FINANCIAL SETTLEMENTS',
+    group: 'INVESTORS & CUSTODY',
     items: [
-      { label: 'Deposits', href: 'deposits.html' },
-      { label: 'Withdrawals', href: 'withdrawals.html' },
-      { label: 'Wallet Adjustments', href: 'wallet-adjustments.html' }
+      { label: 'User Directory', href: 'users.html' },
+      { label: 'Transaction Ledger', href: 'transactions.html' },
+      { label: 'Wallet Adjustments', href: 'wallet-adjustments.html' },
+      { label: 'Deposits Review', href: 'deposits.html' },
+      { label: 'Withdrawal Rails', href: 'withdrawals.html' }
+    ]
+  },
+  {
+    group: 'PORTFOLIOS & PRODUCTS',
+    items: [
+      { label: 'Product Catalog', href: 'products.html' },
+      { label: 'Create Product', href: 'product-create.html' },
+      { label: 'Active Investments', href: 'investments.html' }
+    ]
+  },
+  {
+    group: 'AFFILIATES & REWARDS',
+    items: [
+      { label: 'Referrals Network', href: 'referrals.html' },
+      { label: 'Referral VIP Tiers', href: 'referral-vip.html' },
+      { label: 'Lucky Wheel Config', href: 'lucky-wheel.html' },
+      { label: 'Gift Vouchers', href: 'gift-codes.html' },
+      { label: 'Gift Code History', href: 'gift-code-history.html' },
+      { label: 'Leaderboard Audit', href: 'leaderboard.html' }
+    ]
+  },
+  {
+    group: 'COMMUNICATIONS & SUPPORT',
+    items: [
+      { label: 'Customer Helpdesk', href: 'customer-service.html' },
+      { label: 'Blog Moderation', href: 'blog.html' },
+      { label: 'Withdrawal Proofs', href: 'withdrawal-proofs.html' },
+      { label: 'Announcements', href: 'announcements.html' },
+      { label: 'Send Notifications', href: 'notifications.html' }
+    ]
+  },
+  {
+    group: 'SECURITY & GOVERNANCE',
+    items: [
+      { label: 'Staff Management', href: 'staff.html' }
     ]
   }
 ];
@@ -22,7 +61,6 @@ export async function initAdminNavigation() {
   const session = await requireAuth('../login.html');
   if (!session) return null;
 
-  // Strict Server-Side Role Check
   const { data: userRole, error } = await supabase
     .from('user_roles')
     .select('role')
