@@ -127,7 +127,7 @@
                 <div><strong>Bank:</strong> ${w.bank_name}</div>
                 <div><strong>Account Name:</strong> ${w.account_name}</div>
                 <div><strong>Account Number:</strong> <span style="font-family: monospace; font-weight: 700;">${w.account_number}</span></div>
-                ${w.payment_reference ? `<div style="color: var(--success-green); margin-top: 4px;"><strong>Bank Session Ref:</strong> ${w.payment_reference}</div>` : ''}
+                ${w.payment_reference ? `<div style="color: var(--success-green); margin-top: 4px;"><strong>Settlement:</strong> ${w.payment_reference}</div>` : ''}
                 ${w.rejection_reason ? `<div style="color: var(--error-red); margin-top: 4px;"><strong>Rejection Reason:</strong> ${w.rejection_reason}</div>` : ''}
               </div>
             </div>
@@ -145,16 +145,23 @@
       }).join('');
     }
 
+    // Direct one-click review (Prompt removed for "Mark Paid")
     window.reviewWith = async function(id, action) {
-      let payRef = null;
+      let payRef = 'SETTLED';
       let reason = null;
 
       if (action === 'paid') {
-        payRef = prompt('Enter bank transfer session ID / payment reference:');
-        if (!payRef) return;
+        // Simple confirmation with no text input prompt
+        if (!confirm('Confirm marking this withdrawal request as paid?')) return;
       } else {
         reason = prompt('Enter administrative rejection reason (reserved funds will be refunded to user):');
         if (!reason) return;
+      }
+
+      const card = document.getElementById(`card-${id}`);
+      const actionsRow = card?.querySelector('.card-actions-row');
+      if (actionsRow) {
+        actionsRow.innerHTML = `<div style="grid-column: span 2; text-align: center; font-size: 0.82rem; color: var(--secondary-text);">Updating status...</div>`;
       }
 
       try {
@@ -168,12 +175,14 @@
 
         if (error || !data?.success) {
           alert('Action error: ' + (data?.error || error?.message || 'Failed'));
+          loadWithdrawals();
         } else {
           alert(`Withdrawal marked ${action} successfully!`);
           loadWithdrawals();
         }
       } catch (err) {
         alert('Action error: ' + err.message);
+        loadWithdrawals();
       }
     };
 
