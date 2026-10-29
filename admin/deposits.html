@@ -5,15 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Deposits | ASTRAVEN Admin</title>
   <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active { background: var(--dark-emerald); color: var(--bright-gold); border-color: var(--bright-gold); }
+    .btn-receipt {
+      background: none;
+      border: 1px solid var(--metallic-gold);
+      color: var(--primary-green);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .btn-receipt:hover {
+      background: var(--light-gold-bg);
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
     <div id="adminNavigationContainer"></div>
 
     <main class="main-content">
-      <div style="margin-bottom: 24px;">
+      <div style="margin-bottom: 20px;">
         <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Custody Reconciliation</span>
         <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Manual Bank Deposits</h1>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All Deposits</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="approved">Approved</button>
+        <button class="filter-btn" data-filter="rejected">Rejected</button>
       </div>
 
       <div class="astra-card" style="padding: 0; overflow: hidden;">
@@ -30,30 +68,69 @@
     import { formatCurrency, formatDate } from '../shared/formatters.js';
 
     let currentSession = null;
+    let allDeposits = [];
 
     async function loadDeposits() {
       const auth = await initAdminNavigation();
       if (!auth) return;
       currentSession = auth.session;
 
+      const container = document.getElementById('depositTableContainer');
+
+      // Fixed query: removed invalid profiles(email) field to prevent PostgREST 42703 error
       const { data: deposits, error } = await supabase
         .from('deposits')
-        .select(`*, profiles(username, full_name, email)`)
+        .select(`
+          id, reference, amount, sender_name, transfer_reference, receipt_url, status, created_at,
+          profiles:user_id(username, full_name)
+        `)
         .order('created_at', { ascending: false })
         .limit(100);
 
-      const container = document.getElementById('depositTableContainer');
-      if (error || !deposits || deposits.length === 0) {
+      if (error) {
+        console.error('Error loading deposits:', error);
+        container.innerHTML = `
+          <div style="text-align: center; padding: 40px; color: var(--error-red);">
+            <p><strong>Failed to load deposits:</strong> ${error.message}</p>
+            <button class="btn-gold" style="margin-top: 12px; padding: 8px 16px;" onclick="window.location.reload()">Retry</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (!deposits || deposits.length === 0) {
         container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No deposit submissions found.</p>`;
         return;
       }
 
+      allDeposits = deposits;
+      renderTable('all');
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const filter = btn.dataset.filter;
+          renderTable(filter);
+        });
+      });
+    }
+
+    function renderTable(filter) {
+      const container = document.getElementById('depositTableContainer');
+      const filtered = allDeposits.filter(d => filter === 'all' || d.status === filter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No deposits in this category.</p>`;
+        return;
+      }
+
       container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
           <thead>
             <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
               <th style="padding: 12px;">Ref / Date</th>
-              <th style="padding: 12px;">User</th>
+              <th style="padding: 12px;">Investor</th>
               <th style="padding: 12px;">Amount</th>
               <th style="padding: 12px;">Narration</th>
               <th style="padding: 12px;">Status</th>
@@ -61,18 +138,25 @@
             </tr>
           </thead>
           <tbody>
-            ${deposits.map(d => `
+            ${filtered.map(d => `
               <tr style="border-bottom: 1px solid #ECECEC;">
                 <td style="padding: 12px;">
-                  <strong style="font-family: monospace;">${d.reference}</strong>
+                  <strong style="font-family: monospace; color: var(--deep-forest);">${d.reference}</strong>
                   <div style="font-size: 0.72rem; color: var(--secondary-text);">${formatDate(d.created_at)}</div>
+                  ${d.receipt_url ? `
+                    <button class="btn-receipt" onclick="viewReceipt('${d.receipt_url}')">📎 View Proof</button>
+                  ` : ''}
                 </td>
                 <td style="padding: 12px;">
-                  <div>@${d.profiles?.username || 'user'}</div>
-                  <small style="color: var(--secondary-text);">${d.sender_name || '—'}</small>
+                  <strong>@${d.profiles?.username || 'user'}</strong>
+                  <div style="font-size: 0.75rem; color: var(--secondary-text);">${d.sender_name || '—'}</div>
                 </td>
-                <td style="padding: 12px; font-weight: 700; color: var(--primary-green);">${formatCurrency(d.amount)}</td>
-                <td style="padding: 12px; font-size: 0.8rem;">${d.transfer_reference || '—'}</td>
+                <td style="padding: 12px; font-weight: 700; color: var(--primary-green); font-size: 1rem;">
+                  ${formatCurrency(d.amount)}
+                </td>
+                <td style="padding: 12px; font-size: 0.82rem; max-width: 180px; word-break: break-all;">
+                  ${d.transfer_reference || '—'}
+                </td>
                 <td style="padding: 12px;">
                   <span class="badge-status ${d.status === 'approved' ? 'badge-completed' : (d.status === 'pending' ? 'badge-pending' : 'badge-failed')}">
                     ${d.status}
@@ -80,10 +164,12 @@
                 </td>
                 <td style="padding: 12px;">
                   ${d.status === 'pending' ? `
-                    <button class="btn-gold" style="padding: 6px 12px; font-size: 0.75rem; margin-right: 6px;" onclick="reviewDep('${d.id}', 'approved')">Approve</button>
-                    <button class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem;" onclick="reviewDep('${d.id}', 'rejected')">Reject</button>
+                    <div style="display: flex; gap: 6px;">
+                      <button class="btn-gold" style="padding: 6px 12px; font-size: 0.75rem;" onclick="reviewDep('${d.id}', 'approved')">Approve</button>
+                      <button class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem;" onclick="reviewDep('${d.id}', 'rejected')">Reject</button>
+                    </div>
                   ` : `
-                    <span style="font-size: 0.75rem; color: var(--secondary-text);">Settled</span>
+                    <span style="font-size: 0.75rem; color: var(--secondary-text);">Reviewed</span>
                   `}
                 </td>
               </tr>
@@ -92,6 +178,26 @@
         </table>
       `;
     }
+
+    // View receipt securely with signed URL
+    window.viewReceipt = async function(receiptPath) {
+      if (!receiptPath) return;
+
+      try {
+        const { data, error } = await supabase.storage
+          .from('deposit-receipts')
+          .createSignedUrl(receiptPath, 600);
+
+        if (error || !data?.signedUrl) {
+          alert('Could not generate receipt preview: ' + (error?.message || 'File not found'));
+          return;
+        }
+
+        window.open(data.signedUrl, '_blank');
+      } catch (err) {
+        alert('Receipt access error.');
+      }
+    };
 
     window.reviewDep = async function(id, decision) {
       let reason = null;
@@ -110,9 +216,10 @@
       });
 
       const data = await res.json();
-      if (!data.success) alert(data.error || 'Failed');
-      else {
-        alert(`Deposit ${decision} successfully.`);
+      if (!data.success) {
+        alert(data.error || 'Failed to process review.');
+      } else {
+        alert(`Deposit ${decision} successfully!`);
         loadDeposits();
       }
     };
