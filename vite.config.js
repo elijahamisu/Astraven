@@ -5,7 +5,7 @@ import { readdirSync, existsSync } from 'fs';
 function getHtmlInputs() {
   const inputs = {};
   
-  // 1. Root directory HTML pages
+  // 1. Root directory HTML pages (User portal)
   const rootFiles = readdirSync(__dirname);
   rootFiles.forEach(file => {
     if (file.endsWith('.html')) {
@@ -14,13 +14,13 @@ function getHtmlInputs() {
     }
   });
 
-  // 2. Admin directory HTML pages
+  // 2. Admin directory HTML pages (Preserves exact /admin/ subfolder output in dist)
   const adminDir = resolve(__dirname, 'admin');
   if (existsSync(adminDir)) {
     const adminFiles = readdirSync(adminDir);
     adminFiles.forEach(file => {
       if (file.endsWith('.html')) {
-        const name = `admin_${file.replace(/\.html$/, '')}`;
+        const name = `admin/${file.replace(/\.html$/, '')}`;
         inputs[name] = resolve(adminDir, file);
       }
     });
