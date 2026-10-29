@@ -16,6 +16,15 @@
       font-size: 0.95rem;
       background: var(--cream-white);
     }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
   </style>
 </head>
 <body>
@@ -29,28 +38,31 @@
           <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Manual Wallet Adjustment</h1>
         </div>
 
+        <div id="alertBanner" class="alert-banner"></div>
+
         <form class="astra-card" id="adjustForm">
           <div class="form-group">
-            <label for="targetUser">User Identification (UUID)</label>
-            <input type="text" id="targetUser" class="form-control" placeholder="Paste user UUID" required>
+            <label for="targetUser">Investor (Username, Email, or UUID)</label>
+            <input type="text" id="targetUser" class="form-control" placeholder="e.g. @elisfrosh, user@example.com, or UUID" required>
+            <small style="color: var(--secondary-text); font-size: 0.75rem;">You can type the investor's username (with or without @), registered email, or UUID.</small>
           </div>
 
           <div class="form-group">
-            <label for="adjType">Adjustment Type</label>
+            <label for="adjType">Adjustment Direction</label>
             <select id="adjType" class="form-control" required>
-              <option value="credit">Credit (Deposit / Bonus / Refund)</option>
-              <option value="debit">Debit (Clawback / Correction)</option>
+              <option value="credit">Credit (+) — Deposit Correction / Reward / Compensation</option>
+              <option value="debit">Debit (-) — Clawback / Recovery</option>
             </select>
           </div>
 
           <div class="form-group">
             <label for="amount">Amount (₦)</label>
-            <input type="number" id="amount" class="form-control" min="1" step="0.01" placeholder="1000" required>
+            <input type="number" id="amount" class="form-control" min="1" step="any" placeholder="e.g. 1000" required>
           </div>
 
           <div class="form-group">
             <label for="reason">Mandatory Audit Reason</label>
-            <input type="text" id="reason" class="form-control" placeholder="e.g. Reconciliation for uncredited bank wire ref #123" required>
+            <input type="text" id="reason" class="form-control" placeholder="e.g. Manual bank transfer reconciliation, Gift, Goodwill" required maxlength="250">
           </div>
 
           <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 8px;">
@@ -63,49 +75,89 @@
 
   <script type="module">
     import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
 
     let currentSession = null;
+    const alertBanner = document.getElementById('alertBanner');
+
+    function notify(msg, isError = false) {
+      alertBanner.textContent = msg;
+      alertBanner.className = isError ? 'alert-banner error' : 'alert-banner success';
+      alertBanner.style.display = 'block';
+      alert(msg);
+    }
 
     async function init() {
       const auth = await initAdminNavigation();
       if (!auth) return;
       currentSession = auth.session;
 
-      // Auto-populate from URL if present (?userId=...)
+      // Auto-populate from URL query if opened from user dossier (?userId=...)
       const urlParams = new URLSearchParams(window.location.search);
       const uidParam = urlParams.get('userId');
       if (uidParam) document.getElementById('targetUser').value = uidParam;
 
       document.getElementById('adjustForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true;
+        alertBanner.style.display = 'none';
 
-        const targetUserId = document.getElementById('targetUser').value.trim();
+        const btn = document.getElementById('submitBtn');
+        const targetUser = document.getElementById('targetUser').value.trim();
         const adjustmentType = document.getElementById('adjType').value;
         const amount = Number(document.getElementById('amount').value);
         const reason = document.getElementById('reason').value.trim();
 
+        if (!targetUser || !reason || amount <= 0) {
+          return notify('Please complete all fields with a valid amount.', true);
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Updating Custody Ledger...';
+
         try {
-          const res = await fetch('/api/admin/wallet-adjustment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${currentSession.access_token}`
-            },
-            body: JSON.stringify({ targetUserId, adjustmentType, amount, reason })
+          // 1. Direct RPC execution (Fastest, zero serverless timeout)
+          const { data, error } = await supabase.rpc('admin_adjust_wallet', {
+            p_admin_id: currentSession.user.id,
+            p_user_identifier: targetUser,
+            p_adjustment_type: adjustmentType,
+            p_amount: amount,
+            p_reason: reason
           });
 
-          const data = await res.json();
-          if (!data.success) alert(data.error || 'Failed');
-          else {
-            alert(`Wallet adjusted successfully! Ref: ${data.reference}. New balance: ₦${data.new_balance}`);
-            document.getElementById('adjustForm').reset();
+          if (error || !data?.success) {
+            // 2. Fallback to API route if RPC fails
+            const res = await fetch('/api/admin/wallet-adjustment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentSession.access_token}`
+              },
+              body: JSON.stringify({
+                targetUserId: targetUser,
+                adjustmentType: adjustmentType,
+                amount: amount,
+                reason: reason
+              })
+            });
+
+            const apiData = await res.json();
+            if (!apiData.success) {
+              notify(apiData.error || error?.message || 'Failed to adjust wallet.', true);
+              return;
+            }
+
+            notify(`Wallet adjusted! Target: @${apiData.target_username || targetUser} | Ref: ${apiData.reference} | New Balance: ₦${Number(apiData.new_balance).toLocaleString()}`);
+          } else {
+            notify(`Wallet adjusted! Target: @${data.target_username} | Ref: ${data.reference} | New Balance: ₦${Number(data.new_balance).toLocaleString()}`);
           }
+
+          document.getElementById('adjustForm').reset();
+
         } catch (err) {
-          alert('Network or server error.');
+          notify('Adjustment failure: ' + err.message, true);
         } finally {
           btn.disabled = false;
+          btn.textContent = 'Execute Ledger Adjustment';
         }
       });
     }
