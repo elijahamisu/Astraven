@@ -5,21 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Withdrawals | ASTRAVEN Admin</title>
   <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .page-header-wrap { margin-bottom: 20px; }
+    .header-tag { font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; display: inline-block; }
+    .header-title { font-size: clamp(1.5rem, 5vw, 2.1rem); color: var(--deep-forest); }
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+    .filter-tabs::-webkit-scrollbar { display: none; }
+    .filter-btn { padding: 10px 18px; border-radius: 9999px; border: 1.5px solid rgba(212, 175, 55, 0.4); background: var(--white); color: var(--deep-forest); font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+    .filter-btn.active { background: var(--deep-forest); color: var(--bright-gold); border-color: var(--metallic-gold); }
+    .withdrawals-feed { display: flex; flex-direction: column; gap: 16px; }
+    .with-card { background: var(--white); border: 1.5px solid rgba(212, 175, 55, 0.35); border-radius: var(--radius-md); box-shadow: 0 4px 14px rgba(0, 43, 26, 0.08); overflow: hidden; display: flex; flex-direction: column; }
+    .card-top-bar { background: #FAFAFA; padding: 12px 16px; border-bottom: 1px solid #ECECEC; display: flex; justify-content: space-between; align-items: center; }
+    .card-body { padding: 16px; }
+    .card-actions-row { padding: 12px 16px; background: #FFFDF8; border-top: 1px solid #ECECEC; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+    .empty-state-box { background: var(--white); border: 1.5px dashed rgba(212, 175, 55, 0.4); border-radius: var(--radius-md); padding: 48px 20px; text-align: center; color: var(--secondary-text); }
+    @media (min-width: 768px) {
+      .withdrawals-feed { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
     <div id="adminNavigationContainer"></div>
 
     <main class="main-content">
-      <div style="margin-bottom: 24px;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Settlement Rails</span>
-        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Withdrawal Requests</h1>
+      <div class="page-header-wrap">
+        <span class="header-tag">✦ Settlement Rails</span>
+        <h1 class="header-title font-heading">Withdrawal Requests</h1>
       </div>
 
-      <div class="astra-card" style="padding: 0; overflow: hidden;">
-        <div class="table-responsive" id="withTableContainer">
-          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading withdrawals...</p>
-        </div>
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="paid">Paid</button>
+        <button class="filter-btn" data-filter="rejected">Rejected</button>
+      </div>
+
+      <div class="withdrawals-feed" id="withdrawalsFeed">
+        <div class="empty-state-box"><p>Loading withdrawal requests...</p></div>
       </div>
     </main>
   </div>
@@ -30,70 +53,96 @@
     import { formatCurrency, formatDate } from '../shared/formatters.js';
 
     let currentSession = null;
+    let allWithdrawals = [];
 
     async function loadWithdrawals() {
       const auth = await initAdminNavigation();
       if (!auth) return;
       currentSession = auth.session;
 
+      const container = document.getElementById('withdrawalsFeed');
       const { data: withdrawals, error } = await supabase
         .from('withdrawals')
-        .select(`*, profiles(username, full_name)`)
+        .select(`*, profiles:user_id(username, full_name)`)
         .order('created_at', { ascending: false })
         .limit(100);
 
-      const container = document.getElementById('withTableContainer');
       if (error || !withdrawals || withdrawals.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No withdrawal requests found.</p>`;
+        container.innerHTML = `<div class="empty-state-box"><p>No withdrawal requests found.</p></div>`;
         return;
       }
 
-      container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
-          <thead>
-            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
-              <th style="padding: 12px;">Ref / Date</th>
-              <th style="padding: 12px;">Investor</th>
-              <th style="padding: 12px;">Net Payout</th>
-              <th style="padding: 12px;">Bank Destination</th>
-              <th style="padding: 12px;">Status</th>
-              <th style="padding: 12px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${withdrawals.map(w => `
-              <tr style="border-bottom: 1px solid #ECECEC;">
-                <td style="padding: 12px;">
-                  <strong style="font-family: monospace;">${w.reference}</strong>
-                  <div style="font-size: 0.72rem; color: var(--secondary-text);">${formatDate(w.created_at)}</div>
-                </td>
-                <td style="padding: 12px;">@${w.profiles?.username || 'user'}</td>
-                <td style="padding: 12px; font-weight: 700; color: var(--primary-green); font-size: 1rem;">
-                  ${formatCurrency(w.net_amount)}
-                  <div style="font-size: 0.7rem; color: var(--secondary-text);">Gross: ${formatCurrency(w.amount)}</div>
-                </td>
-                <td style="padding: 12px; font-size: 0.8rem;">
-                  <strong>${w.bank_name}</strong> - ${w.account_number}
-                  <div>${w.account_name}</div>
-                </td>
-                <td style="padding: 12px;">
-                  <span class="badge-status ${w.status === 'paid' ? 'badge-completed' : (w.status === 'pending' ? 'badge-pending' : 'badge-failed')}">
-                    ${w.status}
-                  </span>
-                </td>
-                <td style="padding: 12px;">
-                  ${w.status === 'pending' ? `
-                    <button class="btn-gold" style="padding: 6px 12px; font-size: 0.75rem; margin-right: 6px;" onclick="reviewWith('${w.id}', 'paid')">Mark Paid</button>
-                    <button class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem;" onclick="reviewWith('${w.id}', 'rejected')">Reject</button>
-                  ` : `
-                    <span style="font-size: 0.75rem; color: var(--secondary-text);">${w.payment_reference || 'Closed'}</span>
-                  `}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
+      allWithdrawals = withdrawals;
+      renderCards('all');
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderCards(btn.dataset.filter);
+        });
+      });
+    }
+
+    function renderCards(filter) {
+      const container = document.getElementById('withdrawalsFeed');
+      const filtered = allWithdrawals.filter(w => filter === 'all' || w.status === filter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state-box" style="grid-column: 1 / -1;"><p>No requests match this filter.</p></div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(w => {
+        const isPending = w.status === 'pending';
+        const badgeClass = w.status === 'paid' ? 'badge-completed' : (isPending ? 'badge-pending' : 'badge-failed');
+
+        return `
+          <div class="with-card" id="card-${w.id}">
+            <div class="card-top-bar">
+              <div>
+                <strong style="font-family: monospace; color: var(--deep-forest); font-size: 0.88rem;">${w.reference}</strong>
+                <span style="font-size: 0.75rem; color: var(--secondary-text); display: block;">${formatDate(w.created_at)}</span>
+              </div>
+              <span class="badge-status ${badgeClass}">${w.status.toUpperCase()}</span>
+            </div>
+
+            <div class="card-body">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div>
+                  <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--secondary-text);">NET DISBURSEMENT</span>
+                  <div style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; color: var(--primary-green);">
+                    ${formatCurrency(w.net_amount)}
+                  </div>
+                  <span style="font-size: 0.75rem; color: var(--secondary-text);">Gross: ${formatCurrency(w.amount)} | Fee: ${formatCurrency(w.fee)}</span>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--secondary-text);">INVESTOR</span>
+                  <div style="font-weight: 700; color: var(--deep-forest);">@${w.profiles?.username || 'user'}</div>
+                  <div style="font-size: 0.75rem; color: var(--secondary-text);">${w.profiles?.full_name || '—'}</div>
+                </div>
+              </div>
+
+              <div style="background: var(--light-gold-bg); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.82rem;">
+                <div><strong>Bank:</strong> ${w.bank_name}</div>
+                <div><strong>Account Name:</strong> ${w.account_name}</div>
+                <div><strong>Account Number:</strong> <span style="font-family: monospace; font-weight: 700;">${w.account_number}</span></div>
+                ${w.payment_reference ? `<div style="color: var(--success-green); margin-top: 4px;"><strong>Bank Session Ref:</strong> ${w.payment_reference}</div>` : ''}
+                ${w.rejection_reason ? `<div style="color: var(--error-red); margin-top: 4px;"><strong>Rejection Reason:</strong> ${w.rejection_reason}</div>` : ''}
+              </div>
+            </div>
+
+            <div class="card-actions-row">
+              ${isPending ? `
+                <button class="btn-gold" style="padding: 12px; font-size: 0.88rem;" onclick="reviewWith('${w.id}', 'paid')">Mark Paid</button>
+                <button class="btn-emerald" style="padding: 12px; font-size: 0.88rem; background: rgba(215, 25, 32, 0.08); color: var(--error-red); border-color: var(--error-red);" onclick="reviewWith('${w.id}', 'rejected')">Reject</button>
+              ` : `
+                <div style="grid-column: span 2; text-align: center; font-size: 0.8rem; color: var(--secondary-text); padding: 6px 0;">Settled (${w.status})</div>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     window.reviewWith = async function(id, action) {
@@ -101,27 +150,30 @@
       let reason = null;
 
       if (action === 'paid') {
-        payRef = prompt('Enter bank transfer payment reference / session ID:');
+        payRef = prompt('Enter bank transfer session ID / payment reference:');
         if (!payRef) return;
       } else {
-        reason = prompt('Enter rejection reason (reserved funds will be returned to wallet):');
+        reason = prompt('Enter administrative rejection reason (reserved funds will be refunded to user):');
         if (!reason) return;
       }
 
-      const res = await fetch('/api/withdrawals/review', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentSession.access_token}`
-        },
-        body: JSON.stringify({ withdrawalId: id, action, paymentReference: payRef, rejectionReason: reason })
-      });
+      try {
+        const { data, error } = await supabase.rpc('review_withdrawal', {
+          p_withdrawal_id: id,
+          p_admin_id: currentSession.user.id,
+          p_action: action,
+          p_payment_reference: payRef,
+          p_rejection_reason: reason
+        });
 
-      const data = await res.json();
-      if (!data.success) alert(data.error || 'Failed');
-      else {
-        alert(`Withdrawal marked ${action}.`);
-        loadWithdrawals();
+        if (error || !data?.success) {
+          alert('Action error: ' + (data?.error || error?.message || 'Failed'));
+        } else {
+          alert(`Withdrawal marked ${action} successfully!`);
+          loadWithdrawals();
+        }
+      } catch (err) {
+        alert('Action error: ' + err.message);
       }
     };
 
