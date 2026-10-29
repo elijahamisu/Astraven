@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Investments | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Flight Syndicate Holdings</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Active Investments</h1>
+      </div>
+
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive" id="invTableContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading investments...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+    import { formatCurrency, formatDate } from '../shared/formatters.js';
+
+    async function loadInvestments() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+
+      const { data: invs, error } = await supabase
+        .from('investments')
+        .select(`*, profiles(username)`)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      const container = document.getElementById('invTableContainer');
+      if (error || !invs || invs.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No investor contracts active.</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
+          <thead>
+            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
+              <th style="padding: 12px;">Package / Investor</th>
+              <th style="padding: 12px;">Capital</th>
+              <th style="padding: 12px;">Settled Days</th>
+              <th style="padding: 12px;">Total Paid</th>
+              <th style="padding: 12px;">Maturity Date</th>
+              <th style="padding: 12px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${invs.map(i => `
+              <tr style="border-bottom: 1px solid #ECECEC;">
+                <td style="padding: 12px;">
+                  <strong style="color: var(--deep-forest);">${i.product_name}</strong>
+                  <div style="font-size: 0.75rem; color: var(--secondary-text);">@${i.profiles?.username || 'user'}</div>
+                </td>
+                <td style="padding: 12px; font-weight: 700; color: var(--primary-green);">${formatCurrency(i.purchase_price)}</td>
+                <td style="padding: 12px;">${i.days_settled} / ${i.duration_days} Days</td>
+                <td style="padding: 12px; font-weight: 700; color: var(--success-green);">${formatCurrency(i.total_paid_out)}</td>
+                <td style="padding: 12px; font-size: 0.8rem; color: var(--secondary-text);">${formatDate(i.maturity_date, { includeTime: false })}</td>
+                <td style="padding: 12px;"><span class="badge-status ${i.status === 'active' ? 'badge-completed' : 'badge-pending'}">${i.status}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    loadInvestments();
+  </script>
+</body>
+</html>
