@@ -6,10 +6,16 @@
   <title>Create Product | ASTRAVEN Admin</title>
   <link rel="stylesheet" href="../shared/theme.css">
   <style>
-    .form-wrap { max-width: 600px; margin: 0 auto; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-wrap { max-width: 640px; margin: 0 auto; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
     .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
-    .form-control { padding: 10px 12px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm); font-size: 0.9rem; background: var(--cream-white); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
   </style>
 </head>
 <body>
@@ -18,56 +24,78 @@
 
     <main class="main-content">
       <div class="form-wrap">
-        <a href="products.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none;">← Back to Products</a>
-        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest); margin: 6px 0 20px;">Deploy New Package</h1>
+        <a href="products.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 12px;">
+          ← Back to Catalog
+        </a>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest); margin-bottom: 20px;">Deploy New Package</h1>
 
-        <form class="astra-card" id="createProductForm">
+        <form class="astra-card" id="createProdForm">
           <div class="form-group">
-            <label for="categorySlug">Category</label>
-            <select id="categorySlug" class="form-control" required>
-              <option value="vip">ASTRA-VIP (Daily Payout)</option>
-              <option value="ssvip">SSVIP (Maturity Payout)</option>
-              <option value="limited">Limited Capacity Flight Quota</option>
+            <label for="catSlug">Product Classification</label>
+            <select id="catSlug" class="form-control" required>
+              <option value="vip">ASTRA-VIP (Daily Income)</option>
+              <option value="ssvip">SSVIP (Maturity Model)</option>
+              <option value="limited">Limited Route Capacity</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="code">Unique Code</label>
-            <input type="text" id="code" class="form-control" placeholder="e.g. VIP-9 or LTD-LAGOS" required>
+            <label for="code">Unique Code Identifier</label>
+            <input type="text" id="code" class="form-control" placeholder="e.g. VIP-9 or LTD-KANO" required>
           </div>
 
           <div class="form-group">
-            <label for="name">Product Name</label>
-            <input type="text" id="name" class="form-control" placeholder="ASTRA-VIP 9 Transcontinental" required>
+            <label for="name">Package Name</label>
+            <input type="text" id="name" class="form-control" placeholder="e.g. Trans-Atlantic Jetliner Syndicate" required>
           </div>
 
           <div class="form-group">
-            <label for="price">Price (₦)</label>
+            <label for="desc">Description</label>
+            <textarea id="desc" class="form-control" style="min-height: 80px;" placeholder="Contract specifications..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="price">Purchase Cost (₦)</label>
             <input type="number" id="price" class="form-control" min="1000" step="100" required>
           </div>
 
           <div class="form-group">
             <label for="duration">Cycle Duration (Days)</label>
-            <input type="number" id="duration" class="form-control" min="1" max="365" value="50" required>
+            <input type="number" id="duration" class="form-control" min="1" value="50" required>
           </div>
 
           <div class="form-group">
-            <label for="dailyIncome">Daily Settlement Amount (₦)</label>
-            <input type="number" id="dailyIncome" class="form-control" min="0" step="0.01" value="0">
+            <label for="daily">Daily Settlement Amount (₦, 0 for maturity products)</label>
+            <input type="number" id="daily" class="form-control" min="0" step="0.01" value="0" required>
           </div>
 
           <div class="form-group">
-            <label for="totalPayout">Total Projected Return (₦)</label>
-            <input type="number" id="totalPayout" class="form-control" min="1000" step="100" required>
+            <label for="total">Total Expected Contract Payout (₦)</label>
+            <input type="number" id="total" class="form-control" min="1000" step="100" required>
           </div>
 
           <div class="form-group">
-            <label for="maxCapacity">Maximum Quota Capacity (Optional)</label>
-            <input type="number" id="maxCapacity" class="form-control" placeholder="Leave empty for unlimited">
+            <label for="payoutType">Settlement Type</label>
+            <select id="payoutType" class="form-control" required>
+              <option value="daily">Daily Automated Settlement</option>
+              <option value="maturity">Lump-Sum at Maturity</option>
+            </select>
           </div>
 
-          <button type="submit" id="saveProdBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 10px;">
-            Deploy Product
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="isLimited">
+              <span>Is Limited Capacity Route?</span>
+            </label>
+          </div>
+
+          <div class="form-group" id="capacityGroup" style="display: none;">
+            <label for="maxCapacity">Maximum Seat/Slot Allocation</label>
+            <input type="number" id="maxCapacity" class="form-control" min="1" placeholder="e.g. 50">
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 8px;">
+            Deploy Flight Syndicate
           </button>
         </form>
       </div>
@@ -78,48 +106,47 @@
     import { initAdminNavigation } from '../shared/admin-navigation.js';
     import { supabase } from '../shared/supabase-client.js';
 
-    let currentAdmin = null;
+    let currentSession = null;
 
     async function init() {
       const auth = await initAdminNavigation();
       if (!auth) return;
-      currentAdmin = auth.session.user;
+      currentSession = auth.session;
 
-      document.getElementById('createProductForm').addEventListener('submit', async (e) => {
+      const isLtdCheck = document.getElementById('isLimited');
+      const capGroup = document.getElementById('capacityGroup');
+      isLtdCheck.addEventListener('change', () => {
+        capGroup.style.display = isLtdCheck.checked ? 'flex' : 'none';
+      });
+
+      document.getElementById('createProdForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = document.getElementById('saveProdBtn');
+        const btn = document.getElementById('submitBtn');
         btn.disabled = true;
 
-        const categorySlug = document.getElementById('categorySlug').value;
-        const code = document.getElementById('code').value.trim();
-        const name = document.getElementById('name').value.trim();
-        const price = Number(document.getElementById('price').value);
-        const duration = Number(document.getElementById('duration').value);
-        const dailyIncome = Number(document.getElementById('dailyIncome').value) || 0;
-        const totalPayout = Number(document.getElementById('totalPayout').value);
-        const capacityVal = document.getElementById('maxCapacity').value;
-        const maxCapacity = capacityVal ? Number(capacityVal) : null;
-        const isLimited = categorySlug === 'limited' || maxCapacity !== null;
+        const payload = {
+          p_admin_id: currentSession.user.id,
+          p_category_slug: document.getElementById('catSlug').value,
+          p_code: document.getElementById('code').value,
+          p_name: document.getElementById('name').value,
+          p_description: document.getElementById('desc').value,
+          p_price: Number(document.getElementById('price').value),
+          p_duration_days: Number(document.getElementById('duration').value),
+          p_daily_income: Number(document.getElementById('daily').value),
+          p_total_payout: Number(document.getElementById('total').value),
+          p_payout_type: document.getElementById('payoutType').value,
+          p_is_active: true,
+          p_is_limited: isLtdCheck.checked,
+          p_max_capacity: isLtdCheck.checked ? Number(document.getElementById('maxCapacity').value) : null
+        };
 
-        const { data, error } = await supabase.rpc('admin_create_product', {
-          p_admin_id: currentAdmin.id,
-          p_category_slug: categorySlug,
-          p_code: code,
-          p_name: name,
-          p_description: `${name} investment portfolio.`,
-          p_price: price,
-          p_duration_days: duration,
-          p_daily_income: dailyIncome,
-          p_total_payout: totalPayout,
-          p_payout_type: categorySlug === 'vip' ? 'daily' : 'maturity',
-          p_is_limited: isLimited,
-          p_max_capacity: maxCapacity
-        });
-
+        const { data, error } = await supabase.rpc('admin_create_product', payload);
         btn.disabled = false;
-        if (error || !data.success) alert(data?.error || error?.message || 'Failed');
-        else {
-          alert('Product deployed successfully.');
+
+        if (error || !data.success) {
+          alert(data?.error || error?.message || 'Failed to create product');
+        } else {
+          alert('Flight package deployed successfully!');
           window.location.href = 'products.html';
         }
       });
