@@ -4,63 +4,64 @@ export const ADMIN_NAVIGATION_CONFIG = [
   {
     group: 'EXECUTIVE OVERVIEW',
     items: [
-      { label: 'Overview', href: 'index.html' },
-      { label: 'Reports & Analytics', href: 'reports.html' },
-      { label: 'Audit Logs', href: 'audit-logs.html' },
-      { label: 'Website Settings', href: 'settings.html' }
+      { label: 'Overview', href: '/admin/index.html' },
+      { label: 'Reports & Analytics', href: '/admin/reports.html' },
+      { label: 'Audit Logs', href: '/admin/audit-logs.html' },
+      { label: 'Website Settings', href: '/admin/settings.html' }
     ]
   },
   {
     group: 'INVESTORS & CUSTODY',
     items: [
-      { label: 'User Directory', href: 'users.html' },
-      { label: 'Transaction Ledger', href: 'transactions.html' },
-      { label: 'Wallet Adjustments', href: 'wallet-adjustments.html' },
-      { label: 'Deposits Review', href: 'deposits.html' },
-      { label: 'Withdrawal Rails', href: 'withdrawals.html' }
+      { label: 'User Directory', href: '/admin/users.html' },
+      { label: 'Transaction Ledger', href: '/admin/transactions.html' },
+      { label: 'Wallet Adjustments', href: '/admin/wallet-adjustments.html' },
+      { label: 'Deposits Review', href: '/admin/deposits.html' },
+      { label: 'Withdrawal Rails', href: '/admin/withdrawals.html' }
     ]
   },
   {
     group: 'PORTFOLIOS & PRODUCTS',
     items: [
-      { label: 'Product Catalog', href: 'products.html' },
-      { label: 'Create Product', href: 'product-create.html' },
-      { label: 'Active Investments', href: 'investments.html' }
+      { label: 'Product Catalog', href: '/admin/products.html' },
+      { label: 'Create Product', href: '/admin/product-create.html' },
+      { label: 'Active Investments', href: '/admin/investments.html' }
     ]
   },
   {
     group: 'AFFILIATES & REWARDS',
     items: [
-      { label: 'Referrals Network', href: 'referrals.html' },
-      { label: 'Referral VIP Tiers', href: 'referral-vip.html' },
-      { label: 'Lucky Wheel Config', href: 'lucky-wheel.html' },
-      { label: 'Gift Vouchers', href: 'gift-codes.html' },
-      { label: 'Gift Code History', href: 'gift-code-history.html' },
-      { label: 'Leaderboard Audit', href: 'leaderboard.html' }
+      { label: 'Referrals Network', href: '/admin/referrals.html' },
+      { label: 'Referral VIP Tiers', href: '/admin/referral-vip.html' },
+      { label: 'Lucky Wheel Config', href: '/admin/lucky-wheel.html' },
+      { label: 'Gift Vouchers', href: '/admin/gift-codes.html' },
+      { label: 'Gift Code History', href: '/admin/gift-code-history.html' },
+      { label: 'Leaderboard Audit', href: '/admin/leaderboard.html' }
     ]
   },
   {
     group: 'COMMUNICATIONS & SUPPORT',
     items: [
-      { label: 'Customer Helpdesk', href: 'customer-service.html' },
-      { label: 'Blog Moderation', href: 'blog.html' },
-      { label: 'Withdrawal Proofs', href: 'withdrawal-proofs.html' },
-      { label: 'Announcements', href: 'announcements.html' },
-      { label: 'Send Notifications', href: 'notifications.html' }
+      { label: 'Customer Helpdesk', href: '/admin/customer-service.html' },
+      { label: 'Blog Moderation', href: '/admin/blog.html' },
+      { label: 'Withdrawal Proofs', href: '/admin/withdrawal-proofs.html' },
+      { label: 'Announcements', href: '/admin/announcements.html' },
+      { label: 'Send Notifications', href: '/admin/notifications.html' }
     ]
   },
   {
     group: 'SECURITY & GOVERNANCE',
     items: [
-      { label: 'Staff Management', href: 'staff.html' }
+      { label: 'Staff Management', href: '/admin/staff.html' }
     ]
   }
 ];
 
 export async function initAdminNavigation() {
-  const session = await requireAuth('../login.html');
+  const session = await requireAuth('/admin/login.html');
   if (!session) return null;
 
+  // Strict Server-Side Role Check
   const { data: userRole, error } = await supabase
     .from('user_roles')
     .select('role')
@@ -69,11 +70,11 @@ export async function initAdminNavigation() {
 
   if (error || !userRole || !['admin', 'superadmin', 'support_agent'].includes(userRole.role)) {
     alert('Access Denied: You do not possess administrative permissions.');
-    window.location.href = '../dashboard.html';
+    window.location.replace('/dashboard.html');
     return null;
   }
 
-  const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+  const currentPath = window.location.pathname.replace(/\/$/, '');
 
   const sidebarHTML = `
     <div class="mobile-top-header">
@@ -81,13 +82,13 @@ export async function initAdminNavigation() {
         <button id="adminMenuOpen" class="header-hamburger-btn" aria-label="Toggle admin drawer">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
         </button>
-        <a href="index.html" class="header-brand">
+        <a href="/admin/index.html" class="header-brand">
           <span style="color:var(--bright-gold);font-size:1.4rem;">✈</span>
           <span class="brand-wordmark">ASTRAVEN <small style="font-size:0.65rem;color:var(--bright-gold);">ADMIN</small></span>
         </a>
       </div>
       <div class="header-right">
-        <a href="../dashboard.html" class="header-icon-btn" title="Return to Investor Dashboard">🏠</a>
+        <a href="/dashboard.html" class="header-icon-btn" title="Return to Investor Dashboard">🏠</a>
       </div>
     </div>
 
@@ -95,7 +96,7 @@ export async function initAdminNavigation() {
 
     <aside class="astra-sidebar" id="adminSidebar">
       <div class="sidebar-header">
-        <a href="index.html" class="header-brand">
+        <a href="/admin/index.html" class="header-brand">
           <span style="color:var(--bright-gold);font-size:1.4rem;">✈</span>
           <span class="brand-wordmark">ASTRAVEN <small style="font-size:0.65rem;color:var(--bright-gold);">ADMIN</small></span>
         </a>
@@ -114,20 +115,24 @@ export async function initAdminNavigation() {
           <div class="nav-group">
             <h4 class="nav-group-title">${group.group}</h4>
             <ul class="nav-list">
-              ${group.items.map(item => `
-                <li>
-                  <a href="${item.href}" class="nav-link ${currentFile === item.href ? 'active' : ''}">
-                    <span>${item.label}</span>
-                  </a>
-                </li>
-              `).join('')}
+              ${group.items.map(item => {
+                const cleanHref = item.href.replace(/\.html$/, '');
+                const isActive = currentPath === cleanHref || currentPath === item.href || currentPath.endsWith(cleanHref);
+                return `
+                  <li>
+                    <a href="${item.href}" class="nav-link ${isActive ? 'active' : ''}">
+                      <span>${item.label}</span>
+                    </a>
+                  </li>
+                `;
+              }).join('')}
             </ul>
           </div>
         `).join('')}
       </nav>
 
       <div class="sidebar-footer">
-        <a href="../dashboard.html" class="btn-emerald" style="width:100%;margin-bottom:8px;padding:8px;font-size:0.82rem;text-align:center;">User Dashboard</a>
+        <a href="/dashboard.html" class="btn-emerald" style="width:100%;margin-bottom:8px;padding:8px;font-size:0.82rem;text-align:center;text-decoration:none;">User Dashboard</a>
         <button id="adminLogoutBtn" class="btn-sidebar-logout" type="button">Sign Out</button>
       </div>
     </aside>
