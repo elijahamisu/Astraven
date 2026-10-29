@@ -84,8 +84,8 @@
         <form class="astra-card" id="depositForm">
           <div class="form-group">
             <label for="amount">Deposit Amount (₦)</label>
-            <input type="number" id="amount" class="form-control" placeholder="Min. ₦5,000" min="1000" step="100" required>
-            <small id="minDepositNotice" style="color: var(--secondary-text); font-size: 0.78rem;">Minimum deposit applies.</small>
+            <input type="number" id="amount" class="form-control" placeholder="Enter deposit amount" min="1" step="any" required>
+            <small id="minDepositNotice" style="color: var(--secondary-text); font-size: 0.78rem;">Loading minimum...</small>
           </div>
 
           <div class="form-group">
@@ -117,7 +117,7 @@
     import { formatCurrency } from './shared/formatters.js';
 
     let currentSession = null;
-    let minDeposit = 5000;
+    let minDeposit = 1;
 
     async function loadDepositConfig() {
       await initUserNavigation({ requireSession: true });
@@ -128,7 +128,7 @@
         .from('site_settings')
         .select('value')
         .eq('key', 'deposit_config')
-        .single();
+        .maybeSingle();
 
       if (cfg && cfg.value) {
         const val = cfg.value;
@@ -136,9 +136,10 @@
         document.getElementById('displayAccName').textContent = val.account_name || 'Astraven Aviation Ltd';
         document.getElementById('displayAccNum').textContent = val.account_number || '1228493012';
         document.getElementById('displayInstructions').textContent = val.instructions || '';
-        minDeposit = Number(val.min_deposit || 5000);
+        minDeposit = Number(val.min_deposit) || 1;
         document.getElementById('minDepositNotice').textContent = `Minimum deposit is ${formatCurrency(minDeposit)}.`;
         document.getElementById('amount').min = minDeposit;
+        document.getElementById('amount').placeholder = `Min. ${formatCurrency(minDeposit)}`;
       }
 
       document.getElementById('copyAccBtn').addEventListener('click', () => {
