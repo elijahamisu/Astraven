@@ -51,8 +51,6 @@
           Direct bank settlement to your designated Nigerian commercial account.
         </p>
 
-        <div id="alertBanner" class="alert-banner"></div>
-
         <form class="astra-card" id="withForm">
           <div style="background: var(--deep-forest); color: var(--white); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 0.85rem; opacity: 0.9;">Available Balance:</span>
@@ -67,7 +65,7 @@
 
           <div class="form-group">
             <label for="bankName">Bank Name</label>
-            <input type="text" id="bankName" class="form-control" placeholder="e.g. Access Bank, GTBank, Zenith" required>
+            <input type="text" id="bankName" class="form-control" placeholder="e.g. Access Bank, GTBank, Opay, Zenith" required>
           </div>
 
           <div class="form-group">
@@ -96,6 +94,8 @@
             </div>
           </div>
 
+          <div id="alertBanner" class="alert-banner"></div>
+
           <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 14px;">
             Confirm Withdrawal Request
           </button>
@@ -114,6 +114,14 @@
     let feeRate = 5;
     let currentBalance = 0;
 
+    function showAlert(msg, isError = true) {
+      const banner = document.getElementById('alertBanner');
+      banner.textContent = msg;
+      banner.className = isError ? 'alert-banner error' : 'alert-banner success';
+      banner.style.display = 'block';
+      alert(msg);
+    }
+
     async function initWithdraw() {
       await initUserNavigation({ requireSession: true });
       currentSession = await requireAuth();
@@ -130,7 +138,7 @@
         document.getElementById('availBal').textContent = formatCurrency(currentBalance);
       }
 
-      // Load live settings configured in admin
+      // Load dynamic limits from site_settings
       const { data: cfg } = await supabase
         .from('site_settings')
         .select('value')
@@ -161,72 +169,75 @@
 
     document.getElementById('withForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const alertBanner = document.getElementById('alertBanner');
-      const submitBtn = document.getElementById('submitBtn');
-      alertBanner.style.display = 'none';
+      document.getElementById('alertBanner').style.display = 'none';
 
       const amount = Number(document.getElementById('amount').value);
       const bankName = document.getElementById('bankName').value.trim();
       const accountName = document.getElementById('accountName').value.trim();
       const accountNumber = document.getElementById('accountNumber').value.trim();
+      const submitBtn = document.getElementById('submitBtn');
 
       if (amount < minWithdrawal) {
-        alertBanner.textContent = `Minimum withdrawal amount is ${formatCurrency(minWithdrawal)}.`;
-        alertBanner.className = 'alert-banner error';
-        return;
+        return showAlert(`Minimum withdrawal amount is ${formatCurrency(minWithdrawal)}.`);
       }
 
       if (amount > currentBalance) {
-        alertBanner.textContent = 'Insufficient balance to fulfill withdrawal request.';
-        alertBanner.className = 'alert-banner error';
-        return;
+        return showAlert('Insufficient available balance to fulfill withdrawal request.');
       }
 
       if (!/^\d{10}$/.test(accountNumber)) {
-        alertBanner.textContent = 'Account number must be exactly 10 digits.';
-        alertBanner.className = 'alert-banner error';
-        return;
+        return showAlert('Account number must be exactly 10 digits.');
       }
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Reserving Funds...';
 
       try {
-        const res = await fetch('/api/withdrawals/request', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentSession.access_token}`
-          },
-          body: JSON.stringify({
-            amount,
-            bankName,
-            accountName,
-            accountNumber,
-            idempotencyKey: 'WTH-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
-          })
+        // 1. Direct RPC execution (Fastest, zero serverless timeout)
+        const { data, error } = await supabase.rpc('request_withdrawal', {
+          p_user_id: currentSession.user.id,
+          p_amount: amount,
+          p_bank_name: bankName,
+          p_account_name: accountName,
+          p_account_number: accountNumber,
+          p_idempotency_key: 'WTH-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
         });
 
-        const result = await res.json();
+        if (error || !data?.success) {
+          // 2. Fallback to serverless API
+          const res = await fetch('/api/withdrawals/request', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentSession.access_token}`
+            },
+            body: JSON.stringify({
+              amount,
+              bankName,
+              accountName,
+              accountNumber,
+              idempotencyKey: 'WTH-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
+            })
+          });
 
-        if (!result.success) {
-          alertBanner.textContent = result.error || 'Failed to submit withdrawal.';
-          alertBanner.className = 'alert-banner error';
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Confirm Withdrawal Request';
-          return;
+          const apiResult = await res.json();
+          if (!apiResult.success) {
+            throw new Error(apiResult.error || error?.message || 'Failed to submit withdrawal.');
+          }
+
+          showAlert(`Withdrawal request ${apiResult.reference} registered! ₦${apiResult.net_amount} will be settled.`, false);
+        } else {
+          showAlert(`Withdrawal request ${data.reference} registered! ₦${data.net_amount} will be settled.`, false);
         }
-
-        alertBanner.textContent = `Withdrawal request ${result.reference} accepted! Funds reserved. Redirecting...`;
-        alertBanner.className = 'alert-banner success';
 
         setTimeout(() => {
           window.location.href = 'withdrawal-history.html';
-        }, 1500);
+        }, 1200);
 
       } catch (err) {
-        alertBanner.textContent = 'Network error while processing withdrawal.';
-        alertBanner.className = 'alert-banner error';
+        console.error('Withdrawal failure:', err);
+        showAlert(err.message || 'Withdrawal processing error. Please try again.');
+      } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Confirm Withdrawal Request';
       }
