@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Notification | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .notif-wrap { max-width: 600px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div class="notif-wrap">
+        <div style="margin-bottom: 24px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Member Comms</span>
+          <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Dispatch Notification</h1>
+        </div>
+
+        <form class="astra-card" id="dispatchForm">
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            <label style="font-size: 0.85rem; font-weight: 700;">Target User UUID</label>
+            <input type="text" id="targetUserId" class="form-control" placeholder="User UUID" required>
+
+            <label style="font-size: 0.85rem; font-weight: 700;">Notification Title</label>
+            <input type="text" id="notifTitle" class="form-control" placeholder="e.g. Flight Syndicate Update" required>
+
+            <label style="font-size: 0.85rem; font-weight: 700;">Message Content</label>
+            <textarea id="notifMessage" class="form-control" style="min-height: 90px;" placeholder="Message to display in user inbox..." required></textarea>
+          </div>
+          <button type="submit" class="btn-gold" style="width: 100%; padding: 12px;">Send Alert</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+
+    async function init() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+
+      document.getElementById('dispatchForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user_id = document.getElementById('targetUserId').value.trim();
+        const title = document.getElementById('notifTitle').value.trim();
+        const message = document.getElementById('notifMessage').value.trim();
+
+        const { error } = await supabase.from('notifications').insert({
+          user_id, title, message, type: 'system', is_read: false
+        });
+
+        if (error) alert(error.message);
+        else {
+          alert('Notification dispatched!');
+          document.getElementById('dispatchForm').reset();
+        }
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
