@@ -3,25 +3,297 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Support Helpdesk | ASTRAVEN Admin</title>
+  <title>Customer Helpdesk | ASTRAVEN Admin</title>
   <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .page-header-wrap { margin-bottom: 20px; }
+    .header-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--metallic-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .header-title {
+      font-size: clamp(1.5rem, 5vw, 2.1rem);
+      color: var(--deep-forest);
+      line-height: 1.2;
+    }
+
+    /* Filter Tabs */
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+    }
+    .filter-tabs::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      padding: 10px 18px;
+      border-radius: 9999px;
+      border: 1.5px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .filter-btn.active {
+      background: var(--deep-forest);
+      color: var(--bright-gold);
+      border-color: var(--metallic-gold);
+      box-shadow: 0 2px 8px rgba(0, 43, 26, 0.2);
+    }
+
+    /* Mobile Ticket Cards Stack */
+    .tickets-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .ticket-card {
+      background: var(--white);
+      border: 1.5px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 14px rgba(0, 43, 26, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .ticket-card:hover {
+      border-color: var(--metallic-gold);
+      box-shadow: 0 6px 18px rgba(0, 43, 26, 0.12);
+    }
+
+    .card-top-bar {
+      background: #FAFAFA;
+      padding: 12px 16px;
+      border-bottom: 1px solid #ECECEC;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .ref-code {
+      font-family: monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--deep-forest);
+    }
+    .ticket-category-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--metallic-gold);
+      text-transform: uppercase;
+      background: var(--deep-forest);
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-left: 6px;
+    }
+
+    .card-body {
+      padding: 16px;
+    }
+    .ticket-subject {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--deep-forest);
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+    .investor-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: var(--secondary-text);
+      margin-bottom: 14px;
+    }
+
+    /* Action Button (Large, touch-friendly) */
+    .btn-open-ticket {
+      width: 100%;
+      background: linear-gradient(135deg, var(--bright-gold) 0%, var(--metallic-gold) 100%);
+      color: var(--deep-forest);
+      border: 1px solid var(--metallic-gold);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 2px 6px rgba(212, 175, 55, 0.25);
+    }
+    .btn-open-ticket:hover {
+      filter: brightness(1.06);
+    }
+
+    /* Conversation Modal for Mobile */
+    .chat-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 43, 26, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1200;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .chat-modal.active { display: flex; }
+    .chat-modal-box {
+      background: var(--white);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 640px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-header {
+      padding: 14px 18px;
+      background: #FAFAFA;
+      border-bottom: 1px solid #ECECEC;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-messages-thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--cream-white);
+    }
+    .msg-bubble {
+      max-width: 85%;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .msg-bubble.user {
+      align-self: flex-start;
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: var(--primary-text);
+      border-bottom-left-radius: 2px;
+    }
+    .msg-bubble.staff {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
+      color: var(--white);
+      border-bottom-right-radius: 2px;
+    }
+    .modal-reply-bar {
+      padding: 14px;
+      background: var(--white);
+      border-top: 1px solid #ECECEC;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .empty-state-box {
+      background: var(--white);
+      border: 1.5px dashed rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius-md);
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--secondary-text);
+    }
+
+    @media (min-width: 768px) {
+      .tickets-feed {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
     <div id="adminNavigationContainer"></div>
 
     <main class="main-content">
-      <div style="margin-bottom: 24px;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Member Inquiries</span>
-        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Customer Service Helpdesk</h1>
+      <div class="page-header-wrap">
+        <span class="header-tag">✦ Member Inquiries</span>
+        <h1 class="header-title font-heading">Customer Service Helpdesk</h1>
       </div>
 
-      <div class="astra-card" style="padding: 0; overflow: hidden;">
-        <div class="table-responsive" id="ticketsContainer">
-          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading tickets...</p>
+      <!-- Filter Tabs -->
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All Inquiries</button>
+        <button class="filter-btn" data-filter="open">Open</button>
+        <button class="filter-btn" data-filter="in_progress">In Progress</button>
+        <button class="filter-btn" data-filter="waiting_for_user">Waiting for User</button>
+        <button class="filter-btn" data-filter="resolved">Resolved</button>
+      </div>
+
+      <!-- Mobile-first Card Feed -->
+      <div class="tickets-feed" id="ticketsFeed">
+        <div class="empty-state-box">
+          <p>Loading member inquiries...</p>
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Interactive Conversation & Reply Modal -->
+  <div class="chat-modal" id="chatModal">
+    <div class="chat-modal-box">
+      <div class="modal-header">
+        <div>
+          <span style="font-family: monospace; font-weight: 700; color: var(--metallic-gold); font-size: 0.8rem;" id="modalTicketRef">TCK-REF</span>
+          <h3 style="font-size: 1rem; color: var(--deep-forest); margin-top: 2px;" id="modalTicketSubject">Ticket Subject</h3>
+        </div>
+        <button id="closeModalBtn" type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary-text); padding: 4px;">&times;</button>
+      </div>
+
+      <!-- Messages Thread -->
+      <div class="modal-messages-thread" id="modalThread">
+        <p style="text-align: center; color: var(--secondary-text); padding: 20px;">Loading conversation...</p>
+      </div>
+
+      <!-- Staff Reply Section -->
+      <form class="modal-reply-bar" id="modalReplyForm">
+        <textarea id="replyMessageInput" class="form-control" style="min-height: 80px; resize: vertical;" placeholder="Type response to investor..." required></textarea>
+
+        <div style="display: flex; gap: 8px; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <select id="statusSelect" class="form-control" style="width: auto; flex: 1; min-width: 160px; font-size: 0.82rem; font-weight: 600;">
+            <option value="waiting_for_user">Status: Waiting for User</option>
+            <option value="in_progress">Status: Keep In Progress</option>
+            <option value="resolved">Status: Mark as Resolved</option>
+            <option value="closed">Status: Close Ticket</option>
+          </select>
+
+          <button type="submit" id="sendReplyBtn" class="btn-gold" style="padding: 10px 20px; font-size: 0.88rem;">
+            Send Response
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script type="module">
@@ -30,74 +302,194 @@
     import { formatDate } from '../shared/formatters.js';
 
     let currentSession = null;
+    let allTickets = [];
+    let activeTicketId = null;
 
     async function loadTickets() {
       const auth = await initAdminNavigation();
       if (!auth) return;
       currentSession = auth.session;
 
+      const container = document.getElementById('ticketsFeed');
+
       const { data: tickets, error } = await supabase
         .from('support_tickets')
-        .select(`*, profiles(username)`)
+        .select(`*, profiles:user_id(username, full_name)`)
         .order('last_message_at', { ascending: false })
-        .limit(50);
+        .limit(60);
 
-      const container = document.getElementById('ticketsContainer');
       if (error || !tickets || tickets.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No support tickets open.</p>`;
+        container.innerHTML = `<div class="empty-state-box" style="grid-column: 1 / -1;"><p>No support tickets on file.</p></div>`;
         return;
       }
 
-      container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
-          <thead>
-            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
-              <th style="padding: 12px;">Ref / Category</th>
-              <th style="padding: 12px;">User</th>
-              <th style="padding: 12px;">Subject</th>
-              <th style="padding: 12px;">Last Message</th>
-              <th style="padding: 12px;">Status</th>
-              <th style="padding: 12px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${tickets.map(t => `
-              <tr style="border-bottom: 1px solid #ECECEC;">
-                <td style="padding: 12px;">
-                  <strong style="font-family: monospace;">${t.ticket_ref}</strong>
-                  <div style="font-size: 0.72rem; color: var(--metallic-gold); font-weight: 700;">${t.category}</div>
-                </td>
-                <td style="padding: 12px; font-weight: 600;">@${t.profiles?.username || 'user'}</td>
-                <td style="padding: 12px;">${t.subject}</td>
-                <td style="padding: 12px; color: var(--secondary-text); font-size: 0.78rem;">${formatDate(t.last_message_at)}</td>
-                <td style="padding: 12px;"><span class="badge-status ${t.status === 'resolved' ? 'badge-completed' : 'badge-pending'}">${t.status}</span></td>
-                <td style="padding: 12px;">
-                  <button class="btn-gold" style="padding: 6px 12px; font-size: 0.75rem;" onclick="replyTicket('${t.id}')">Reply</button>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
+      allTickets = tickets;
+      renderCards('all');
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderCards(btn.dataset.filter);
+        });
+      });
     }
 
-    window.replyTicket = async function(id) {
-      const msg = prompt('Enter administrative response:');
+    function renderCards(filter) {
+      const container = document.getElementById('ticketsFeed');
+      const filtered = allTickets.filter(t => filter === 'all' || t.status === filter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state-box" style="grid-column: 1 / -1;"><p>No tickets match this filter.</p></div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(t => {
+        const isResolved = t.status === 'resolved' || t.status === 'closed';
+        const badgeClass = isResolved ? 'badge-completed' : (t.status === 'open' ? 'badge-pending' : 'badge-completed');
+        const username = t.profiles?.username || 'user';
+        const fullName = t.profiles?.full_name || 'Investor';
+
+        return `
+          <div class="ticket-card" id="card-${t.id}">
+            <!-- Card Header -->
+            <div class="card-top-bar">
+              <div>
+                <span class="ref-code">${t.ticket_ref}</span>
+                <span class="ticket-category-pill">${t.category}</span>
+              </div>
+              <span class="badge-status ${badgeClass}">${t.status.replace(/_/g, ' ')}</span>
+            </div>
+
+            <!-- Card Body -->
+            <div class="card-body">
+              <h2 class="ticket-subject">${escapeHtml(t.subject)}</h2>
+
+              <div class="investor-meta-row">
+                <span>By: <strong>@${username}</strong> (${fullName})</span>
+                <span>${formatDate(t.last_message_at)}</span>
+              </div>
+
+              <!-- Dedicated Touch-Friendly Action Button -->
+              <button class="btn-open-ticket" onclick="openTicket('${t.id}')">
+                <span>💬</span>
+                <span>Open Conversation &amp; Reply</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Modal Handlers & Conversation Thread
+    window.openTicket = async function(ticketId) {
+      activeTicketId = ticketId;
+      const modal = document.getElementById('chatModal');
+      const thread = document.getElementById('modalThread');
+      modal.classList.add('active');
+
+      const ticket = allTickets.find(t => t.id === ticketId);
+      if (ticket) {
+        document.getElementById('modalTicketRef').textContent = `${ticket.ticket_ref} — [${ticket.category}]`;
+        document.getElementById('modalTicketSubject').textContent = ticket.subject;
+      }
+
+      thread.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 20px;">Loading conversation...</p>`;
+
+      const { data: messages, error } = await supabase
+        .from('support_messages')
+        .select('*')
+        .eq('ticket_id', ticketId)
+        .order('created_at', { ascending: true });
+
+      if (error || !messages || messages.length === 0) {
+        thread.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 20px;">No message history found.</p>`;
+        return;
+      }
+
+      thread.innerHTML = messages.map(m => {
+        const isStaff = m.is_staff;
+        return `
+          <div class="msg-bubble ${isStaff ? 'staff' : 'user'}">
+            <span style="font-size: 0.72rem; font-weight: 700; color: ${isStaff ? 'var(--bright-gold)' : 'var(--primary-green)'}; display: block; margin-bottom: 2px;">
+              ${isStaff ? '✦ Staff Response' : 'Investor Message'}
+            </span>
+            <div>${escapeHtml(m.message)}</div>
+            ${m.attachment_url ? `
+              <div style="margin-top: 6px;">
+                <button type="button" class="btn-receipt" onclick="viewAttachment('${m.attachment_url}')">📎 View Attachment</button>
+              </div>
+            ` : ''}
+            <span style="font-size: 0.68rem; opacity: 0.7; margin-top: 4px; display: block; text-align: right;">${formatDate(m.created_at)}</span>
+          </div>
+        `;
+      }).join('');
+
+      thread.scrollTop = thread.scrollHeight;
+    };
+
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+      document.getElementById('chatModal').classList.remove('active');
+    });
+
+    // Send Reply Form Submission
+    document.getElementById('modalReplyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('replyMessageInput');
+      const btn = document.getElementById('sendReplyBtn');
+      const statusSelect = document.getElementById('statusSelect');
+      const msg = input.value.trim();
+
       if (!msg) return;
 
-      const { data, error } = await supabase.rpc('reply_support_ticket', {
-        p_ticket_id: id,
-        p_sender_id: currentSession.user.id,
-        p_message: msg,
-        p_attachment_url: null
-      });
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
 
-      if (error || !data.success) alert('Failed to send reply');
-      else {
-        alert('Response dispatched to user.');
+      try {
+        // 1. Post reply through RPC (which verifies staff role and dispatches user notification)
+        const { data, error } = await supabase.rpc('reply_support_ticket', {
+          p_ticket_id: activeTicketId,
+          p_sender_id: currentSession.user.id,
+          p_message: msg,
+          p_attachment_url: null
+        });
+
+        if (error || !data.success) {
+          throw new Error(data?.error || error?.message || 'Failed to send reply');
+        }
+
+        // 2. Update status if custom choice selected
+        const chosenStatus = statusSelect.value;
+        if (chosenStatus) {
+          await supabase
+            .from('support_tickets')
+            .update({ status: chosenStatus, updated_at: new Date().toISOString() })
+            .eq('id', activeTicketId);
+        }
+
+        input.value = '';
+        alert('Response dispatched successfully to investor!');
+        openTicket(activeTicketId);
         loadTickets();
+
+      } catch (err) {
+        alert(err.message || 'Error dispatching reply');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Response';
       }
+    });
+
+    window.viewAttachment = async function(path) {
+      const { data } = await supabase.storage.from('support-attachments').createSignedUrl(path, 600);
+      if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+      else alert('Could not load attachment.');
     };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
 
     loadTickets();
   </script>
