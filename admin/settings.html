@@ -16,6 +16,15 @@
       font-size: 0.95rem;
       background: var(--cream-white);
     }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
   </style>
 </head>
 <body>
@@ -28,6 +37,8 @@
           <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Platform Configuration</span>
           <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Central Website Settings</h1>
         </div>
+
+        <div id="alertBanner" class="alert-banner"></div>
 
         <!-- Deposit Configuration -->
         <form class="astra-card" id="depositConfigForm">
@@ -50,10 +61,10 @@
 
           <div class="form-group">
             <label for="minDep">Minimum Deposit (₦)</label>
-            <input type="number" id="minDep" class="form-control" required min="1000">
+            <input type="number" id="minDep" class="form-control" required min="1" step="any" placeholder="e.g. 5000">
           </div>
 
-          <button type="submit" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">
+          <button type="submit" id="saveDepBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">
             Save Deposit Settings
           </button>
         </form>
@@ -64,15 +75,16 @@
 
           <div class="form-group">
             <label for="minWith">Minimum Withdrawal (₦)</label>
-            <input type="number" id="minWith" class="form-control" required min="1000">
+            <!-- min="1" allows any custom amount like 600, 500, 100, etc. -->
+            <input type="number" id="minWith" class="form-control" required min="1" step="any" placeholder="e.g. 600">
           </div>
 
           <div class="form-group">
             <label for="feePercent">Withdrawal Fee Percentage (%)</label>
-            <input type="number" id="feePercent" class="form-control" required min="0" max="25" step="0.5">
+            <input type="number" id="feePercent" class="form-control" required min="0" max="100" step="any" placeholder="e.g. 5">
           </div>
 
-          <button type="submit" class="btn-emerald" style="width: 100%; padding: 12px; margin-top: 8px;">
+          <button type="submit" id="saveWithBtn" class="btn-emerald" style="width: 100%; padding: 12px; margin-top: 8px;">
             Save Withdrawal Settings
           </button>
         </form>
@@ -85,6 +97,15 @@
     import { supabase } from '../shared/supabase-client.js';
 
     let currentSession = null;
+    const alertBanner = document.getElementById('alertBanner');
+
+    function notify(msg, isError = false) {
+      alertBanner.textContent = msg;
+      alertBanner.className = isError ? 'alert-banner error' : 'alert-banner success';
+      alertBanner.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      alert(msg);
+    }
 
     async function loadSettings() {
       const auth = await initAdminNavigation();
@@ -92,7 +113,7 @@
       currentSession = auth.session;
 
       // 1. Load Deposit Config
-      const { data: depCfg } = await supabase.from('site_settings').select('value').eq('key', 'deposit_config').single();
+      const { data: depCfg } = await supabase.from('site_settings').select('value').eq('key', 'deposit_config').maybeSingle();
       if (depCfg?.value) {
         document.getElementById('bankName').value = depCfg.value.bank_name || '';
         document.getElementById('accName').value = depCfg.value.account_name || '';
@@ -101,15 +122,19 @@
       }
 
       // 2. Load Withdrawal Config
-      const { data: withCfg } = await supabase.from('site_settings').select('value').eq('key', 'withdrawal_config').single();
+      const { data: withCfg } = await supabase.from('site_settings').select('value').eq('key', 'withdrawal_config').maybeSingle();
       if (withCfg?.value) {
         document.getElementById('minWith').value = withCfg.value.min_withdrawal || 3000;
-        document.getElementById('feePercent').value = withCfg.value.fee_value || 5;
+        document.getElementById('feePercent').value = withCfg.value.fee_value !== undefined ? withCfg.value.fee_value : 5;
       }
 
       // Handlers
       document.getElementById('depositConfigForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const btn = document.getElementById('saveDepBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving Deposit Settings...';
+
         const value = {
           bank_name: document.getElementById('bankName').value.trim(),
           account_name: document.getElementById('accName').value.trim(),
@@ -117,33 +142,63 @@
           min_deposit: Number(document.getElementById('minDep').value),
           is_enabled: true
         };
-        saveSetting('deposit_config', value);
+
+        await saveSetting('deposit_config', value);
+        btn.disabled = false;
+        btn.textContent = 'Save Deposit Settings';
       });
 
       document.getElementById('withConfigForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const btn = document.getElementById('saveWithBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving Withdrawal Settings...';
+
         const value = {
           min_withdrawal: Number(document.getElementById('minWith').value),
           fee_value: Number(document.getElementById('feePercent').value),
           fee_type: 'percentage',
           is_enabled: true
         };
-        saveSetting('withdrawal_config', value);
+
+        await saveSetting('withdrawal_config', value);
+        btn.disabled = false;
+        btn.textContent = 'Save Withdrawal Settings';
       });
     }
 
     async function saveSetting(key, value) {
-      const res = await fetch('/api/admin/update-settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentSession.access_token}`
-        },
-        body: JSON.stringify({ key, value })
-      });
-      const data = await res.json();
-      if (!data.success) alert(data.error || 'Failed');
-      else alert('Settings saved successfully!');
+      alertBanner.style.display = 'none';
+
+      try {
+        // Fast direct atomic RPC execution
+        const { data, error } = await supabase.rpc('admin_update_site_setting', {
+          p_admin_id: currentSession.user.id,
+          p_key: key,
+          p_value: value
+        });
+
+        if (error || !data.success) {
+          // Fallback to API route if RPC fails
+          const res = await fetch('/api/admin/update-settings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentSession.access_token}`
+            },
+            body: JSON.stringify({ key, value })
+          });
+          const apiData = await res.json();
+          if (!apiData.success) {
+            notify(apiData.error || error?.message || 'Failed to update settings.', true);
+            return;
+          }
+        }
+
+        notify(`Settings for "${key === 'withdrawal_config' ? 'Withdrawals' : 'Deposits'}" saved successfully!`);
+      } catch (err) {
+        notify('Network error saving settings: ' + err.message, true);
+      }
     }
 
     loadSettings();
