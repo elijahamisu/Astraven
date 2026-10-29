@@ -71,6 +71,11 @@
       if (!auth) return;
       currentSession = auth.session;
 
+      // Auto-populate from URL if present (?userId=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const uidParam = urlParams.get('userId');
+      if (uidParam) document.getElementById('targetUser').value = uidParam;
+
       document.getElementById('adjustForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
