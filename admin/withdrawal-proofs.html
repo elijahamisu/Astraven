@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moderation & Proof Review | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Content Governance</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Community Proof Moderation</h1>
+      </div>
+
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive" id="postsModContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading submissions...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+    import { formatDate } from '../shared/formatters.js';
+
+    let currentSession = null;
+
+    async function loadPosts() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+      currentSession = auth.session;
+
+      const { data: posts, error } = await supabase
+        .from('blog_posts')
+        .select(`*, profiles(username)`)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      const container = document.getElementById('postsModContainer');
+      if (error || !posts || posts.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No community posts awaiting review.</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
+          <thead>
+            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
+              <th style="padding: 12px;">Author / Title</th>
+              <th style="padding: 12px;">Proof Attachment</th>
+              <th style="padding: 12px;">Date</th>
+              <th style="padding: 12px;">Status</th>
+              <th style="padding: 12px;">Moderation Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${posts.map(p => `
+              <tr style="border-bottom: 1px solid #ECECEC;">
+                <td style="padding: 12px;">
+                  <strong style="color: var(--deep-forest); font-size: 0.95rem;">${p.title}</strong>
+                  <div style="font-size: 0.75rem; color: var(--secondary-text);">@${p.profiles?.username || 'user'}</div>
+                  <p style="font-size: 0.8rem; color: var(--primary-text); margin-top: 4px;">${p.content.substring(0, 100)}...</p>
+                </td>
+                <td style="padding: 12px;">
+                  ${p.image_url ? `
+                    <a href="${p.image_url}" target="_blank" style="color: var(--primary-green); font-weight: 700; text-decoration: none;">[View Receipt Proof]</a>
+                  ` : 'None'}
+                </td>
+                <td style="padding: 12px; color: var(--secondary-text); font-size: 0.75rem;">${formatDate(p.created_at)}</td>
+                <td style="padding: 12px;"><span class="badge-status ${p.status === 'approved' ? 'badge-completed' : (p.status === 'pending' ? 'badge-pending' : 'badge-failed')}">${p.status}</span></td>
+                <td style="padding: 12px;">
+                  ${p.status === 'pending' ? `
+                    <button class="btn-gold" style="padding: 6px 12px; font-size: 0.75rem; margin-right: 4px;" onclick="modPost('${p.id}', 'approved')">Approve + Bonus</button>
+                    <button class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem;" onclick="modPost('${p.id}', 'rejected')">Reject</button>
+                  ` : `
+                    <span style="font-size: 0.75rem; color: var(--secondary-text);">Reviewed</span>
+                  `}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    window.modPost = async function(id, decision) {
+      let bonus = 0;
+      let reason = null;
+
+      if (decision === 'approved') {
+        const b = prompt('Optional posting bonus amount to award to user wallet (₦, enter 0 for none):', '500');
+        bonus = Number(b) || 0;
+      } else {
+        reason = prompt('Enter rejection reason:');
+        if (!reason) return;
+      }
+
+      const { data, error } = await supabase.rpc('admin_moderate_post', {
+        p_admin_id: currentSession.user.id,
+        p_post_id: id,
+        p_decision: decision,
+        p_rejection_reason: reason,
+        p_bonus_amount: bonus
+      });
+
+      if (error || !data.success) alert('Moderation failed');
+      else {
+        alert(`Post ${decision}.`);
+        loadPosts();
+      }
+    };
+
+    loadPosts();
+  </script>
+</body>
+</html>
