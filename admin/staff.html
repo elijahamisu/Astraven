@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Permissions | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .staff-wrap { max-width: 640px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div class="staff-wrap">
+        <div style="margin-bottom: 24px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Role-Based Access Control</span>
+          <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Staff Role Management</h1>
+        </div>
+
+        <form class="astra-card" id="staffRoleForm" style="margin-bottom: 24px;">
+          <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 12px;">Assign Staff Clearance</h2>
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            <input type="text" id="targetStaffId" class="form-control" placeholder="Target User UUID" required>
+            <select id="staffRole" class="form-control" required>
+              <option value="support_agent">Support Agent (Helpdesk Clearance)</option>
+              <option value="admin">Administrator (Financial & Product Clearance)</option>
+              <option value="superadmin">Superadministrator (Full Clearance)</option>
+              <option value="user">Revoke to Standard User</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-gold" style="width: 100%; padding: 12px;">Apply Role</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+
+    let currentSession = null;
+
+    async function init() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+      currentSession = auth.session;
+
+      document.getElementById('staffRoleForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const targetUserId = document.getElementById('targetStaffId').value.trim();
+        const role = document.getElementById('staffRole').value;
+
+        const { data, error } = await supabase.rpc('admin_manage_staff_role', {
+          p_admin_id: currentSession.user.id,
+          p_target_user_id: targetUserId,
+          p_role: role
+        });
+
+        if (error || !data.success) alert(data?.error || 'Failed to assign role');
+        else {
+          alert(`Permissions updated to ${role}.`);
+          document.getElementById('staffRoleForm').reset();
+        }
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
