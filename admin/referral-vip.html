@@ -5,23 +5,263 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Referral VIP Tiers | ASTRAVEN Admin</title>
   <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .page-header-wrap { margin-bottom: 20px; }
+    .header-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--metallic-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .header-title {
+      font-size: clamp(1.5rem, 5vw, 2.1rem);
+      color: var(--deep-forest);
+      line-height: 1.2;
+    }
+
+    /* Mobile Tier Cards Feed */
+    .tiers-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tier-card {
+      background: var(--white);
+      border: 1.5px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 14px rgba(0, 43, 26, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .tier-card:hover {
+      border-color: var(--metallic-gold);
+      box-shadow: 0 6px 18px rgba(0, 43, 26, 0.12);
+    }
+
+    .tier-top-bar {
+      background: #FAFAFA;
+      padding: 12px 16px;
+      border-bottom: 1px solid #ECECEC;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tier-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--metallic-gold);
+      background: var(--deep-forest);
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+    .tier-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--deep-forest);
+    }
+
+    .tier-body {
+      padding: 16px;
+    }
+
+    /* Salary Highlight Box */
+    .salary-box {
+      background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
+      border: 1px solid var(--metallic-gold);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--white);
+      margin-bottom: 14px;
+    }
+    .salary-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--soft-gold);
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+      display: block;
+    }
+    .salary-val {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--bright-gold);
+    }
+
+    /* Requirements Grid */
+    .reqs-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: var(--cream-white);
+      border: 1px solid #E5E7EB;
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .req-item-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: var(--secondary-text);
+      display: block;
+      margin-bottom: 2px;
+    }
+    .req-item-val {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--deep-forest);
+    }
+
+    /* Action Button */
+    .btn-edit-tier {
+      width: 100%;
+      background: linear-gradient(135deg, var(--bright-gold) 0%, var(--metallic-gold) 100%);
+      color: var(--deep-forest);
+      border: 1px solid var(--metallic-gold);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(212, 175, 55, 0.25);
+    }
+    .btn-edit-tier:hover {
+      filter: brightness(1.06);
+    }
+
+    /* Edit Tier Modal */
+    .tier-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 43, 26, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .tier-modal.active { display: flex; }
+    .tier-modal-box {
+      background: var(--white);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control {
+      padding: 10px 12px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+
+    .empty-state-box {
+      background: var(--white);
+      border: 1.5px dashed rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius-md);
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--secondary-text);
+    }
+
+    @media (min-width: 768px) {
+      .tiers-feed {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
     <div id="adminNavigationContainer"></div>
 
     <main class="main-content">
-      <div style="margin-bottom: 24px;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Leadership Governance</span>
-        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Referral VIP Tier Requirements</h1>
+      <div class="page-header-wrap">
+        <span class="header-tag">✦ Leadership Governance</span>
+        <h1 class="header-title font-heading">Referral VIP Requirements</h1>
       </div>
 
-      <div class="astra-card" style="padding: 0; overflow: hidden;">
-        <div class="table-responsive" id="vipTiersContainer">
-          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading VIP levels...</p>
+      <!-- Mobile-First Tiers Stack -->
+      <div class="tiers-feed" id="tiersFeed">
+        <div class="empty-state-box">
+          <p>Loading VIP tier requirements...</p>
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Interactive Edit Tier Modal -->
+  <div class="tier-modal" id="tierModal">
+    <div class="tier-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.25rem; color: var(--deep-forest);" id="modalHeaderTitle">Edit VIP Tier</h2>
+        <button id="closeModalBtn" type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary-text); padding: 4px;">&times;</button>
+      </div>
+
+      <form id="editTierForm">
+        <input type="hidden" id="editLevel">
+
+        <div class="form-group">
+          <label for="editName">Tier Name</label>
+          <input type="text" id="editName" class="form-control" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label for="editDaily">Daily Salary (₦)</label>
+            <input type="number" id="editDaily" class="form-control" min="0" step="any" required>
+          </div>
+          <div class="form-group">
+            <label for="editMonthly">Monthly Salary (₦)</label>
+            <input type="number" id="editMonthly" class="form-control" min="0" step="any" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editDownlines">Required Active Downlines</label>
+          <input type="number" id="editDownlines" class="form-control" min="1" required>
+        </div>
+
+        <div class="form-group">
+          <label for="editTeam">Required Team Deposit Volume (₦)</label>
+          <input type="number" id="editTeam" class="form-control" min="0" step="any" required>
+        </div>
+
+        <div class="form-group">
+          <label for="editPersonal">Required Personal Deposit (₦)</label>
+          <input type="number" id="editPersonal" class="form-control" min="0" step="any" required>
+        </div>
+
+        <button type="submit" id="saveTierBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 10px;">
+          Save Tier Configuration
+        </button>
+      </form>
+    </div>
   </div>
 
   <script type="module">
@@ -29,47 +269,142 @@
     import { supabase } from '../shared/supabase-client.js';
     import { formatCurrency } from '../shared/formatters.js';
 
+    let currentSession = null;
+    let allTiers = [];
+
     async function loadTiers() {
       const auth = await initAdminNavigation();
       if (!auth) return;
+      currentSession = auth.session;
+
+      const container = document.getElementById('tiersFeed');
 
       const { data: tiers, error } = await supabase
         .from('referral_vip_levels')
         .select('*')
         .order('level', { ascending: true });
 
-      const container = document.getElementById('vipTiersContainer');
       if (error || !tiers || tiers.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No tiers configured.</p>`;
+        container.innerHTML = `<div class="empty-state-box" style="grid-column: 1 / -1;"><p>No VIP tiers configured.</p></div>`;
         return;
       }
 
-      container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
-          <thead>
-            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
-              <th style="padding: 12px;">Level</th>
-              <th style="padding: 12px;">Daily Salary</th>
-              <th style="padding: 12px;">Monthly Salary</th>
-              <th style="padding: 12px;">Req. Downlines</th>
-              <th style="padding: 12px;">Req. Team Volume</th>
-              <th style="padding: 12px;">Req. Personal Dep</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${tiers.map(t => `
-              <tr style="border-bottom: 1px solid #ECECEC;">
-                <td style="padding: 12px; font-weight: 700; color: var(--deep-forest);">${t.name}</td>
-                <td style="padding: 12px; font-weight: 700; color: var(--metallic-gold);">${formatCurrency(t.daily_salary)}</td>
-                <td style="padding: 12px; font-weight: 700; color: var(--primary-green);">${formatCurrency(t.monthly_salary)}</td>
-                <td style="padding: 12px;">${t.required_active_downlines} Active</td>
-                <td style="padding: 12px;">${formatCurrency(t.required_team_deposits)}</td>
-                <td style="padding: 12px;">${formatCurrency(t.required_personal_deposit)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
+      allTiers = tiers;
+
+      container.innerHTML = tiers.map(t => `
+        <div class="tier-card" id="card-${t.level}">
+          <!-- Top Bar -->
+          <div class="tier-top-bar">
+            <span class="tier-name">${escapeHtml(t.name)}</span>
+            <span class="tier-badge">TIER #${t.level}</span>
+          </div>
+
+          <!-- Body -->
+          <div class="tier-body">
+            <!-- Salary Box -->
+            <div class="salary-box">
+              <div>
+                <span class="salary-label">DAILY SALARY</span>
+                <div class="salary-val">${formatCurrency(t.daily_salary)}</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="salary-label">MONTHLY SALARY</span>
+                <div class="salary-val" style="color: var(--white);">${formatCurrency(t.monthly_salary)}</div>
+              </div>
+            </div>
+
+            <!-- Requirements Grid -->
+            <div class="reqs-grid">
+              <div>
+                <span class="req-item-label">Downlines</span>
+                <div class="req-item-val">${t.required_active_downlines} Active</div>
+              </div>
+              <div>
+                <span class="req-item-label">Team Volume</span>
+                <div class="req-item-val" style="color: var(--primary-green);">${formatCurrency(t.required_team_deposits)}</div>
+              </div>
+              <div>
+                <span class="req-item-label">Personal Dep</span>
+                <div class="req-item-val">${formatCurrency(t.required_personal_deposit)}</div>
+              </div>
+            </div>
+
+            <!-- Edit Button -->
+            <button class="btn-edit-tier" onclick="openEditModal(${t.level})">
+              <span>✏️</span>
+              <span>Edit Tier Settings</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Modal Opening with Current Values Prefilled
+    window.openEditModal = function(level) {
+      const tier = allTiers.find(t => t.level === level);
+      if (!tier) return;
+
+      document.getElementById('modalHeaderTitle').textContent = `Edit ${tier.name}`;
+      document.getElementById('editLevel').value = tier.level;
+      document.getElementById('editName').value = tier.name;
+      document.getElementById('editDaily').value = tier.daily_salary;
+      document.getElementById('editMonthly').value = tier.monthly_salary;
+      document.getElementById('editDownlines').value = tier.required_active_downlines;
+      document.getElementById('editTeam').value = tier.required_team_deposits;
+      document.getElementById('editPersonal').value = tier.required_personal_deposit;
+
+      document.getElementById('tierModal').classList.add('active');
+    };
+
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+      document.getElementById('tierModal').classList.remove('active');
+    });
+
+    // Save Updated Tier Settings
+    document.getElementById('editTierForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('saveTierBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving Tier Configuration...';
+
+      const level = Number(document.getElementById('editLevel').value);
+      const name = document.getElementById('editName').value.trim();
+      const dailySalary = Number(document.getElementById('editDaily').value);
+      const monthlySalary = Number(document.getElementById('editMonthly').value);
+      const requiredDownlines = Number(document.getElementById('editDownlines').value);
+      const requiredTeam = Number(document.getElementById('editTeam').value);
+      const requiredPersonal = Number(document.getElementById('editPersonal').value);
+
+      try {
+        const { data, error } = await supabase.rpc('admin_update_referral_vip_tier', {
+          p_admin_id: currentSession.user.id,
+          p_level: level,
+          p_name: name,
+          p_daily_salary: dailySalary,
+          p_monthly_salary: monthlySalary,
+          p_required_downlines: requiredDownlines,
+          p_required_team_deposits: requiredTeam,
+          p_required_personal_deposit: requiredPersonal
+        });
+
+        if (error || !data?.success) {
+          alert('Failed to update tier: ' + (data?.error || error?.message || 'Error'));
+        } else {
+          alert(`${name} updated successfully!`);
+          document.getElementById('tierModal').classList.remove('active');
+          loadTiers();
+        }
+      } catch (err) {
+        alert('Server communication error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Tier Configuration';
+      }
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
     }
 
     loadTiers();
