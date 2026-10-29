@@ -11,17 +11,17 @@
     <div id="adminNavigationContainer"></div>
 
     <main class="main-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <div>
-          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Aviation Catalogues</span>
-          <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Product Portfolios</h1>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Aviation Syndicates</span>
+          <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Product Catalog</h1>
         </div>
-        <a href="product-create.html" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">+ Create New Product</a>
+        <a href="product-create.html" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">+ Create New Package</a>
       </div>
 
       <div class="astra-card" style="padding: 0; overflow: hidden;">
         <div class="table-responsive" id="productsTableContainer">
-          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading catalogues...</p>
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading flight packages...</p>
         </div>
       </div>
     </main>
@@ -32,21 +32,21 @@
     import { supabase } from '../shared/supabase-client.js';
     import { formatCurrency } from '../shared/formatters.js';
 
-    let currentAdmin = null;
+    let currentSession = null;
 
     async function loadProducts() {
       const auth = await initAdminNavigation();
       if (!auth) return;
-      currentAdmin = auth.session.user;
+      currentSession = auth.session;
 
-      const { data: products, error } = await supabase
+      const { data: prods, error } = await supabase
         .from('products')
         .select(`*, product_categories(name, slug)`)
         .order('price', { ascending: true });
 
       const container = document.getElementById('productsTableContainer');
-      if (error || !products || products.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No products configured.</p>`;
+      if (error || !prods || prods.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No packages configured.</p>`;
         return;
       }
 
@@ -56,33 +56,33 @@
             <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
               <th style="padding: 12px;">Code / Name</th>
               <th style="padding: 12px;">Category</th>
-              <th style="padding: 12px;">Price</th>
-              <th style="padding: 12px;">Duration</th>
-              <th style="padding: 12px;">Payout Term</th>
+              <th style="padding: 12px;">Cost</th>
+              <th style="padding: 12px;">Cycle</th>
+              <th style="padding: 12px;">Daily Settlement</th>
+              <th style="padding: 12px;">Total Payout</th>
               <th style="padding: 12px;">Status</th>
-              <th style="padding: 12px;">Actions</th>
+              <th style="padding: 12px;">Action</th>
             </tr>
           </thead>
           <tbody>
-            ${products.map(p => `
+            ${prods.map(p => `
               <tr style="border-bottom: 1px solid #ECECEC;">
                 <td style="padding: 12px;">
-                  <strong style="color: var(--deep-forest);">${p.name}</strong>
-                  <div style="font-family: monospace; font-size: 0.75rem; color: var(--secondary-text);">${p.code}</div>
+                  <strong style="color: var(--deep-forest); font-family: monospace;">${p.code}</strong>
+                  <div style="font-size: 0.75rem; color: var(--secondary-text);">${p.name}</div>
                 </td>
-                <td style="padding: 12px;">${p.product_categories?.name || '—'}</td>
+                <td style="padding: 12px; font-weight: 600;">${p.product_categories?.name || 'VIP'}</td>
                 <td style="padding: 12px; font-weight: 700; color: var(--primary-green);">${formatCurrency(p.price)}</td>
                 <td style="padding: 12px;">${p.duration_days} Days</td>
-                <td style="padding: 12px; font-size: 0.8rem;">
-                  ${p.payout_type === 'daily' ? `${formatCurrency(p.daily_income)}/day` : `Maturity: ${formatCurrency(p.total_payout)}`}
-                </td>
+                <td style="padding: 12px; color: var(--metallic-gold); font-weight: 700;">${p.daily_income > 0 ? formatCurrency(p.daily_income) : '—'}</td>
+                <td style="padding: 12px; font-weight: 700;">${formatCurrency(p.total_payout)}</td>
                 <td style="padding: 12px;">
                   <span class="badge-status ${p.is_active ? 'badge-completed' : 'badge-pending'}">
-                    ${p.is_active ? 'Active' : 'Coming Soon'}
+                    ${p.is_active ? 'Active' : 'Closed'}
                   </span>
                 </td>
                 <td style="padding: 12px;">
-                  <button class="btn-emerald" style="padding: 5px 10px; font-size: 0.75rem;" onclick="toggleActive('${p.id}', ${!p.is_active})">
+                  <button class="${p.is_active ? 'btn-emerald' : 'btn-gold'}" style="padding: 6px 12px; font-size: 0.75rem;" onclick="toggleStatus('${p.id}', ${!p.is_active})">
                     ${p.is_active ? 'Deactivate' : 'Activate'}
                   </button>
                 </td>
@@ -93,14 +93,13 @@
       `;
     }
 
-    window.toggleActive = async function(productId, state) {
-      const { data, error } = await supabase.rpc('admin_toggle_product_active', {
-        p_admin_id: currentAdmin.id,
-        p_product_id: productId,
-        p_is_active: state
+    window.toggleStatus = async function(id, newState) {
+      const { data, error } = await supabase.rpc('admin_toggle_product_status', {
+        p_admin_id: currentSession.user.id,
+        p_product_id: id,
+        p_is_active: newState
       });
-
-      if (error || !data.success) alert(data?.error || error?.message || 'Failed');
+      if (error || !data.success) alert('Failed to update product state');
       else loadProducts();
     };
 
