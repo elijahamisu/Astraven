@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dossier | ASTRAVEN Admin</title>
+  <title>User Profile Dossier | ASTRAVEN Admin</title>
   <link rel="stylesheet" href="../shared/theme.css">
   <style>
-    .dossier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .dossier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .dossier-cell { background: var(--light-gold-bg); padding: 14px; border-radius: var(--radius-sm); border: 1px solid rgba(212, 175, 55, 0.3); }
   </style>
 </head>
 <body>
@@ -14,21 +15,15 @@
     <div id="adminNavigationContainer"></div>
 
     <main class="main-content">
-      <div style="margin-bottom: 16px;">
-        <a href="users.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none;">← Back to Users List</a>
-        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest); margin-top: 6px;" id="userHeading">Investor Dossier</h1>
+      <div style="margin-bottom: 20px;">
+        <a href="users.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 12px;">
+          ← Back to User Directory
+        </a>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">User Dossier</h1>
       </div>
 
-      <div class="dossier-grid" id="dossierCards">
-        <p style="color: var(--secondary-text);">Loading user details...</p>
-      </div>
-
-      <div class="astra-card" style="margin-bottom: 24px;">
-        <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 14px;">Administrative Actions</h2>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button id="toggleSuspendBtn" class="btn-emerald">Loading...</button>
-          <a id="adjustWalletBtn" class="btn-gold" style="text-decoration: none;">Adjust Wallet Balance</a>
-        </div>
+      <div class="astra-card" id="userDossierContainer">
+        <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Compiling dossier...</p>
       </div>
     </main>
   </div>
@@ -38,69 +33,102 @@
     import { supabase } from '../shared/supabase-client.js';
     import { formatCurrency, formatDate } from '../shared/formatters.js';
 
-    let currentAdmin = null;
+    let currentSession = null;
     let targetUserId = null;
-    let isCurrentlySuspended = false;
 
     async function loadDossier() {
       const auth = await initAdminNavigation();
       if (!auth) return;
-      currentAdmin = auth.session.user;
+      currentSession = auth.session;
 
       const urlParams = new URLSearchParams(window.location.search);
       targetUserId = urlParams.get('id');
-      if (!targetUserId) return;
+
+      const container = document.getElementById('userDossierContainer');
+      if (!targetUserId) {
+        container.innerHTML = `<p style="color: var(--error-red);">No user ID provided.</p>`;
+        return;
+      }
 
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', targetUserId).single();
       const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', targetUserId).single();
+      const { data: roleRow } = await supabase.from('user_roles').select('role').eq('user_id', targetUserId).maybeSingle();
 
-      if (!profile) return;
-      isCurrentlySuspended = profile.is_suspended;
+      if (!profile) {
+        container.innerHTML = `<p style="color: var(--error-red);">Account not found.</p>`;
+        return;
+      }
 
-      document.getElementById('userHeading').textContent = `Dossier: @${profile.username}`;
-      document.getElementById('adjustWalletBtn').href = `wallet-adjustments.html?user_id=${profile.id}`;
-
-      const suspendBtn = document.getElementById('toggleSuspendBtn');
-      suspendBtn.textContent = isCurrentlySuspended ? 'Reactivate Account' : 'Suspend Account';
-      suspendBtn.onclick = handleToggleSuspend;
-
-      document.getElementById('dossierCards').innerHTML = `
-        <div class="astra-card">
-          <h3 style="font-size: 1.1rem; color: var(--deep-forest); margin-bottom: 10px;">Identity</h3>
-          <p><strong>Full Name:</strong> ${profile.full_name || '—'}</p>
-          <p><strong>Username:</strong> @${profile.username}</p>
-          <p><strong>Phone:</strong> ${profile.phone || '—'}</p>
-          <p><strong>Referral Code:</strong> ${profile.referral_code}</p>
-          <p><strong>Status:</strong> ${profile.is_suspended ? 'Suspended' : 'Active'}</p>
-          <p><strong>Registered:</strong> ${formatDate(profile.created_at)}</p>
+      container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ECECEC; padding-bottom: 14px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 1.4rem; color: var(--deep-forest);">@${profile.username}</h2>
+            <span style="font-size: 0.8rem; color: var(--secondary-text); font-family: monospace;">UUID: ${profile.id}</span>
+          </div>
+          <div>
+            <button id="suspendToggleBtn" class="${profile.is_suspended ? 'btn-gold' : 'btn-emerald'}" style="padding: 8px 16px; font-size: 0.82rem;">
+              ${profile.is_suspended ? 'Reactivate Account' : 'Suspend Account'}
+            </button>
+          </div>
         </div>
-        <div class="astra-card">
-          <h3 style="font-size: 1.1rem; color: var(--deep-forest); margin-bottom: 10px;">Wallet Balances</h3>
-          <p><strong>Available:</strong> ${formatCurrency(wallet?.balance || 0)}</p>
-          <p><strong>Reserved (Pending):</strong> ${formatCurrency(wallet?.reserved_balance || 0)}</p>
-          <p><strong>Total Deposited:</strong> ${formatCurrency(wallet?.total_deposited || 0)}</p>
-          <p><strong>Total Withdrawn:</strong> ${formatCurrency(wallet?.total_withdrawn || 0)}</p>
-          <p><strong>Total Earned:</strong> ${formatCurrency(wallet?.total_earned || 0)}</p>
+
+        <div class="dossier-grid">
+          <div class="dossier-cell">
+            <span style="font-size: 0.72rem; color: var(--secondary-text); text-transform: uppercase;">FULL NAME</span>
+            <div style="font-weight: 700; color: var(--deep-forest); font-size: 1rem;">${profile.full_name || '—'}</div>
+          </div>
+          <div class="dossier-cell">
+            <span style="font-size: 0.72rem; color: var(--secondary-text); text-transform: uppercase;">PHONE</span>
+            <div style="font-weight: 700; color: var(--deep-forest);">${profile.phone || '—'}</div>
+          </div>
+          <div class="dossier-cell">
+            <span style="font-size: 0.72rem; color: var(--secondary-text); text-transform: uppercase;">AFFILIATE CODE</span>
+            <div style="font-weight: 700; color: var(--metallic-gold); font-family: monospace;">${profile.referral_code}</div>
+          </div>
+          <div class="dossier-cell">
+            <span style="font-size: 0.72rem; color: var(--secondary-text); text-transform: uppercase;">SYSTEM ROLE</span>
+            <div style="font-weight: 700; color: var(--primary-green);">${roleRow?.role?.toUpperCase() || 'USER'}</div>
+          </div>
+          <div class="dossier-cell">
+            <span style="font-size: 0.72rem; color: var(--secondary-text); text-transform: uppercase;">AVAILABLE WALLET</span>
+            <div style="font-weight: 700; color: var(--primary-green); font-size: 1.2rem;">${formatCurrency(wallet?.balance || 0)}</div>
+          </div>
+          <div class="dossier-cell">
+            <span style="font-size: 0.72rem; color: var(--secondary-text); text-transform: uppercase;">RESERVED FUNDS</span>
+            <div style="font-weight: 700;">${formatCurrency(wallet?.reserved_balance || 0)}</div>
+          </div>
+          <div class="dossier-cell">
+            <span style="font-size: 0.72rem; color: var(--secondary-text); text-transform: uppercase;">TOTAL DEPOSITED</span>
+            <div style="font-weight: 700;">${formatCurrency(wallet?.total_deposited || 0)}</div>
+          </div>
+          <div class="dossier-cell">
+            <span style="font-size: 0.72rem; color: var(--secondary-text); text-transform: uppercase;">TOTAL WITHDRAWN</span>
+            <div style="font-weight: 700;">${formatCurrency(wallet?.total_withdrawn || 0)}</div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <a href="wallet-adjustments.html?userId=${profile.id}" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">Adjust Wallet</a>
         </div>
       `;
-    }
 
-    async function handleToggleSuspend() {
-      const reason = prompt('Enter administrative reason for status change:');
-      if (!reason) return;
+      document.getElementById('suspendToggleBtn').addEventListener('click', async () => {
+        const reason = prompt('State administrative reason:');
+        if (!reason) return;
 
-      const { data, error } = await supabase.rpc('admin_toggle_user_suspension', {
-        p_target_user_id: targetUserId,
-        p_admin_id: currentAdmin.id,
-        p_suspend: !isCurrentlySuspended,
-        p_reason: reason
+        const { data, error } = await supabase.rpc('admin_toggle_user_suspension', {
+          p_admin_id: currentSession.user.id,
+          p_user_id: targetUserId,
+          p_suspend: !profile.is_suspended,
+          p_reason: reason
+        });
+
+        if (error || !data.success) alert(data?.error || 'Failed');
+        else {
+          alert('Account status updated.');
+          loadDossier();
+        }
       });
-
-      if (error || !data.success) alert(data?.error || error?.message || 'Failed');
-      else {
-        alert('User status updated successfully.');
-        window.location.reload();
-      }
     }
 
     loadDossier();
