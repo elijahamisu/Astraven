@@ -6,7 +6,6 @@
   <title>Manage Deposits | ASTRAVEN Admin</title>
   <link rel="stylesheet" href="../shared/theme.css">
   <style>
-    /* Mobile-first Header & Filter Styling */
     .page-header-wrap {
       margin-bottom: 20px;
     }
@@ -24,8 +23,6 @@
       color: var(--deep-forest);
       line-height: 1.2;
     }
-
-    /* Scrollable Filter Tabs with Pill Radii */
     .filter-tabs {
       display: flex;
       gap: 8px;
@@ -57,14 +54,11 @@
       border-color: var(--metallic-gold);
       box-shadow: 0 2px 8px rgba(0, 43, 26, 0.2);
     }
-
-    /* Mobile Deposit Card Stack */
     .deposits-feed {
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
-
     .deposit-card {
       background: var(--white);
       border: 1.5px solid rgba(212, 175, 55, 0.35);
@@ -73,14 +67,7 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .deposit-card:hover {
-      border-color: var(--metallic-gold);
-      box-shadow: 0 6px 18px rgba(0, 43, 26, 0.12);
-    }
-
-    /* Card Top: Reference, Date & Status Badge */
     .card-top-bar {
       background: #FAFAFA;
       padding: 12px 16px;
@@ -95,7 +82,6 @@
       font-size: 0.88rem;
       font-weight: 700;
       color: var(--deep-forest);
-      letter-spacing: 0.02em;
     }
     .ref-date {
       font-size: 0.75rem;
@@ -103,8 +89,6 @@
       display: block;
       margin-top: 2px;
     }
-
-    /* Card Main Body: Amount & Investor */
     .card-body {
       padding: 16px;
     }
@@ -144,8 +128,6 @@
       font-size: 0.8rem;
       color: var(--secondary-text);
     }
-
-    /* Narration Box */
     .narration-box {
       background: var(--cream-white);
       border: 1px solid #E5E7EB;
@@ -168,10 +150,7 @@
       word-break: break-all;
       font-family: monospace;
       font-size: 0.82rem;
-      line-height: 1.35;
     }
-
-    /* Receipt Proof Button */
     .proof-btn {
       width: 100%;
       background: var(--light-gold-bg);
@@ -186,13 +165,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: background 0.2s;
     }
-    .proof-btn:hover {
-      background: #FCEFC9;
-    }
-
-    /* Card Action Footer: Approve / Reject Buttons */
     .card-actions-row {
       padding: 12px 16px;
       background: #FFFDF8;
@@ -214,12 +187,6 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: all 0.2s;
-      box-shadow: 0 2px 6px rgba(212, 175, 55, 0.25);
-    }
-    .btn-approve-action:hover {
-      filter: brightness(1.06);
-      transform: translateY(-1px);
     }
     .btn-reject-action {
       background: rgba(215, 25, 32, 0.08);
@@ -234,13 +201,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: all 0.2s;
     }
-    .btn-reject-action:hover {
-      background: var(--error-red);
-      color: var(--white);
-    }
-
     .settled-note {
       font-size: 0.8rem;
       color: var(--secondary-text);
@@ -249,8 +210,6 @@
       width: 100%;
       padding: 6px 0;
     }
-
-    /* Empty state */
     .empty-state-box {
       background: var(--white);
       border: 1.5px dashed rgba(212, 175, 55, 0.4);
@@ -259,8 +218,6 @@
       text-align: center;
       color: var(--secondary-text);
     }
-
-    /* Tablet and Desktop: 2-column Grid */
     @media (min-width: 768px) {
       .deposits-feed {
         display: grid;
@@ -322,7 +279,6 @@
         .limit(100);
 
       if (error) {
-        console.error('Error loading deposits:', error);
         container.innerHTML = `
           <div class="empty-state-box" style="color: var(--error-red);">
             <p><strong>Failed to load deposits:</strong> ${error.message}</p>
@@ -344,7 +300,6 @@
       allDeposits = deposits;
       renderCards('all');
 
-      // Filter listener
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -406,7 +361,7 @@
                 <div class="narration-text">${escapeHtml(d.transfer_reference || 'None provided')}</div>
               </div>
 
-              <!-- Receipt Button if Uploaded -->
+              <!-- Receipt Proof -->
               ${d.receipt_url ? `
                 <button class="proof-btn" onclick="viewReceipt('${d.receipt_url}')">
                   <span>📎</span>
@@ -415,7 +370,7 @@
               ` : ''}
             </div>
 
-            <!-- Action Footer -->
+            <!-- Action Buttons -->
             <div class="card-actions-row">
               ${isPending ? `
                 <button class="btn-approve-action" onclick="reviewDep('${d.id}', 'approved')">
@@ -437,7 +392,6 @@
       }).join('');
     }
 
-    // View receipt screenshot via Supabase signed URL
     window.viewReceipt = async function(receiptPath) {
       if (!receiptPath) return;
 
@@ -457,7 +411,7 @@
       }
     };
 
-    // Review Deposit Action
+    // Review Deposit Action: Fast direct RPC with full fallback and error display
     window.reviewDep = async function(id, decision) {
       let reason = null;
       if (decision === 'rejected') {
@@ -472,25 +426,40 @@
       }
 
       try {
-        const res = await fetch('/api/deposits/review', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentSession.access_token}`
-          },
-          body: JSON.stringify({ depositId: id, decision, rejectionReason: reason })
+        // 1. Direct RPC execution (Fastest, zero serverless timeout)
+        const { data, error } = await supabase.rpc('review_deposit_request', {
+          p_deposit_id: id,
+          p_admin_id: currentSession.user.id,
+          p_decision: decision,
+          p_rejection_reason: reason
         });
 
-        const data = await res.json();
-        if (!data.success) {
-          alert(data.error || 'Failed to review deposit.');
-          loadDeposits();
+        if (error || !data?.success) {
+          // 2. Fallback to serverless API endpoint if RPC fails
+          const res = await fetch('/api/deposits/review', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentSession.access_token}`
+            },
+            body: JSON.stringify({ depositId: id, decision, rejectionReason: reason })
+          });
+
+          const apiData = await res.json();
+          if (!apiData.success) {
+            alert('Deposit review error: ' + (apiData.error || error?.message || 'Action failed'));
+          } else {
+            alert(`Deposit ${decision} successfully!`);
+          }
         } else {
-          alert(`Deposit ${decision} successfully!`);
-          loadDeposits();
+          alert(`Deposit ${decision} successfully! User wallet credited.`);
         }
+
+        loadDeposits();
+
       } catch (err) {
-        alert('Server communication error.');
+        console.error('Fatal review error:', err);
+        alert('Action error: ' + err.message);
         loadDeposits();
       }
     };
