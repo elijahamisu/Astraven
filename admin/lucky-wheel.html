@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lucky Wheel Slots | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ RNG Prize Management</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Lucky Wheel Slot Prizes</h1>
+      </div>
+
+      <div class="astra-card" id="wheelSlotsContainer">
+        <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading slot configurations...</p>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+    import { formatCurrency } from '../shared/formatters.js';
+
+    let currentSession = null;
+
+    async function loadWheel() {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+      currentSession = auth.session;
+
+      const { data: slots, error } = await supabase
+        .from('lucky_wheel_config')
+        .select('*')
+        .order('slot_number', { ascending: true });
+
+      const container = document.getElementById('wheelSlotsContainer');
+      if (error || !slots || slots.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text);">No slots found.</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+          ${slots.map(s => `
+            <div style="background: var(--light-gold-bg); padding: 16px; border-radius: var(--radius-sm); border: 1.5px solid var(--metallic-gold);">
+              <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--deep-forest);">SLOT #${s.slot_number}</div>
+              <div style="font-size: 1.4rem; font-family: var(--font-heading); color: var(--primary-green); font-weight: 700; margin: 4px 0 10px;">
+                ${formatCurrency(s.prize_amount)}
+              </div>
+              <button class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem; width: 100%;" onclick="editSlot(${s.slot_number}, ${s.prize_amount})">
+                Update Prize Value
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    window.editSlot = async function(slotNum, currentAmt) {
+      const newAmt = prompt(`Enter new prize amount for Slot #${slotNum}:`, currentAmt);
+      if (newAmt === null) return;
+      const num = Number(newAmt);
+      if (isNaN(num) || num < 0) return alert('Invalid amount');
+
+      const { data, error } = await supabase.rpc('admin_update_lucky_wheel_slot', {
+        p_admin_id: currentSession.user.id,
+        p_slot_number: slotNum,
+        p_prize_amount: num,
+        p_label: `₦${num.toLocaleString()}`
+      });
+
+      if (error || !data.success) alert('Failed to update slot.');
+      else {
+        alert('Prize updated successfully!');
+        loadWheel();
+      }
+    };
+
+    loadWheel();
+  </script>
+</body>
+</html>
