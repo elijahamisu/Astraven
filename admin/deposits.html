@@ -6,34 +6,267 @@
   <title>Manage Deposits | ASTRAVEN Admin</title>
   <link rel="stylesheet" href="../shared/theme.css">
   <style>
-    .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+    /* Mobile-first Header & Filter Styling */
+    .page-header-wrap {
+      margin-bottom: 20px;
+    }
+    .header-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--metallic-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .header-title {
+      font-size: clamp(1.5rem, 5vw, 2.1rem);
+      color: var(--deep-forest);
+      line-height: 1.2;
+    }
+
+    /* Scrollable Filter Tabs with Pill Radii */
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+    }
+    .filter-tabs::-webkit-scrollbar {
+      display: none;
+    }
     .filter-btn {
-      padding: 8px 16px;
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(212, 175, 55, 0.4);
+      padding: 10px 18px;
+      border-radius: 9999px;
+      border: 1.5px solid rgba(212, 175, 55, 0.4);
       background: var(--white);
       color: var(--deep-forest);
-      font-size: 0.82rem;
-      font-weight: 600;
+      font-size: 0.85rem;
+      font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
     }
-    .filter-btn.active { background: var(--dark-emerald); color: var(--bright-gold); border-color: var(--bright-gold); }
-    .btn-receipt {
-      background: none;
-      border: 1px solid var(--metallic-gold);
-      color: var(--primary-green);
-      font-size: 0.75rem;
+    .filter-btn.active {
+      background: var(--deep-forest);
+      color: var(--bright-gold);
+      border-color: var(--metallic-gold);
+      box-shadow: 0 2px 8px rgba(0, 43, 26, 0.2);
+    }
+
+    /* Mobile Deposit Card Stack */
+    .deposits-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .deposit-card {
+      background: var(--white);
+      border: 1.5px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 14px rgba(0, 43, 26, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .deposit-card:hover {
+      border-color: var(--metallic-gold);
+      box-shadow: 0 6px 18px rgba(0, 43, 26, 0.12);
+    }
+
+    /* Card Top: Reference, Date & Status Badge */
+    .card-top-bar {
+      background: #FAFAFA;
+      padding: 12px 16px;
+      border-bottom: 1px solid #ECECEC;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .ref-code {
+      font-family: monospace;
+      font-size: 0.88rem;
       font-weight: 700;
-      padding: 4px 8px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 4px;
+      color: var(--deep-forest);
+      letter-spacing: 0.02em;
     }
-    .btn-receipt:hover {
+    .ref-date {
+      font-size: 0.75rem;
+      color: var(--secondary-text);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* Card Main Body: Amount & Investor */
+    .card-body {
+      padding: 16px;
+    }
+    .amount-investor-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .amount-value {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--primary-green);
+      line-height: 1.1;
+    }
+    .amount-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--secondary-text);
+      display: block;
+      margin-bottom: 2px;
+    }
+    .investor-meta {
+      text-align: right;
+    }
+    .investor-handle {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--deep-forest);
+      display: block;
+    }
+    .investor-name {
+      font-size: 0.8rem;
+      color: var(--secondary-text);
+    }
+
+    /* Narration Box */
+    .narration-box {
+      background: var(--cream-white);
+      border: 1px solid #E5E7EB;
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+    .narration-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--metallic-gold);
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .narration-text {
+      color: var(--primary-text);
+      word-break: break-all;
+      font-family: monospace;
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    /* Receipt Proof Button */
+    .proof-btn {
+      width: 100%;
       background: var(--light-gold-bg);
+      border: 1px dashed var(--metallic-gold);
+      border-radius: var(--radius-sm);
+      color: var(--primary-green);
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .proof-btn:hover {
+      background: #FCEFC9;
+    }
+
+    /* Card Action Footer: Approve / Reject Buttons */
+    .card-actions-row {
+      padding: 12px 16px;
+      background: #FFFDF8;
+      border-top: 1px solid #ECECEC;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 10px;
+    }
+    .btn-approve-action {
+      background: linear-gradient(135deg, var(--bright-gold) 0%, var(--metallic-gold) 100%);
+      color: var(--deep-forest);
+      border: 1px solid var(--metallic-gold);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 6px rgba(212, 175, 55, 0.25);
+    }
+    .btn-approve-action:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+    .btn-reject-action {
+      background: rgba(215, 25, 32, 0.08);
+      color: var(--error-red);
+      border: 1px solid var(--error-red);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-reject-action:hover {
+      background: var(--error-red);
+      color: var(--white);
+    }
+
+    .settled-note {
+      font-size: 0.8rem;
+      color: var(--secondary-text);
+      font-style: italic;
+      text-align: center;
+      width: 100%;
+      padding: 6px 0;
+    }
+
+    /* Empty state */
+    .empty-state-box {
+      background: var(--white);
+      border: 1.5px dashed rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius-md);
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--secondary-text);
+    }
+
+    /* Tablet and Desktop: 2-column Grid */
+    @media (min-width: 768px) {
+      .deposits-feed {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
     }
   </style>
 </head>
@@ -42,11 +275,12 @@
     <div id="adminNavigationContainer"></div>
 
     <main class="main-content">
-      <div style="margin-bottom: 20px;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Custody Reconciliation</span>
-        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Manual Bank Deposits</h1>
+      <div class="page-header-wrap">
+        <span class="header-tag">✦ Custody Reconciliation</span>
+        <h1 class="header-title font-heading">Manual Bank Deposits</h1>
       </div>
 
+      <!-- Horizontal Pill Filter Tabs -->
       <div class="filter-tabs">
         <button class="filter-btn active" data-filter="all">All Deposits</button>
         <button class="filter-btn" data-filter="pending">Pending</button>
@@ -54,9 +288,10 @@
         <button class="filter-btn" data-filter="rejected">Rejected</button>
       </div>
 
-      <div class="astra-card" style="padding: 0; overflow: hidden;">
-        <div class="table-responsive" id="depositTableContainer">
-          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading deposits...</p>
+      <!-- Responsive Card Feed -->
+      <div class="deposits-feed" id="depositsFeed">
+        <div class="empty-state-box">
+          <p>Loading deposits...</p>
         </div>
       </div>
     </main>
@@ -75,9 +310,8 @@
       if (!auth) return;
       currentSession = auth.session;
 
-      const container = document.getElementById('depositTableContainer');
+      const container = document.getElementById('depositsFeed');
 
-      // Fixed query: removed invalid profiles(email) field to prevent PostgREST 42703 error
       const { data: deposits, error } = await supabase
         .from('deposits')
         .select(`
@@ -90,96 +324,120 @@
       if (error) {
         console.error('Error loading deposits:', error);
         container.innerHTML = `
-          <div style="text-align: center; padding: 40px; color: var(--error-red);">
+          <div class="empty-state-box" style="color: var(--error-red);">
             <p><strong>Failed to load deposits:</strong> ${error.message}</p>
-            <button class="btn-gold" style="margin-top: 12px; padding: 8px 16px;" onclick="window.location.reload()">Retry</button>
+            <button class="btn-gold" style="margin-top: 14px; padding: 8px 18px;" onclick="window.location.reload()">Retry</button>
           </div>
         `;
         return;
       }
 
       if (!deposits || deposits.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No deposit submissions found.</p>`;
+        container.innerHTML = `
+          <div class="empty-state-box">
+            <p>No deposit submissions found.</p>
+          </div>
+        `;
         return;
       }
 
       allDeposits = deposits;
-      renderTable('all');
+      renderCards('all');
 
+      // Filter listener
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          const filter = btn.dataset.filter;
-          renderTable(filter);
+          renderCards(btn.dataset.filter);
         });
       });
     }
 
-    function renderTable(filter) {
-      const container = document.getElementById('depositTableContainer');
+    function renderCards(filter) {
+      const container = document.getElementById('depositsFeed');
       const filtered = allDeposits.filter(d => filter === 'all' || d.status === filter);
 
       if (filtered.length === 0) {
-        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 40px;">No deposits in this category.</p>`;
+        container.innerHTML = `
+          <div class="empty-state-box" style="grid-column: 1 / -1;">
+            <p>No deposits match this filter.</p>
+          </div>
+        `;
         return;
       }
 
-      container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
-          <thead>
-            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
-              <th style="padding: 12px;">Ref / Date</th>
-              <th style="padding: 12px;">Investor</th>
-              <th style="padding: 12px;">Amount</th>
-              <th style="padding: 12px;">Narration</th>
-              <th style="padding: 12px;">Status</th>
-              <th style="padding: 12px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filtered.map(d => `
-              <tr style="border-bottom: 1px solid #ECECEC;">
-                <td style="padding: 12px;">
-                  <strong style="font-family: monospace; color: var(--deep-forest);">${d.reference}</strong>
-                  <div style="font-size: 0.72rem; color: var(--secondary-text);">${formatDate(d.created_at)}</div>
-                  ${d.receipt_url ? `
-                    <button class="btn-receipt" onclick="viewReceipt('${d.receipt_url}')">📎 View Proof</button>
-                  ` : ''}
-                </td>
-                <td style="padding: 12px;">
-                  <strong>@${d.profiles?.username || 'user'}</strong>
-                  <div style="font-size: 0.75rem; color: var(--secondary-text);">${d.sender_name || '—'}</div>
-                </td>
-                <td style="padding: 12px; font-weight: 700; color: var(--primary-green); font-size: 1rem;">
-                  ${formatCurrency(d.amount)}
-                </td>
-                <td style="padding: 12px; font-size: 0.82rem; max-width: 180px; word-break: break-all;">
-                  ${d.transfer_reference || '—'}
-                </td>
-                <td style="padding: 12px;">
-                  <span class="badge-status ${d.status === 'approved' ? 'badge-completed' : (d.status === 'pending' ? 'badge-pending' : 'badge-failed')}">
-                    ${d.status}
-                  </span>
-                </td>
-                <td style="padding: 12px;">
-                  ${d.status === 'pending' ? `
-                    <div style="display: flex; gap: 6px;">
-                      <button class="btn-gold" style="padding: 6px 12px; font-size: 0.75rem;" onclick="reviewDep('${d.id}', 'approved')">Approve</button>
-                      <button class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem;" onclick="reviewDep('${d.id}', 'rejected')">Reject</button>
-                    </div>
-                  ` : `
-                    <span style="font-size: 0.75rem; color: var(--secondary-text);">Reviewed</span>
-                  `}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
+      container.innerHTML = filtered.map(d => {
+        const isPending = d.status === 'pending';
+        const badgeClass = d.status === 'approved' ? 'badge-completed' : (isPending ? 'badge-pending' : 'badge-failed');
+        const username = d.profiles?.username || 'user';
+        const fullName = d.profiles?.full_name || d.sender_name || 'Investor';
+
+        return `
+          <div class="deposit-card" id="card-${d.id}">
+            <!-- Top Bar -->
+            <div class="card-top-bar">
+              <div>
+                <span class="ref-code">${d.reference}</span>
+                <span class="ref-date">${formatDate(d.created_at)}</span>
+              </div>
+              <span class="badge-status ${badgeClass}">
+                ${d.status.toUpperCase()}
+              </span>
+            </div>
+
+            <!-- Body -->
+            <div class="card-body">
+              <div class="amount-investor-row">
+                <div>
+                  <span class="amount-label">Deposit Amount</span>
+                  <div class="amount-value">${formatCurrency(d.amount)}</div>
+                </div>
+                <div class="investor-meta">
+                  <span class="amount-label">Investor</span>
+                  <span class="investor-handle">@${username}</span>
+                  <span class="investor-name">${fullName}</span>
+                </div>
+              </div>
+
+              <!-- Narration Details -->
+              <div class="narration-box">
+                <span class="narration-label">Bank Narration / Reference</span>
+                <div class="narration-text">${escapeHtml(d.transfer_reference || 'None provided')}</div>
+              </div>
+
+              <!-- Receipt Button if Uploaded -->
+              ${d.receipt_url ? `
+                <button class="proof-btn" onclick="viewReceipt('${d.receipt_url}')">
+                  <span>📎</span>
+                  <span>View Payment Receipt Screenshot</span>
+                </button>
+              ` : ''}
+            </div>
+
+            <!-- Action Footer -->
+            <div class="card-actions-row">
+              ${isPending ? `
+                <button class="btn-approve-action" onclick="reviewDep('${d.id}', 'approved')">
+                  <span>✓</span>
+                  <span>Approve &amp; Credit</span>
+                </button>
+                <button class="btn-reject-action" onclick="reviewDep('${d.id}', 'rejected')">
+                  <span>✕</span>
+                  <span>Reject</span>
+                </button>
+              ` : `
+                <div class="settled-note" style="grid-column: span 2;">
+                  This request has been settled (${d.status}).
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
-    // View receipt securely with signed URL
+    // View receipt screenshot via Supabase signed URL
     window.viewReceipt = async function(receiptPath) {
       if (!receiptPath) return;
 
@@ -189,7 +447,7 @@
           .createSignedUrl(receiptPath, 600);
 
         if (error || !data?.signedUrl) {
-          alert('Could not generate receipt preview: ' + (error?.message || 'File not found'));
+          alert('Could not open receipt proof: ' + (error?.message || 'File not found.'));
           return;
         }
 
@@ -199,30 +457,48 @@
       }
     };
 
+    // Review Deposit Action
     window.reviewDep = async function(id, decision) {
       let reason = null;
       if (decision === 'rejected') {
-        reason = prompt('Enter rejection reason:');
+        reason = prompt('Enter administrative rejection reason:');
         if (!reason) return;
       }
 
-      const res = await fetch('/api/deposits/review', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentSession.access_token}`
-        },
-        body: JSON.stringify({ depositId: id, decision, rejectionReason: reason })
-      });
+      const card = document.getElementById(`card-${id}`);
+      const actionsRow = card?.querySelector('.card-actions-row');
+      if (actionsRow) {
+        actionsRow.innerHTML = `<div class="settled-note" style="grid-column: span 2;">Processing ${decision}...</div>`;
+      }
 
-      const data = await res.json();
-      if (!data.success) {
-        alert(data.error || 'Failed to process review.');
-      } else {
-        alert(`Deposit ${decision} successfully!`);
+      try {
+        const res = await fetch('/api/deposits/review', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({ depositId: id, decision, rejectionReason: reason })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert(data.error || 'Failed to review deposit.');
+          loadDeposits();
+        } else {
+          alert(`Deposit ${decision} successfully!`);
+          loadDeposits();
+        }
+      } catch (err) {
+        alert('Server communication error.');
         loadDeposits();
       }
     };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
 
     loadDeposits();
   </script>
