@@ -8,15 +8,32 @@
   <style>
     .post-wrap { max-width: 680px; margin: 0 auto; }
     .comment-item {
-      padding: 12px 0;
+      padding: 14px 0;
       border-bottom: 1px solid #ECECEC;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
     .comment-item:last-child { border-bottom: none; }
     .comment-author-row {
       display: flex;
       justify-content: space-between;
-      font-size: 0.8rem;
-      margin-bottom: 4px;
+      align-items: center;
+      font-size: 0.82rem;
+    }
+    .comment-author {
+      font-weight: 700;
+      color: var(--deep-forest);
+    }
+    .comment-time {
+      color: var(--secondary-text);
+      font-size: 0.75rem;
+    }
+    .comment-text {
+      font-size: 0.92rem;
+      color: var(--primary-text);
+      line-height: 1.45;
+      word-break: break-word;
     }
   </style>
 </head>
@@ -30,19 +47,24 @@
           ← Back to Community Feed
         </a>
 
+        <!-- Main Post Card -->
         <div class="astra-card" id="postContentCard" style="margin-bottom: 24px;">
           <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading post...</p>
         </div>
 
         <!-- Comments Section -->
         <div class="astra-card">
-          <h3 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 14px;">Discussion & Comments</h3>
+          <h3 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 14px;" id="commentsHeading">
+            Discussion &amp; Comments
+          </h3>
 
+          <!-- Add Comment Form -->
           <form id="commentForm" style="display: flex; gap: 8px; margin-bottom: 20px;">
-            <input type="text" id="commentInput" class="form-control" style="flex: 1; padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm);" placeholder="Write a comment..." required maxlength="300">
-            <button type="submit" id="commentBtn" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">Send</button>
+            <input type="text" id="commentInput" class="form-control" style="flex: 1; padding: 12px 14px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm);" placeholder="Write a comment..." required maxlength="300" autocomplete="off">
+            <button type="submit" id="commentBtn" class="btn-gold" style="padding: 12px 20px; font-size: 0.88rem; flex-shrink: 0;">Send</button>
           </form>
 
+          <!-- Comments Feed (Newest first) -->
           <div id="commentsList">
             <p style="color: var(--secondary-text); font-size: 0.85rem; text-align: center; padding: 20px;">Loading comments...</p>
           </div>
@@ -77,7 +99,7 @@
       const { data: post, error } = await supabase
         .from('blog_posts')
         .select(`
-          id, title, content, caption, image_url, likes_count, bonus_awarded, created_at,
+          id, title, content, caption, image_url, likes_count, comments_count, bonus_awarded, created_at,
           profiles!blog_posts_user_id_fkey(username, full_name)
         `)
         .eq('id', targetPostId)
@@ -103,7 +125,7 @@
         <p style="font-size: 0.95rem; color: var(--primary-text); line-height: 1.6; white-space: pre-wrap;">${escapeHtml(post.content)}</p>
 
         ${post.image_url ? `
-          <img src="${post.image_url}" alt="Proof receipt" style="width: 100%; max-height: 440px; object-fit: contain; border-radius: var(--radius-sm); border: 1px solid #E5E7EB; margin-top: 14px; background: #000;">
+          <img src="${post.image_url}" alt="Proof receipt" style="width: 100%; max-height: 440px; object-fit: contain; border-radius: var(--radius-sm); border: 1px solid #E5E7EB; margin-top: 14px; background: #000; cursor: pointer;" onclick="window.open('${post.image_url}', '_blank')">
         ` : ''}
 
         ${post.caption ? `
@@ -116,26 +138,31 @@
 
     async function loadComments() {
       const container = document.getElementById('commentsList');
+
+      // Order with ascending: false so NEWEST comments appear at the top
       const { data: comments, error } = await supabase
         .from('blog_comments')
         .select(`id, comment, created_at, profiles!blog_comments_user_id_fkey(username, full_name)`)
         .eq('post_id', targetPostId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error || !comments || comments.length === 0) {
+        document.getElementById('commentsHeading').textContent = 'Discussion & Comments (0)';
         container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); font-size: 0.85rem; padding: 14px;">No comments yet. Share your thoughts above!</p>`;
         return;
       }
+
+      document.getElementById('commentsHeading').textContent = `Discussion & Comments (${comments.length})`;
 
       container.innerHTML = comments.map(c => {
         const name = c.profiles?.full_name || c.profiles?.username || 'Investor';
         return `
           <div class="comment-item">
             <div class="comment-author-row">
-              <strong style="color: var(--deep-forest);">@${escapeHtml(name)}</strong>
-              <span style="color: var(--secondary-text);">${formatDate(c.created_at)}</span>
+              <span class="comment-author">@${escapeHtml(name)}</span>
+              <span class="comment-time">${formatDate(c.created_at)}</span>
             </div>
-            <p style="font-size: 0.88rem; color: var(--primary-text);">${escapeHtml(c.comment)}</p>
+            <div class="comment-text">${escapeHtml(c.comment)}</div>
           </div>
         `;
       }).join('');
@@ -149,6 +176,7 @@
       if (!text) return;
 
       btn.disabled = true;
+      btn.textContent = 'Posting...';
 
       const { error } = await supabase
         .from('blog_comments')
@@ -159,11 +187,14 @@
         });
 
       btn.disabled = false;
-      if (!error) {
+      btn.textContent = 'Send';
+
+      if (error) {
+        alert('Failed to post comment: ' + error.message);
+      } else {
         input.value = '';
+        // Reload comments immediately to show the new comment at the top
         loadComments();
-        // Increment count
-        await supabase.rpc('increment_post_comments', { p_post_id: targetPostId }).catch(() => {});
       }
     });
 
