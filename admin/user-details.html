@@ -8,6 +8,36 @@
   <style>
     .dossier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
     .dossier-cell { background: var(--light-gold-bg); padding: 14px; border-radius: var(--radius-sm); border: 1px solid rgba(212, 175, 55, 0.3); }
+    .grant-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 43, 26, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .grant-modal.active { display: flex; }
+    .grant-modal-box {
+      background: var(--white);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
   </style>
 </head>
 <body>
@@ -16,16 +46,59 @@
 
     <main class="main-content">
       <div style="margin-bottom: 20px;">
-        <a href="users.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 12px;">
+        <a href="/admin/users.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 12px;">
           ← Back to User Directory
         </a>
         <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">User Dossier</h1>
       </div>
 
-      <div class="astra-card" id="userDossierContainer">
+      <div class="astra-card" id="userDossierContainer" style="margin-bottom: 24px;">
         <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Compiling dossier...</p>
       </div>
+
+      <!-- User Active Investments Section -->
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 18px 20px; border-bottom: 1px solid #ECECEC; display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin: 0;">Active Flight Packages &amp; Investments</h2>
+          <button id="openGrantModalBtn" class="btn-gold" style="padding: 8px 16px; font-size: 0.8rem;">+ Grant Package</button>
+        </div>
+        <div class="table-responsive" id="userInvestmentsContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 30px;">Loading user portfolio...</p>
+        </div>
+      </div>
     </main>
+  </div>
+
+  <!-- Grant Product Modal -->
+  <div class="grant-modal" id="grantModal">
+    <div class="grant-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.3rem; color: var(--deep-forest);">Grant Flight Package</h2>
+        <button id="closeModalBtn" type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary-text);">&times;</button>
+      </div>
+
+      <p style="color: var(--secondary-text); font-size: 0.85rem; margin-bottom: 16px;">
+        This will immediately activate the selected package for this investor without deducting their wallet balance. Settlements will proceed automatically.
+      </p>
+
+      <form id="grantProductForm">
+        <div class="form-group">
+          <label for="productSelect">Select Package / Flight Syndicate</label>
+          <select id="productSelect" class="form-control" required>
+            <option value="">-- Choose Product --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="grantReason">Administrative Reason / Note</label>
+          <input type="text" id="grantReason" class="form-control" placeholder="e.g. Executive Partner Allocation, Influencer Grant" required>
+        </div>
+
+        <button type="submit" id="submitGrantBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 8px;">
+          Confirm &amp; Activate Package
+        </button>
+      </form>
+    </div>
   </div>
 
   <script type="module">
@@ -65,7 +138,7 @@
             <h2 style="font-size: 1.4rem; color: var(--deep-forest);">@${profile.username}</h2>
             <span style="font-size: 0.8rem; color: var(--secondary-text); font-family: monospace;">UUID: ${profile.id}</span>
           </div>
-          <div>
+          <div style="display: flex; gap: 8px;">
             <button id="suspendToggleBtn" class="${profile.is_suspended ? 'btn-gold' : 'btn-emerald'}" style="padding: 8px 16px; font-size: 0.82rem;">
               ${profile.is_suspended ? 'Reactivate Account' : 'Suspend Account'}
             </button>
@@ -107,11 +180,13 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-          <a href="wallet-adjustments.html?userId=${profile.id}" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">Adjust Wallet</a>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <a href="/admin/wallet-adjustments.html?userId=${profile.id}" class="btn-emerald" style="padding: 10px 18px; font-size: 0.85rem; text-decoration: none;">Adjust Wallet</a>
+          <button id="triggerGrantModalBtn" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">Grant Flight Package</button>
         </div>
       `;
 
+      // Suspension Toggle Handler
       document.getElementById('suspendToggleBtn').addEventListener('click', async () => {
         const reason = prompt('State administrative reason:');
         if (!reason) return;
@@ -129,7 +204,125 @@
           loadDossier();
         }
       });
+
+      // Bind modal opening
+      document.getElementById('triggerGrantModalBtn').addEventListener('click', openModal);
+      document.getElementById('openGrantModalBtn').addEventListener('click', openModal);
+
+      loadUserInvestments();
+      loadProductsDropdown();
     }
+
+    async function loadUserInvestments() {
+      const container = document.getElementById('userInvestmentsContainer');
+      const { data: invs, error } = await supabase
+        .from('investments')
+        .select('*')
+        .eq('user_id', targetUserId)
+        .order('created_at', { ascending: false });
+
+      if (error || !invs || invs.length === 0) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 24px;">No active or past flight packages for this user.</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px;">
+          <thead>
+            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
+              <th style="padding: 12px;">Package Name</th>
+              <th style="padding: 12px;">Value</th>
+              <th style="padding: 12px;">Settled</th>
+              <th style="padding: 12px;">Total Payout</th>
+              <th style="padding: 12px;">Maturity Date</th>
+              <th style="padding: 12px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${invs.map(i => `
+              <tr style="border-bottom: 1px solid #ECECEC;">
+                <td style="padding: 12px;">
+                  <strong style="color: var(--deep-forest);">${i.product_name}</strong>
+                  ${i.metadata?.is_admin_grant ? `<span class="badge-status badge-completed" style="font-size:0.65rem; margin-left:4px;">ADMIN GRANT</span>` : ''}
+                </td>
+                <td style="padding: 12px; font-weight: 700; color: var(--primary-green);">${formatCurrency(i.purchase_price)}</td>
+                <td style="padding: 12px;">${i.days_settled} / ${i.duration_days} Days</td>
+                <td style="padding: 12px; font-weight: 700;">${formatCurrency(i.total_payout)}</td>
+                <td style="padding: 12px; color: var(--secondary-text); font-size: 0.75rem;">${formatDate(i.maturity_date, { includeTime: false })}</td>
+                <td style="padding: 12px;"><span class="badge-status ${i.status === 'active' ? 'badge-completed' : 'badge-pending'}">${i.status}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadProductsDropdown() {
+      const select = document.getElementById('productSelect');
+      const { data: prods } = await supabase
+        .from('products')
+        .select(`id, code, name, price, duration_days, product_categories(name)`)
+        .order('price', { ascending: true });
+
+      if (prods) {
+        select.innerHTML = '<option value="">-- Choose Package to Grant --</option>' + 
+          prods.map(p => `
+            <option value="${p.id}">
+              [${p.product_categories?.name || 'VIP'}] ${p.name} - ${formatCurrency(p.price)} (${p.duration_days} Days)
+            </option>
+          `).join('');
+      }
+    }
+
+    function openModal() {
+      document.getElementById('grantModal').classList.add('active');
+    }
+
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+      document.getElementById('grantModal').classList.remove('active');
+    });
+
+    document.getElementById('grantProductForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitGrantBtn');
+      const productId = document.getElementById('productSelect').value;
+      const reason = document.getElementById('grantReason').value.trim();
+
+      if (!productId) return alert('Please select a product.');
+
+      btn.disabled = true;
+      btn.textContent = 'Granting Package...';
+
+      try {
+        const res = await fetch('/api/admin/grant-product', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({
+            targetUserId: targetUserId,
+            productId: productId,
+            reason: reason
+          })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert(data.error || 'Failed to grant product.');
+        } else {
+          alert(`Package "${data.product_name}" granted successfully! Ref: ${data.reference}`);
+          document.getElementById('grantModal').classList.remove('active');
+          document.getElementById('grantProductForm').reset();
+          loadUserInvestments();
+        }
+      } catch (err) {
+        alert('Server error executing package grant.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Confirm & Activate Package';
+      }
+    });
 
     loadDossier();
   </script>
