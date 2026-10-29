@@ -55,37 +55,39 @@
           Direct electronic wire transfer to our corporate aviation custody account.
         </p>
 
-        <div id="alertBanner" class="alert-banner"></div>
-
-        <!-- Bank Details Box Loaded from Site Settings -->
+        <!-- Bank Details Box -->
         <div class="bank-card">
           <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--soft-gold); letter-spacing: 0.08em; margin-bottom: 8px;">
             ASTRAVEN SETTLEMENT ACCOUNT
           </div>
           <div class="bank-row">
             <span style="color: #D1D5DB;">Bank Name:</span>
-            <strong id="displayBank" style="color: var(--white);">Loading...</strong>
+            <strong id="displayBank" style="color: var(--white);">Zenith Bank PLC</strong>
           </div>
           <div class="bank-row">
             <span style="color: #D1D5DB;">Account Name:</span>
-            <strong id="displayAccName" style="color: var(--white); text-align: right;">Loading...</strong>
+            <strong id="displayAccName" style="color: var(--white); text-align: right;">Astraven Aviation &amp; Asset Mgt Ltd</strong>
           </div>
           <div class="bank-row">
             <span style="color: #D1D5DB;">Account Number:</span>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <strong id="displayAccNum" style="font-family: monospace; font-size: 1.15rem; color: var(--bright-gold);">Loading...</strong>
+              <strong id="displayAccNum" style="font-family: monospace; font-size: 1.15rem; color: var(--bright-gold);">1228493012</strong>
               <button id="copyAccBtn" type="button" class="btn-emerald" style="padding: 4px 10px; font-size: 0.75rem;">Copy</button>
             </div>
           </div>
-          <div style="margin-top: 10px; font-size: 0.8rem; color: #CBD5E1; line-height: 1.4;" id="displayInstructions"></div>
+          <div style="margin-top: 10px; font-size: 0.8rem; color: #CBD5E1; line-height: 1.4;" id="displayInstructions">
+            Transfer the exact amount to the account above. Include your username or deposit reference in narration.
+          </div>
         </div>
+
+        <div id="alertBanner" class="alert-banner"></div>
 
         <!-- Deposit Proof Submission Form -->
         <form class="astra-card" id="depositForm">
           <div class="form-group">
             <label for="amount">Deposit Amount (₦)</label>
             <input type="number" id="amount" class="form-control" placeholder="Enter deposit amount" min="1" step="any" required>
-            <small id="minDepositNotice" style="color: var(--secondary-text); font-size: 0.78rem;">Loading minimum...</small>
+            <small id="minDepositNotice" style="color: var(--secondary-text); font-size: 0.78rem;">Minimum deposit applies.</small>
           </div>
 
           <div class="form-group">
@@ -95,7 +97,7 @@
 
           <div class="form-group">
             <label for="transferRef">Bank Transaction Reference / Narration</label>
-            <input type="text" id="transferRef" class="form-control" placeholder="Session ID or reference" required>
+            <input type="text" id="transferRef" class="form-control" placeholder="Session ID or narration reference" required>
           </div>
 
           <div class="form-group">
@@ -117,7 +119,15 @@
     import { formatCurrency } from './shared/formatters.js';
 
     let currentSession = null;
-    let minDeposit = 1;
+    let minDeposit = 100;
+
+    function showAlert(msg, isError = true) {
+      const banner = document.getElementById('alertBanner');
+      banner.textContent = msg;
+      banner.className = isError ? 'alert-banner error' : 'alert-banner success';
+      banner.style.display = 'block';
+      alert(msg);
+    }
 
     async function loadDepositConfig() {
       await initUserNavigation({ requireSession: true });
@@ -132,13 +142,13 @@
 
       if (cfg && cfg.value) {
         const val = cfg.value;
-        document.getElementById('displayBank').textContent = val.bank_name || 'Zenith Bank PLC';
-        document.getElementById('displayAccName').textContent = val.account_name || 'Astraven Aviation Ltd';
-        document.getElementById('displayAccNum').textContent = val.account_number || '1228493012';
-        document.getElementById('displayInstructions').textContent = val.instructions || '';
-        minDeposit = Number(val.min_deposit) || 1;
+        if (val.bank_name) document.getElementById('displayBank').textContent = val.bank_name;
+        if (val.account_name) document.getElementById('displayAccName').textContent = val.account_name;
+        if (val.account_number) document.getElementById('displayAccNum').textContent = val.account_number;
+        if (val.instructions) document.getElementById('displayInstructions').textContent = val.instructions;
+        
+        minDeposit = Number(val.min_deposit) || 100;
         document.getElementById('minDepositNotice').textContent = `Minimum deposit is ${formatCurrency(minDeposit)}.`;
-        document.getElementById('amount').min = minDeposit;
         document.getElementById('amount').placeholder = `Min. ${formatCurrency(minDeposit)}`;
       }
 
@@ -151,19 +161,24 @@
 
     document.getElementById('depositForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const alertBanner = document.getElementById('alertBanner');
-      const submitBtn = document.getElementById('submitBtn');
-      alertBanner.style.display = 'none';
+      document.getElementById('alertBanner').style.display = 'none';
 
       const amount = Number(document.getElementById('amount').value);
       const senderName = document.getElementById('senderName').value.trim();
       const transferRef = document.getElementById('transferRef').value.trim();
       const receiptFile = document.getElementById('receiptFile').files[0];
+      const submitBtn = document.getElementById('submitBtn');
+
+      if (!amount || amount <= 0) {
+        return showAlert('Please enter a valid deposit amount.');
+      }
 
       if (amount < minDeposit) {
-        alertBanner.textContent = `Amount is below the minimum required deposit of ${formatCurrency(minDeposit)}.`;
-        alertBanner.className = 'alert-banner error';
-        return;
+        return showAlert(`Deposit amount must be at least ${formatCurrency(minDeposit)}.`);
+      }
+
+      if (!senderName || !transferRef) {
+        return showAlert('Please enter both sender name and transaction reference.');
       }
 
       submitBtn.disabled = true;
@@ -172,53 +187,73 @@
       let receiptUrl = null;
 
       try {
+        // Handle optional receipt upload
         if (receiptFile) {
-          const fileExt = receiptFile.name.split('.').pop();
+          submitBtn.textContent = 'Uploading Receipt...';
+          const fileExt = receiptFile.name.split('.').pop() || 'png';
           const filePath = `${currentSession.user.id}/${Date.now()}_receipt.${fileExt}`;
-          const { error: uploadErr } = await supabase.storage
-            .from('deposit-receipts')
-            .upload(filePath, receiptFile);
+          
+          try {
+            const { error: uploadErr } = await supabase.storage
+              .from('deposit-receipts')
+              .upload(filePath, receiptFile);
 
-          if (!uploadErr) {
-            receiptUrl = filePath;
+            if (!uploadErr) {
+              receiptUrl = filePath;
+            }
+          } catch (uploadEx) {
+            console.warn('Storage upload bypassed:', uploadEx);
           }
         }
 
-        const res = await fetch('/api/deposits/submit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentSession.access_token}`
-          },
-          body: JSON.stringify({
-            amount,
-            senderName,
-            transferRef,
-            receiptUrl,
-            idempotencyKey: 'DEP-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
-          })
+        submitBtn.textContent = 'Registering Deposit...';
+
+        // 1. Direct RPC execution (Fastest, zero serverless cold-start)
+        const { data, error } = await supabase.rpc('submit_deposit_request', {
+          p_user_id: currentSession.user.id,
+          p_amount: amount,
+          p_sender_name: senderName,
+          p_transfer_ref: transferRef,
+          p_payment_date: new Date().toISOString().split('T')[0],
+          p_receipt_url: receiptUrl,
+          p_idempotency_key: 'DEP-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
         });
 
-        const result = await res.json();
+        if (error || !data?.success) {
+          // 2. Fallback to serverless API
+          const res = await fetch('/api/deposits/submit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentSession.access_token}`
+            },
+            body: JSON.stringify({
+              amount,
+              senderName,
+              transferRef,
+              receiptUrl,
+              idempotencyKey: 'DEP-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
+            })
+          });
 
-        if (!result.success) {
-          alertBanner.textContent = result.error || 'Failed to submit deposit.';
-          alertBanner.className = 'alert-banner error';
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Deposit Request';
-          return;
+          const apiResult = await res.json();
+          if (!apiResult.success) {
+            throw new Error(apiResult.error || error?.message || 'Deposit registration failed.');
+          }
+
+          showAlert(`Deposit request ${apiResult.reference} registered! Awaiting verification.`, false);
+        } else {
+          showAlert(`Deposit request ${data.reference} registered! Awaiting verification.`, false);
         }
-
-        alertBanner.textContent = `Deposit request ${result.reference} registered! Awaiting verification. Redirecting...`;
-        alertBanner.className = 'alert-banner success';
 
         setTimeout(() => {
           window.location.href = 'deposit-history.html';
-        }, 1500);
+        }, 1200);
 
       } catch (err) {
-        alertBanner.textContent = 'Network or submission error. Please check your history.';
-        alertBanner.className = 'alert-banner error';
+        console.error('Submission failure:', err);
+        showAlert(err.message || 'Deposit submission error. Please try again.');
+      } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Deposit Request';
       }
