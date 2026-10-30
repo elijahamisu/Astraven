@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       p_idempotency_key: idempotencyKey || null
     });
 
-    if (error || !data.success) return res.status(400).json(data || { success: false, error: error.message });
+    if (error || !data?.success) return res.status(400).json(data || { success: false, error: error.message });
     return res.status(200).json(data);
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Internal spin processor error.' });

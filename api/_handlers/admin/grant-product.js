@@ -44,7 +44,7 @@ export default async function handler(req, res) {
       p_reason: reason || 'Executive Package Grant'
     });
 
-    if (error || !data.success) {
+    if (error || !data?.success) {
       return res.status(400).json(data || { success: false, error: error.message });
     }
 
