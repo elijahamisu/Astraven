@@ -38,6 +38,11 @@
       font-size: 0.95rem;
       background: var(--cream-white);
     }
+    .dl-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0 6px; }
+    .dl-chip { border: 1px solid #E5E7EB; background: #fff; color: var(--deep-forest); border-radius: 999px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .dl-chip span { display: inline-block; min-width: 18px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: #F3F4F6; font-size: 0.72rem; }
+    .dl-chip.active { background: var(--deep-forest); color: #fff; border-color: var(--deep-forest); }
+    .dl-chip.active span { background: rgba(255,255,255,.2); }
   </style>
 </head>
 <body>
@@ -64,6 +69,31 @@
         </div>
         <div class="table-responsive" id="userInvestmentsContainer">
           <p style="text-align: center; color: var(--secondary-text); padding: 30px;">Loading user portfolio...</p>
+        </div>
+      </div>
+
+      <!-- Downline Section -->
+      <div class="astra-card" style="padding: 0; overflow: hidden; margin-top: 24px;">
+        <div style="padding: 18px 20px; border-bottom: 1px solid #ECECEC;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin: 0;">Downline Team</h2>
+            <span id="downlineSummary" style="font-size: 0.8rem; color: var(--secondary-text);"></span>
+          </div>
+          <div class="dl-filters" id="downlineFilters">
+            <button type="button" class="dl-chip active" data-filter="all">All <span data-count="all">0</span></button>
+            <button type="button" class="dl-chip" data-filter="active">Active <span data-count="active">0</span></button>
+            <button type="button" class="dl-chip" data-filter="inactive">Inactive <span data-count="inactive">0</span></button>
+            <select id="downlineLevel" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.8rem;">
+              <option value="0">All levels</option>
+              <option value="1">Level 1 (direct)</option>
+              <option value="2">Level 2</option>
+              <option value="3">Level 3</option>
+            </select>
+          </div>
+          <small style="color: var(--secondary-text); font-size: 0.75rem;">Active = has at least one running package they bought (admin grants don't count).</small>
+        </div>
+        <div class="table-responsive" id="userDownlineContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 30px;">Loading downline...</p>
         </div>
       </div>
     </main>
@@ -210,6 +240,7 @@
       document.getElementById('openGrantModalBtn').addEventListener('click', openModal);
 
       loadUserInvestments();
+      loadDownlines();
       loadProductsDropdown();
     }
 
@@ -323,6 +354,84 @@
         btn.textContent = 'Confirm & Activate Package';
       }
     });
+
+    let downlines = [];
+    let downlineFilter = 'all';
+
+    async function loadDownlines() {
+      const container = document.getElementById('userDownlineContainer');
+      const { data, error } = await supabase.rpc('admin_get_user_downlines', { p_user_id: targetUserId });
+      if (error) {
+        container.innerHTML = `<p style="text-align: center; color: var(--error-red); padding: 24px;">Could not load downline: ${error.message}</p>`;
+        return;
+      }
+      downlines = data || [];
+      const active = downlines.filter(d => d.is_active).length;
+      document.querySelector('[data-count="all"]').textContent = downlines.length;
+      document.querySelector('[data-count="active"]').textContent = active;
+      document.querySelector('[data-count="inactive"]').textContent = downlines.length - active;
+      const teamDeposits = downlines.reduce((a, d) => a + Number(d.total_deposits || 0), 0);
+      document.getElementById('downlineSummary').textContent =
+        `${downlines.length} members · ${active} active · Team deposits ${formatCurrency(teamDeposits)}`;
+      renderDownlines();
+    }
+
+    function renderDownlines() {
+      const container = document.getElementById('userDownlineContainer');
+      const level = Number(document.getElementById('downlineLevel').value);
+      const rows = downlines.filter(d =>
+        (downlineFilter === 'all' || (downlineFilter === 'active') === d.is_active) &&
+        (!level || d.level === level));
+
+      if (!rows.length) {
+        container.innerHTML = `<p style="text-align: center; color: var(--secondary-text); padding: 24px;">${downlines.length ? 'No downline members match this filter.' : 'This user has no downline yet.'}</p>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 650px;">
+          <thead>
+            <tr style="background: #FAFAFA; text-align: left; color: var(--secondary-text); font-size: 0.72rem; text-transform: uppercase;">
+              <th style="padding: 12px;">Member</th>
+              <th style="padding: 12px;">Level</th>
+              <th style="padding: 12px;">Status</th>
+              <th style="padding: 12px;">Deposits</th>
+              <th style="padding: 12px;">Running Packages</th>
+              <th style="padding: 12px;">Joined</th>
+              <th style="padding: 12px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(d => `
+              <tr style="border-bottom: 1px solid #ECECEC;">
+                <td style="padding: 12px;">
+                  <strong style="color: var(--deep-forest);">@${d.username || '—'}</strong>
+                  <div style="font-size: 0.75rem; color: var(--secondary-text);">${d.full_name || ''}${d.phone ? ' · ' + d.phone : ''}</div>
+                </td>
+                <td style="padding: 12px;">L${d.level}</td>
+                <td style="padding: 12px;">
+                  <span class="badge-status ${d.is_active ? 'badge-completed' : 'badge-pending'}">${d.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
+                  ${d.is_suspended ? '<span class="badge-status badge-failed" style="margin-left:4px;">SUSPENDED</span>' : ''}
+                </td>
+                <td style="padding: 12px; font-weight: 700; color: var(--primary-green);">${formatCurrency(d.total_deposits)} <small style="color: var(--secondary-text); font-weight: 400;">(${d.deposit_count})</small></td>
+                <td style="padding: 12px;">${d.active_investments} · ${formatCurrency(d.invested_amount)}</td>
+                <td style="padding: 12px; color: var(--secondary-text); font-size: 0.75rem;">${formatDate(d.joined_at, { includeTime: false })}</td>
+                <td style="padding: 12px;"><a href="/admin/user-details.html?id=${d.user_id}" class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem; text-decoration: none;">View</a></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    document.getElementById('downlineFilters').addEventListener('click', (e) => {
+      const chip = e.target.closest('.dl-chip');
+      if (!chip) return;
+      downlineFilter = chip.dataset.filter;
+      document.querySelectorAll('.dl-chip').forEach(c => c.classList.toggle('active', c === chip));
+      renderDownlines();
+    });
+    document.getElementById('downlineLevel').addEventListener('change', renderDownlines);
 
     loadDossier();
   </script>
