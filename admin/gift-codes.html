@@ -69,6 +69,7 @@
               <th style="padding: 12px;">Capacity Used</th>
               <th style="padding: 12px;">Created</th>
               <th style="padding: 12px;">Status</th>
+              <th style="padding: 12px;">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -78,7 +79,11 @@
                 <td style="padding: 12px; font-weight: 700; color: var(--primary-green);">${formatCurrency(c.amount)}</td>
                 <td style="padding: 12px;">${c.current_redemptions} / ${c.max_redemptions}</td>
                 <td style="padding: 12px; color: var(--secondary-text); font-size: 0.78rem;">${formatDate(c.created_at, { includeTime: false })}</td>
-                <td style="padding: 12px;"><span class="badge-status ${c.is_active ? 'badge-completed' : 'badge-failed'}">${c.is_active ? 'Active' : 'Expired'}</span></td>
+                <td style="padding: 12px;"><span class="badge-status ${c.is_active ? 'badge-completed' : 'badge-failed'}">${c.is_active ? 'Active' : 'Disabled'}</span></td>
+                <td style="padding: 12px; white-space: nowrap;">
+                  <button class="btn-emerald" style="padding: 5px 10px; font-size: 0.72rem;" onclick="toggleCode('${c.id}', ${!c.is_active}, '${c.code}')">${c.is_active ? 'Deactivate' : 'Activate'}</button>
+                  <button style="padding: 5px 10px; font-size: 0.72rem; background: #B91C1C; color: #fff; border: none; border-radius: 6px; margin-left: 4px;" onclick="deleteCode('${c.id}', '${c.code}', ${Number(c.current_redemptions) || 0})">Delete</button>
+                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -119,6 +124,26 @@
         loadCodes();
       }
     });
+
+    window.toggleCode = async function(id, activate, code) {
+      if (!activate && !confirm(`Deactivate ${code}? Users won't be able to redeem it.`)) return;
+      const { error } = await supabase.from('gift_codes').update({ is_active: activate }).eq('id', id);
+      if (error) return alert('Failed: ' + error.message);
+      loadCodes();
+    };
+
+    window.deleteCode = async function(id, code, used) {
+      if (used > 0) {
+        if (confirm(`${code} has already been redeemed ${used} time(s). Deleting it would erase that history, so it will be deactivated instead. Continue?`)) {
+          return toggleCode(id, false, code);
+        }
+        return;
+      }
+      if (!confirm(`Delete ${code} permanently?`)) return;
+      const { error } = await supabase.from('gift_codes').delete().eq('id', id);
+      if (error) return alert('Failed: ' + error.message);
+      loadCodes();
+    };
 
     loadCodes();
   </script>
