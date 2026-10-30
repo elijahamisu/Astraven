@@ -120,6 +120,7 @@
   <script type="module">
     import { initUserNavigation } from './shared/user-navigation.js';
     import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { fetchUsernames } from './shared/usernames.js';
     import { formatCurrency, formatDate } from './shared/formatters.js';
 
     async function loadReferrals() {
@@ -169,7 +170,7 @@
       // 3. Fetch Direct Downlines
       const { data: downlines } = await supabase
         .from('referrals')
-        .select('referred_id, created_at, profiles!referrals_referred_id_fkey(username, full_name)')
+        .select('referred_id, created_at')
         .eq('referrer_id', userId)
         .order('created_at', { ascending: false });
 
@@ -190,6 +191,7 @@
         return;
       }
 
+      const usernames = await fetchUsernames(downlines.map(d => d.referred_id));
       container.innerHTML = `
         <table class="tx-table">
           <thead>
@@ -197,7 +199,7 @@
           </thead>
           <tbody>
             ${downlines.map(d => {
-              const name = d.profiles?.username || 'Investor_' + d.referred_id.substring(0, 6);
+              const name = usernames.get(d.referred_id) || 'Investor_' + d.referred_id.substring(0, 6);
               return `
                 <tr>
                   <td style="font-weight: 600;">@${name}</td>

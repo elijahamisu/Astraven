@@ -109,6 +109,7 @@
   <script type="module">
     import { initUserNavigation } from './shared/user-navigation.js';
     import { requireAuth, supabase } from './shared/supabase-client.js';
+    import { fetchUsernames } from './shared/usernames.js';
     import { formatDate } from './shared/formatters.js';
 
     let currentUserId = null;
@@ -122,8 +123,7 @@
       const { data: posts, error } = await supabase
         .from('blog_posts')
         .select(`
-          id, title, content, caption, image_url, likes_count, comments_count, bonus_awarded, created_at,
-          profiles!blog_posts_user_id_fkey(username, full_name)
+          id, user_id, title, content, caption, image_url, likes_count, comments_count, bonus_awarded, created_at
         `)
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
@@ -152,9 +152,10 @@
         .eq('user_id', currentUserId);
 
       const likedSet = new Set((userLikes || []).map(l => l.post_id));
+      const usernames = await fetchUsernames(posts.map(p => p.user_id));
 
       container.innerHTML = posts.map(p => {
-        const author = p.profiles?.username ? '@' + p.profiles.username : 'Investor';
+        const author = usernames.get(p.user_id) ? '@' + usernames.get(p.user_id) : 'Investor';
         const isLiked = likedSet.has(p.id);
         const commentCount = Number(p.comments_count) || 0;
 
