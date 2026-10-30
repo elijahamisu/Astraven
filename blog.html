@@ -154,14 +154,14 @@
       const likedSet = new Set((userLikes || []).map(l => l.post_id));
 
       container.innerHTML = posts.map(p => {
-        const author = p.profiles?.full_name || p.profiles?.username || 'Investor';
+        const author = p.profiles?.username ? '@' + p.profiles.username : 'Investor';
         const isLiked = likedSet.has(p.id);
         const commentCount = Number(p.comments_count) || 0;
 
         return `
           <div class="post-card" id="post-${p.id}">
             <div class="post-author-row">
-              <div class="author-avatar">${author.charAt(0).toUpperCase()}</div>
+              <div class="author-avatar">${author.replace("@", "").charAt(0).toUpperCase()}</div>
               <div>
                 <strong style="font-size: 0.95rem; color: var(--deep-forest); display: block;">${escapeHtml(author)}</strong>
                 <span style="font-size: 0.75rem; color: var(--secondary-text);">${formatDate(p.created_at)}</span>

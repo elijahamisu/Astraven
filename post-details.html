@@ -110,7 +110,7 @@
         return;
       }
 
-      const author = post.profiles?.full_name || post.profiles?.username || 'Investor';
+      const author = post.profiles?.username ? '@' + post.profiles.username : 'Investor';
 
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -155,7 +155,7 @@
       document.getElementById('commentsHeading').textContent = `Discussion & Comments (${comments.length})`;
 
       container.innerHTML = comments.map(c => {
-        const name = c.profiles?.full_name || c.profiles?.username || 'Investor';
+        const name = c.profiles?.username ? '@' + c.profiles.username : 'Investor';
         return `
           <div class="comment-item">
             <div class="comment-author-row">
