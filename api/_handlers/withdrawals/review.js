@@ -2,7 +2,7 @@
 //  action "approve": locks the request, then sends the Afrstar payout order.
 //  action "rejected": refunds the reserved amount (only while still pending).
 // Final paid/failed status comes from /api/afrstar/payout-callback.
-import { createPayoutOrder, getSupabaseAdmin, getUserFromRequest, isAdmin } from '../_lib/afrstar.js';
+import { createPayoutOrder, getSupabaseAdmin, getUserFromRequest, isAdmin } from '../../_lib/afrstar.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed.' });

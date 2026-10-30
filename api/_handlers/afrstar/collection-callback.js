@@ -1,6 +1,6 @@
 // Afrstar collection webhook. Set this URL as the Collection callback in the merchant portal.
 // Credits the wallet (and pays referral commission) only for a verified status = 1.
-import { ackFail, ackSuccess, getSupabaseAdmin, readJsonBody, verifyCollectionCallback } from '../_lib/afrstar.js';
+import { ackFail, ackSuccess, getSupabaseAdmin, readJsonBody, verifyCollectionCallback } from '../../_lib/afrstar.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return ackFail(res, 405);

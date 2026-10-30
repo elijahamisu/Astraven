@@ -1,6 +1,6 @@
 // User withdrawal request: funds are reserved and the request waits for admin approval.
-import { getSupabaseAdmin, getUserFromRequest } from '../_lib/afrstar.js';
-import { AFRSTAR_BANKS } from '../../shared/afrstar-banks.js';
+import { getSupabaseAdmin, getUserFromRequest } from '../../_lib/afrstar.js';
+import { AFRSTAR_BANKS } from '../../../shared/afrstar-banks.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed.' });

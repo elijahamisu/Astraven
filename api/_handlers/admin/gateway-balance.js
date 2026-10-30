@@ -1,5 +1,5 @@
 // Admin-only: Afrstar merchant balance (POST /gateway/balance/).
-import { getBalance, getSupabaseAdmin, getUserFromRequest, isAdmin } from '../_lib/afrstar.js';
+import { getBalance, getSupabaseAdmin, getUserFromRequest, isAdmin } from '../../_lib/afrstar.js';
 
 export default async function handler(req, res) {
   let supabaseAdmin;

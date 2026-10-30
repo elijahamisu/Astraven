@@ -1,6 +1,6 @@
 // Afrstar payout webhook. Set this URL as the Payout callback in the merchant portal.
 // status 1 = paid, 9 = failed (amount refunded to the user's wallet).
-import { ackFail, ackSuccess, getSupabaseAdmin, readJsonBody, verifyPayoutCallback } from '../_lib/afrstar.js';
+import { ackFail, ackSuccess, getSupabaseAdmin, readJsonBody, verifyPayoutCallback } from '../../_lib/afrstar.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return ackFail(res, 405);
