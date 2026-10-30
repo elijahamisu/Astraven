@@ -1,3 +1,4 @@
+import './mobile-cards.js';
 import { requireAuth, signOutUser, supabase } from './supabase-client.js';
 
 // Clean SVG Icons for Admin Bottom Bar

@@ -745,3 +745,48 @@ h1, h2, h3, h4, .font-heading {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+/* ===== Mobile card view for data tables (see shared/mobile-cards.js) ===== */
+@media (max-width: 768px) {
+  .table-responsive { overflow-x: visible; }
+  table.mc-table { min-width: 0 !important; width: 100% !important; border: 0 !important; }
+  table.mc-table thead, table.mc-table tr.mc-header-row { display: none !important; }
+  table.mc-table, table.mc-table tbody, table.mc-table tr, table.mc-table td { display: block; width: 100%; }
+  table.mc-table tr {
+    background: #FFFFFF;
+    border: 1px solid #ECECEC !important;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(15, 45, 30, 0.06);
+    margin-bottom: 12px;
+    padding: 6px 14px;
+  }
+  table.mc-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0 !important;
+    border: 0 !important;
+    border-bottom: 1px dashed #EEE !important;
+    text-align: right !important;
+    word-break: break-word;
+  }
+  table.mc-table td:last-child { border-bottom: 0 !important; }
+  table.mc-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    max-width: 45%;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--secondary-text, #6B7280);
+  }
+  table.mc-table td[data-label=""]::before { content: none; }
+  table.mc-table td[data-label=""] { justify-content: flex-end; }
+  table.mc-table td.mc-full { display: block; text-align: center !important; }
+  table.mc-table td.mc-full::before { content: none; }
+  table.mc-table td > * { max-width: 100%; }
+  table.mc-table td button, table.mc-table td .btn-gold, table.mc-table td a.btn-gold { flex-shrink: 0; }
+}
