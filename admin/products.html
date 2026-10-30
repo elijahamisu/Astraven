@@ -42,6 +42,7 @@
       const { data: prods, error } = await supabase
         .from('products')
         .select(`*, product_categories(name, slug)`)
+        .is('archived_at', null)
         .order('price', { ascending: true });
 
       const container = document.getElementById('productsTableContainer');
@@ -85,6 +86,9 @@
                   <button class="${p.is_active ? 'btn-emerald' : 'btn-gold'}" style="padding: 6px 12px; font-size: 0.75rem;" onclick="toggleStatus('${p.id}', ${!p.is_active})">
                     ${p.is_active ? 'Deactivate' : 'Activate'}
                   </button>
+                  <button style="padding: 6px 12px; font-size: 0.75rem; margin-left: 6px; background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; border-radius: 8px; font-weight: 600; cursor: pointer;" onclick="deleteProduct('${p.id}', this)" data-name="${String(p.name).replace(/"/g, '&quot;')}">
+                    Delete
+                  </button>
                 </td>
               </tr>
             `).join('')}
@@ -101,6 +105,24 @@
       });
       if (error || !data.success) alert('Failed to update product state');
       else loadProducts();
+    };
+
+    window.deleteProduct = async function(id, btn) {
+      const name = btn.dataset.name;
+      if (!confirm(`Delete "${name}"?\n\nIf users already bought it, it will be removed from the store but their running packages keep paying out.`)) return;
+      btn.disabled = true;
+      btn.textContent = 'Deleting...';
+      const { data, error } = await supabase.rpc('admin_delete_product', { p_product_id: id });
+      if (error || !data?.success) {
+        alert(error?.message || data?.message || 'Failed to delete product');
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+        return;
+      }
+      alert(data.mode === 'deleted'
+        ? `"${name}" was deleted.`
+        : `"${name}" was removed from the store. ${data.investments} existing purchase(s) will keep running.`);
+      loadProducts();
     };
 
     loadProducts();

@@ -72,6 +72,7 @@
         .from('products')
         .select('*')
         .eq('category_id', category.id)
+        .is('archived_at', null)
         .order('created_at', { ascending: false });
 
       const container = document.getElementById('limitedContainer');

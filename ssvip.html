@@ -59,6 +59,7 @@
         .from('products')
         .select('*')
         .eq('category_id', category.id)
+        .is('archived_at', null)
         .order('price', { ascending: true });
 
       const container = document.getElementById('ssvipContainer');
