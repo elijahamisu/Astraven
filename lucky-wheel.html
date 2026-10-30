@@ -64,11 +64,15 @@
 
     <main class="main-content">
       <div class="wheel-wrap">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Daily Flight Roulette</span>
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Flight Roulette</span>
         <h1 class="font-heading" style="font-size: 1.8rem;">Astraven Lucky Wheel</h1>
         <p style="color: var(--secondary-text); font-size: 0.88rem; margin-top: 4px;">
-          Verified aviation investors and active team referrers qualify for instant cash prize spins.
+          Every spin wins ₦600, credited straight to your wallet.
         </p>
+
+        <div id="spinsBadge" style="display: inline-block; margin-top: 12px; padding: 8px 16px; border-radius: 999px; background: #FFF8E1; border: 1px solid var(--metallic-gold); color: var(--deep-forest); font-weight: 700; font-size: 0.9rem;">
+          Spins available: <span id="spinsLeft">…</span>
+        </div>
 
         <div class="wheel-stage">
           <div class="wheel-pointer"></div>
@@ -84,6 +88,12 @@
           <a href="lucky-wheel-history.html" style="font-size: 0.85rem; color: var(--primary-green); font-weight: 600; text-decoration: none;">
             View My Spin History →
           </a>
+        </div>
+
+        <div class="astra-card" style="margin-top: 20px; text-align: left; max-width: 420px; margin-left: auto; margin-right: auto;">
+          <h3 style="font-size: 0.95rem; color: var(--deep-forest); margin-bottom: 8px;">How to earn spins</h3>
+          <p style="font-size: 0.85rem; color: var(--secondary-text); margin: 0 0 6px;">✦ 1 spin for every package you buy in ASTRA-VIP, SSVIP or Limited Products.</p>
+          <p style="font-size: 0.85rem; color: var(--secondary-text); margin: 0;">✦ 1 spin for every friend you invite directly who deposits and buys a package.</p>
         </div>
       </div>
     </main>
@@ -110,6 +120,7 @@
 
       slots = dbSlots || [];
       drawWheel();
+      await loadSpinsLeft();
 
       document.getElementById('spinBtn').addEventListener('click', handleSpin);
     }
@@ -148,6 +159,24 @@
       }
     }
 
+    let spinsLeft = 0;
+    async function loadSpinsLeft() {
+      const { count } = await supabase
+        .from('lucky_wheel_spin_credits')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', currentSession.user.id)
+        .is('used_at', null);
+      setSpinsLeft(count || 0);
+    }
+
+    function setSpinsLeft(n) {
+      spinsLeft = n;
+      document.getElementById('spinsLeft').textContent = n;
+      const btn = document.getElementById('spinBtn');
+      if (!isSpinning) btn.disabled = n <= 0;
+      btn.textContent = n > 0 ? 'SPIN LUCKY WHEEL' : 'NO SPINS LEFT';
+    }
+
     async function handleSpin() {
       if (isSpinning) return;
       const spinBtn = document.getElementById('spinBtn');
@@ -166,7 +195,8 @@
         const data = await res.json();
         if (!data.success) {
           alert(data.error || 'Spin failed.');
-          spinBtn.disabled = false;
+          if (typeof data.spins_left === 'number') setSpinsLeft(data.spins_left);
+          else spinBtn.disabled = false;
           return;
         }
 
@@ -179,15 +209,17 @@
         const slotCenterDeg = (slotWon - 1) * arcDeg + (arcDeg / 2);
         const targetDeg = 270 - slotCenterDeg;
         const totalSpins = 360 * 5; // 5 full revolutions
-        const finalRotation = totalSpins + targetDeg;
+        const base = currentRotation - (currentRotation % 360);
+        const finalRotation = base + totalSpins + ((targetDeg % 360) + 360) % 360;
+        currentRotation = finalRotation;
 
         const canvas = document.getElementById('wheelCanvas');
         canvas.style.transform = `rotate(${finalRotation}deg)`;
 
         setTimeout(() => {
-          alert(`🎉 Congratulations! You won ₦${data.prize_amount}! Credited directly to your wallet.`);
-          spinBtn.disabled = false;
+          alert(`🎉 Congratulations! You won ₦${Number(data.prize_amount).toLocaleString()}! Credited directly to your wallet.`);
           isSpinning = false;
+          setSpinsLeft(data.spins_left ?? Math.max(spinsLeft - 1, 0));
         }, 4200);
 
       } catch (err) {
