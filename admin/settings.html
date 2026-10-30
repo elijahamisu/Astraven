@@ -108,6 +108,16 @@
             Save Referral Settings
           </button>
         </form>
+
+        <form class="astra-card" id="welcomeForm">
+          <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 14px;">Welcome Bonus</h2>
+          <div class="form-group">
+            <label for="welcomeAmt">Bonus for new sign-ups (₦)</label>
+            <input type="number" id="welcomeAmt" class="form-control" required min="0" step="any" placeholder="e.g. 600">
+            <small style="color: var(--secondary-text); font-size: 0.78rem;">Credited to every new account at registration. Set 0 to turn it off.</small>
+          </div>
+          <button type="submit" id="saveWelcomeBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">Save Welcome Bonus</button>
+        </form>
       </div>
     </main>
   </div>
@@ -126,8 +136,8 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    const configs = { deposit_config: {}, withdrawal_config: {}, referral_config: {} };
-    const LABELS = { deposit_config: 'Deposit', withdrawal_config: 'Withdrawal', referral_config: 'Referral' };
+    const configs = { deposit_config: {}, withdrawal_config: {}, referral_config: {}, welcome_bonus: {} };
+    const LABELS = { deposit_config: 'Deposit', withdrawal_config: 'Withdrawal', referral_config: 'Referral', welcome_bonus: 'Welcome bonus' };
 
     function renderWithStatus(enabled) {
       const badge = document.getElementById('withStatusBadge');
@@ -143,6 +153,7 @@
       document.getElementById('withEnabled').checked = w.is_enabled !== false;
       renderWithStatus(w.is_enabled !== false);
       document.getElementById('commRate').value = r.commission_rate ?? 10;
+      document.getElementById('welcomeAmt').value = configs.welcome_bonus.amount ?? 600;
     }
 
     async function loadSettings() {
@@ -151,7 +162,7 @@
       currentSession = auth.session;
 
       const { data } = await supabase.from('site_settings').select('key, value')
-        .in('key', ['deposit_config', 'withdrawal_config', 'referral_config']);
+        .in('key', ['deposit_config', 'withdrawal_config', 'referral_config', 'welcome_bonus']);
       (data || []).forEach((row) => { configs[row.key] = row.value || {}; });
       fillForms();
 
@@ -166,6 +177,9 @@
         fee_type: 'percentage'
       }));
 
+      bindForm('welcomeForm', 'saveWelcomeBtn', 'welcome_bonus', () => ({
+        amount: Number(document.getElementById('welcomeAmt').value)
+      }));
       bindForm('refConfigForm', 'saveRefBtn', 'referral_config', () => ({
         commission_rate: Number(document.getElementById('commRate').value)
       }));

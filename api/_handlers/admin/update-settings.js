@@ -53,6 +53,10 @@ function validateSetting(key, v) {
     if (!num(v.min_deposit) || v.min_deposit <= 0) return 'Minimum deposit must be greater than 0.';
     return null;
   }
+  if (key === 'welcome_bonus') {
+    if (!num(v.amount) || v.amount < 0 || v.amount > 1000000) return 'Welcome bonus must be between 0 and 1,000,000.';
+    return null;
+  }
   if (key === 'referral_config') {
     if (!num(v.commission_rate) || v.commission_rate < 0 || v.commission_rate > 100) return 'Commission must be between 0 and 100%.';
     return null;
