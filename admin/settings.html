@@ -109,6 +109,18 @@
           </button>
         </form>
 
+        <form class="astra-card" id="manualDepForm">
+          <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 14px;">Manual Deposit Account</h2>
+          <label style="display: flex; gap: 8px; align-items: center; font-weight: 600; margin-bottom: 12px;">
+            <input type="checkbox" id="manEnabled"> Allow manual bank transfer deposits
+          </label>
+          <div class="form-group"><label for="manBank">Bank name</label><input id="manBank" class="form-control" maxlength="100" placeholder="e.g. Opay"></div>
+          <div class="form-group"><label for="manAccNo">Account number</label><input id="manAccNo" class="form-control" inputmode="numeric" maxlength="10" placeholder="10 digits"></div>
+          <div class="form-group"><label for="manAccName">Account name</label><input id="manAccName" class="form-control" maxlength="120"></div>
+          <div class="form-group"><label for="manNote">Instructions (optional)</label><textarea id="manNote" class="form-control" rows="2" maxlength="500" placeholder="e.g. Use your username as narration"></textarea></div>
+          <button type="submit" id="saveManBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">Save Manual Deposit Details</button>
+        </form>
+
         <form class="astra-card" id="welcomeForm">
           <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 14px;">Welcome Bonus</h2>
           <div class="form-group">
@@ -136,8 +148,8 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    const configs = { deposit_config: {}, withdrawal_config: {}, referral_config: {}, welcome_bonus: {} };
-    const LABELS = { deposit_config: 'Deposit', withdrawal_config: 'Withdrawal', referral_config: 'Referral', welcome_bonus: 'Welcome bonus' };
+    const configs = { deposit_config: {}, withdrawal_config: {}, referral_config: {}, welcome_bonus: {}, manual_deposit_config: {} };
+    const LABELS = { deposit_config: 'Deposit', withdrawal_config: 'Withdrawal', referral_config: 'Referral', welcome_bonus: 'Welcome bonus', manual_deposit_config: 'Manual deposit' };
 
     function renderWithStatus(enabled) {
       const badge = document.getElementById('withStatusBadge');
@@ -154,6 +166,12 @@
       renderWithStatus(w.is_enabled !== false);
       document.getElementById('commRate').value = r.commission_rate ?? 10;
       document.getElementById('welcomeAmt').value = configs.welcome_bonus.amount ?? 600;
+      const m = configs.manual_deposit_config;
+      document.getElementById('manEnabled').checked = !!m.is_enabled;
+      document.getElementById('manBank').value = m.bank_name || '';
+      document.getElementById('manAccNo').value = m.account_number || '';
+      document.getElementById('manAccName').value = m.account_name || '';
+      document.getElementById('manNote').value = m.instructions || '';
     }
 
     async function loadSettings() {
@@ -162,7 +180,7 @@
       currentSession = auth.session;
 
       const { data } = await supabase.from('site_settings').select('key, value')
-        .in('key', ['deposit_config', 'withdrawal_config', 'referral_config', 'welcome_bonus']);
+        .in('key', ['deposit_config', 'withdrawal_config', 'referral_config', 'welcome_bonus', 'manual_deposit_config']);
       (data || []).forEach((row) => { configs[row.key] = row.value || {}; });
       fillForms();
 
@@ -177,6 +195,13 @@
         fee_type: 'percentage'
       }));
 
+      bindForm('manualDepForm', 'saveManBtn', 'manual_deposit_config', () => ({
+        is_enabled: document.getElementById('manEnabled').checked,
+        bank_name: document.getElementById('manBank').value.trim(),
+        account_number: document.getElementById('manAccNo').value.trim(),
+        account_name: document.getElementById('manAccName').value.trim(),
+        instructions: document.getElementById('manNote').value.trim()
+      }));
       bindForm('welcomeForm', 'saveWelcomeBtn', 'welcome_bonus', () => ({
         amount: Number(document.getElementById('welcomeAmt').value)
       }));

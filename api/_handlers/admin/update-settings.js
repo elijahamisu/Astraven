@@ -53,6 +53,16 @@ function validateSetting(key, v) {
     if (!num(v.min_deposit) || v.min_deposit <= 0) return 'Minimum deposit must be greater than 0.';
     return null;
   }
+  if (key === 'manual_deposit_config') {
+    if (typeof v.is_enabled !== 'boolean') return 'Manual deposit on/off is required.';
+    for (const f of ['bank_name', 'account_number', 'account_name', 'instructions']) {
+      if (v[f] != null && (typeof v[f] !== 'string' || v[f].length > 500)) return 'Invalid ' + f.replace('_', ' ') + '.';
+    }
+    if (v.is_enabled && (!v.bank_name?.trim() || !/^\d{10}$/.test(v.account_number || '') || !v.account_name?.trim())) {
+      return 'Bank name, 10-digit account number and account name are required to turn manual deposits on.';
+    }
+    return null;
+  }
   if (key === 'welcome_bonus') {
     if (!num(v.amount) || v.amount < 0 || v.amount > 1000000) return 'Welcome bonus must be between 0 and 1,000,000.';
     return null;
