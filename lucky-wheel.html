@@ -67,7 +67,7 @@
         <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Flight Roulette</span>
         <h1 class="font-heading" style="font-size: 1.8rem;">Astraven Lucky Wheel</h1>
         <p style="color: var(--secondary-text); font-size: 0.88rem; margin-top: 4px;">
-          Every spin wins ₦600, credited straight to your wallet.
+          Spin to win cash prizes up to <span id="maxPrize">₦8,000</span>, credited straight to your wallet.
         </p>
 
         <div id="spinsBadge" style="display: inline-block; margin-top: 12px; padding: 8px 16px; border-radius: 999px; background: #FFF8E1; border: 1px solid var(--metallic-gold); color: var(--deep-forest); font-weight: 700; font-size: 0.9rem;">
@@ -119,6 +119,8 @@
         .order('slot_number', { ascending: true });
 
       slots = dbSlots || [];
+      const max = Math.max(0, ...slots.map(s => Number(s.prize_amount)));
+      if (max) document.getElementById('maxPrize').textContent = '₦' + max.toLocaleString();
       drawWheel();
       await loadSpinsLeft();
 
@@ -128,16 +130,16 @@
     function drawWheel() {
       const canvas = document.getElementById('wheelCanvas');
       const ctx = canvas.getContext('2d');
-      const numSlots = 6;
+      const numSlots = slots.length || 6;
       const arc = (2 * Math.PI) / numSlots;
-      const colors = ['#002B1A', '#064E32', '#003D24', '#002B1A', '#064E32', '#003D24'];
+      const colors = ['#002B1A', '#064E32', '#003D24'];
 
       ctx.clearRect(0, 0, 600, 600);
 
       for (let i = 0; i < numSlots; i++) {
         const angle = i * arc;
         ctx.beginPath();
-        ctx.fillStyle = colors[i % colors.length];
+        ctx.fillStyle = Number(slots[i]?.prize_amount) === 0 ? '#5A1E1E' : colors[i % colors.length];
         ctx.moveTo(300, 300);
         ctx.arc(300, 300, 290, angle, angle + arc);
         ctx.lineTo(300, 300);
@@ -152,7 +154,7 @@
         ctx.rotate(angle + arc / 2);
         ctx.textAlign = 'right';
         ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 30px Inter, sans-serif';
+        ctx.font = `bold ${numSlots > 8 ? 24 : numSlots > 6 ? 27 : 30}px Inter, "Noto Color Emoji", sans-serif`;
         const label = slots[i]?.label || `Slot ${i + 1}`;
         ctx.fillText(label, 260, 10);
         ctx.restore();
@@ -201,12 +203,12 @@
         }
 
         isSpinning = true;
-        const slotWon = data.slot_won; // 1 to 6
-        const numSlots = 6;
+        const slotIndex = Math.max(0, slots.findIndex(s => s.slot_number === data.slot_won));
+        const numSlots = slots.length || 6;
         const arcDeg = 360 / numSlots;
 
         // Pointer is at the top (270 degrees). Compute exact target rotation.
-        const slotCenterDeg = (slotWon - 1) * arcDeg + (arcDeg / 2);
+        const slotCenterDeg = slotIndex * arcDeg + (arcDeg / 2);
         const targetDeg = 270 - slotCenterDeg;
         const totalSpins = 360 * 5; // 5 full revolutions
         const base = currentRotation - (currentRotation % 360);
@@ -217,7 +219,11 @@
         canvas.style.transform = `rotate(${finalRotation}deg)`;
 
         setTimeout(() => {
-          alert(`🎉 Congratulations! You won ₦${Number(data.prize_amount).toLocaleString()}! Credited directly to your wallet.`);
+          if (Number(data.prize_amount) > 0) {
+            alert(`🎉 Congratulations! You won ₦${Number(data.prize_amount).toLocaleString()}! Credited directly to your wallet.`);
+          } else {
+            alert('😢 Bad luck this time! Earn another spin and try again.');
+          }
           isSpinning = false;
           setSpinsLeft(data.spins_left ?? Math.max(spinsLeft - 1, 0));
         }, 4200);

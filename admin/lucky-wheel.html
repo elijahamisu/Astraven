@@ -12,8 +12,39 @@
 
     <main class="main-content">
       <div style="margin-bottom: 24px;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ RNG Prize Management</span>
-        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Lucky Wheel Slot Prizes</h1>
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Prize Management</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Lucky Wheel</h1>
+      </div>
+
+      <div class="astra-card" style="margin-bottom: 20px;">
+        <h2 style="font-size: 1.1rem; color: var(--deep-forest); margin-bottom: 4px;">Fixed spin reward</h2>
+        <p style="font-size: 0.82rem; color: var(--secondary-text); margin-bottom: 12px;">Every spin lands on this slot and pays its amount. Pick Bad Luck to pay nothing.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <select id="winningSlotSelect" class="form-control" style="flex: 1; min-width: 200px;"></select>
+          <button id="saveWinningBtn" class="btn-gold" style="padding: 10px 18px;">Save Reward</button>
+        </div>
+        <div id="winningStatus" style="font-size: 0.85rem; margin-top: 10px; color: var(--primary-green); font-weight: 600;"></div>
+      </div>
+
+      <div class="astra-card" style="margin-bottom: 20px;">
+        <h2 style="font-size: 1.1rem; color: var(--deep-forest); margin-bottom: 4px;">Grant spins to a user</h2>
+        <p style="font-size: 0.82rem; color: var(--secondary-text); margin-bottom: 12px;">The user gets a notification and can spin right away.</p>
+        <form id="grantSpinsForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; align-items: end;">
+          <div>
+            <label class="form-label" style="font-size: 0.78rem; font-weight: 600;">Username or phone</label>
+            <input id="grantUser" class="form-control" placeholder="e.g. daniel" required>
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 0.78rem; font-weight: 600;">Number of spins</label>
+            <input id="grantCount" type="number" min="1" max="100" value="1" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 0.78rem; font-weight: 600;">Note (optional)</label>
+            <input id="grantNote" class="form-control" placeholder="e.g. Promo winner">
+          </div>
+          <button type="submit" id="grantSpinsBtn" class="btn-emerald" style="padding: 11px 18px;">Grant Spins</button>
+        </form>
+        <div id="grantStatus" style="font-size: 0.85rem; margin-top: 10px; font-weight: 600;"></div>
       </div>
 
       <div class="astra-card" id="wheelSlotsContainer">
@@ -28,61 +59,128 @@
     import { formatCurrency } from '../shared/formatters.js';
 
     let currentSession = null;
+    let slots = [];
+    let winningSlot = 1;
+
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const slotText = (s) => Number(s.prize_amount) === 0 ? s.label : `${s.label} (${formatCurrency(s.prize_amount)})`;
 
     async function loadWheel() {
-      const auth = await initAdminNavigation();
-      if (!auth) return;
-      currentSession = auth.session;
+      const [{ data, error }, { data: cfg }] = await Promise.all([
+        supabase.from('lucky_wheel_config').select('*').order('slot_number', { ascending: true }),
+        supabase.from('site_settings').select('value').eq('key', 'lucky_wheel_config').maybeSingle()
+      ]);
+      slots = data || [];
+      winningSlot = Number(cfg?.value?.winning_slot || 1);
 
-      const { data: slots, error } = await supabase
-        .from('lucky_wheel_config')
-        .select('*')
-        .order('slot_number', { ascending: true });
+      const select = document.getElementById('winningSlotSelect');
+      select.innerHTML = slots.map(s => `<option value="${s.slot_number}" ${s.slot_number === winningSlot ? 'selected' : ''}>Slot #${s.slot_number}: ${esc(slotText(s))}</option>`).join('');
+      const current = slots.find(s => s.slot_number === winningSlot);
+      document.getElementById('winningStatus').textContent = current ? `Current reward: ${slotText(current)}` : '';
 
       const container = document.getElementById('wheelSlotsContainer');
-      if (error || !slots || slots.length === 0) {
+      if (error || !slots.length) {
         container.innerHTML = `<p style="text-align: center; color: var(--secondary-text);">No slots found.</p>`;
         return;
       }
 
       container.innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+        <h2 style="font-size: 1.1rem; color: var(--deep-forest); margin-bottom: 12px;">Wheel slots</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
           ${slots.map(s => `
-            <div style="background: var(--light-gold-bg); padding: 16px; border-radius: var(--radius-sm); border: 1.5px solid var(--metallic-gold);">
-              <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--deep-forest);">SLOT #${s.slot_number}</div>
-              <div style="font-size: 1.4rem; font-family: var(--font-heading); color: var(--primary-green); font-weight: 700; margin: 4px 0 10px;">
-                ${formatCurrency(s.prize_amount)}
+            <div style="background: var(--light-gold-bg); padding: 14px; border-radius: var(--radius-sm); border: 1.5px solid ${s.slot_number === winningSlot ? 'var(--primary-green)' : 'var(--metallic-gold)'};">
+              <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--deep-forest);">
+                SLOT #${s.slot_number} ${s.slot_number === winningSlot ? '· <span style="color: var(--primary-green);">WINNING</span>' : ''}
               </div>
-              <button class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem; width: 100%;" onclick="editSlot(${s.slot_number}, ${s.prize_amount})">
-                Update Prize Value
-              </button>
+              <div style="font-size: 1.3rem; font-family: var(--font-heading); color: var(--primary-green); font-weight: 700; margin: 4px 0 2px;">${esc(s.label)}</div>
+              <div style="font-size: 0.78rem; color: var(--secondary-text); margin-bottom: 10px;">Pays ${formatCurrency(s.prize_amount)}</div>
+              <button class="btn-emerald" style="padding: 6px 12px; font-size: 0.75rem; width: 100%;" onclick="editSlot(${s.slot_number})">Edit Slot</button>
             </div>
           `).join('')}
         </div>
       `;
     }
 
-    window.editSlot = async function(slotNum, currentAmt) {
-      const newAmt = prompt(`Enter new prize amount for Slot #${slotNum}:`, currentAmt);
+    window.editSlot = async function(slotNum) {
+      const s = slots.find(x => x.slot_number === slotNum);
+      const newAmt = prompt(`Prize amount for Slot #${slotNum} (0 = Bad Luck):`, s.prize_amount);
       if (newAmt === null) return;
       const num = Number(newAmt);
-      if (isNaN(num) || num < 0) return alert('Invalid amount');
+      if (!Number.isFinite(num) || num < 0) return alert('Invalid amount');
+      const defLabel = num === 0 ? '😢 Bad Luck' : `₦${num.toLocaleString()}`;
+      const label = prompt('Label shown on the wheel (emoji allowed):', Number(s.prize_amount) === num ? s.label : defLabel);
+      if (label === null) return;
 
       const { data, error } = await supabase.rpc('admin_update_lucky_wheel_slot', {
         p_admin_id: currentSession.user.id,
         p_slot_number: slotNum,
         p_prize_amount: num,
-        p_label: `₦${num.toLocaleString()}`
+        p_label: label.trim() || defLabel
       });
-
-      if (error || !data.success) alert('Failed to update slot.');
-      else {
-        alert('Prize updated successfully!');
-        loadWheel();
-      }
+      if (error || !data?.success) alert(data?.error || error?.message || 'Failed to update slot.');
+      else loadWheel();
     };
 
-    loadWheel();
+    document.getElementById('saveWinningBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('saveWinningBtn');
+      const slot = Number(document.getElementById('winningSlotSelect').value);
+      btn.disabled = true;
+      const { data, error } = await supabase.rpc('admin_set_lucky_wheel_winning_slot', { p_slot_number: slot });
+      btn.disabled = false;
+      if (error || !data?.success) return alert(data?.error || error?.message || 'Failed to save.');
+      loadWheel();
+    });
+
+    document.getElementById('grantSpinsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const status = document.getElementById('grantStatus');
+      const btn = document.getElementById('grantSpinsBtn');
+      const who = document.getElementById('grantUser').value.trim().replace(/^@/, '');
+      const count = Number(document.getElementById('grantCount').value);
+      const note = document.getElementById('grantNote').value.trim();
+      if (!who) return;
+      if (!Number.isInteger(count) || count < 1 || count > 100) return alert('Spins must be between 1 and 100.');
+
+      btn.disabled = true;
+      status.style.color = 'var(--secondary-text)';
+      status.textContent = 'Looking up user...';
+
+      const { data: users } = await supabase
+        .from('profiles')
+        .select('id, username, full_name')
+        .or(`username.ilike.${who},phone.eq.${who}`)
+        .limit(2);
+
+      if (!users || users.length !== 1) {
+        btn.disabled = false;
+        status.style.color = 'var(--error-red, #B91C1C)';
+        status.textContent = users?.length ? 'More than one user matches. Use the exact username.' : 'No user found with that username or phone.';
+        return;
+      }
+      const u = users[0];
+      if (!confirm(`Grant ${count} spin(s) to @${u.username}${u.full_name ? ' (' + u.full_name + ')' : ''}?`)) {
+        btn.disabled = false; status.textContent = ''; return;
+      }
+
+      const { data, error } = await supabase.rpc('admin_grant_lucky_wheel_spins', { p_user_id: u.id, p_count: count, p_note: note || null });
+      btn.disabled = false;
+      if (error || !data?.success) {
+        status.style.color = 'var(--error-red, #B91C1C)';
+        status.textContent = data?.error || error?.message || 'Failed to grant spins.';
+        return;
+      }
+      status.style.color = 'var(--primary-green)';
+      status.textContent = `Granted ${count} spin(s) to @${u.username}. They now have ${data.spins_left} spin(s).`;
+      e.target.reset();
+      document.getElementById('grantCount').value = 1;
+    });
+
+    (async () => {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+      currentSession = auth.session;
+      loadWheel();
+    })();
   </script>
 </body>
 </html>
