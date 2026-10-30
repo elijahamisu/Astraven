@@ -84,6 +84,8 @@
   </div>
 
   <script type="module">
+    import { watchSetting } from './shared/site-settings.js';
+    let depositsEnabled = true;
     import { initUserNavigation } from './shared/user-navigation.js';
     import { requireAuth, supabase } from './shared/supabase-client.js';
     import { formatCurrency } from './shared/formatters.js';
@@ -103,16 +105,21 @@
       currentSession = await requireAuth();
       if (!currentSession) return;
 
-      const { data: cfg } = await supabase.from('site_settings').select('value').eq('key', 'deposit_config').maybeSingle();
-      if (cfg && cfg.value) {
-        minDeposit = Number(cfg.value.min_deposit) || 100;
+      await watchSetting('deposit_config', (cfg) => {
+        minDeposit = Number(cfg.min_deposit) || 100;
         document.getElementById('minDepositNotice').textContent = `Minimum deposit is ${formatCurrency(minDeposit)}.`;
         document.getElementById('amount').placeholder = `Min. ${formatCurrency(minDeposit)}`;
-        if (cfg.value.is_enabled === false) {
+        depositsEnabled = cfg.is_enabled !== false;
+        const btn = document.getElementById('submitBtn');
+        if (!depositsEnabled) {
           showAlert('Deposits are temporarily offline for maintenance.');
-          document.getElementById('submitBtn').disabled = true;
+          btn.disabled = true;
+        } else {
+          const banner = document.getElementById('alertBanner');
+          if (banner.textContent.startsWith('Deposits are temporarily offline')) banner.style.display = 'none';
+          btn.disabled = false;
         }
-      }
+      });
     }
 
     document.getElementById('depositForm').addEventListener('submit', async (e) => {
@@ -123,6 +130,7 @@
       const submitBtn = document.getElementById('submitBtn');
 
       if (!amount || amount <= 0) return showAlert('Please enter a valid deposit amount.');
+      if (!depositsEnabled) return showAlert('Deposits are temporarily offline for maintenance.');
       if (amount < minDeposit) return showAlert(`Deposit amount must be at least ${formatCurrency(minDeposit)}.`);
 
       submitBtn.disabled = true;

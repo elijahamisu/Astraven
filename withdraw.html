@@ -107,6 +107,8 @@
   </div>
 
   <script type="module">
+    import { watchSetting } from './shared/site-settings.js';
+    let withdrawalsEnabled = true;
     import { initUserNavigation } from './shared/user-navigation.js';
     import { requireAuth, supabase } from './shared/supabase-client.js';
     import { formatCurrency } from './shared/formatters.js';
@@ -140,21 +142,28 @@
         document.getElementById('availBal').textContent = formatCurrency(currentBalance);
       }
 
-      // Load dynamic limits from site_settings
-      const { data: cfg } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'withdrawal_config')
-        .maybeSingle();
-
-      if (cfg && cfg.value) {
-        minWithdrawal = Number(cfg.value.min_withdrawal) || 1;
-        feeRate = Number(cfg.value.fee_value) !== undefined ? Number(cfg.value.fee_value) : 5;
+      // Live limits from site_settings (updates instantly when admin changes them)
+      await watchSetting('withdrawal_config', (cfg) => {
+        minWithdrawal = Number(cfg.min_withdrawal) || 1;
+        feeRate = cfg.fee_value !== undefined && cfg.fee_value !== null ? Number(cfg.fee_value) : 5;
+        withdrawalsEnabled = cfg.is_enabled !== false;
         document.getElementById('minNotice').textContent = `Minimum withdrawal: ${formatCurrency(minWithdrawal)}. Fee: ${feeRate}%.`;
         document.getElementById('feePercent').textContent = feeRate;
         document.getElementById('amount').min = minWithdrawal;
         document.getElementById('amount').placeholder = `Min. ${formatCurrency(minWithdrawal)}`;
-      }
+        const btn = document.getElementById('submitBtn');
+        const banner = document.getElementById('alertBanner');
+        if (!withdrawalsEnabled) {
+          showAlert('Withdrawals are currently locked by the administrator. Please check back later.');
+          btn.disabled = true;
+          btn.textContent = 'Withdrawals Locked';
+        } else {
+          if (banner.textContent.startsWith('Withdrawals are currently locked')) banner.style.display = 'none';
+          btn.disabled = false;
+          btn.textContent = 'Confirm Withdrawal Request';
+        }
+        updateCalc();
+      });
 
       const bankSelect = document.getElementById('bankCode');
       [...AFRSTAR_BANKS].sort((a, b) => a.name.localeCompare(b.name)).forEach(b => {
@@ -187,6 +196,7 @@
       const accountNumber = document.getElementById('accountNumber').value.trim();
       const submitBtn = document.getElementById('submitBtn');
 
+      if (!withdrawalsEnabled) return showAlert('Withdrawals are currently locked by the administrator. Please check back later.');
       if (amount < minWithdrawal) return showAlert(`Minimum withdrawal amount is ${formatCurrency(minWithdrawal)}.`);
       if (amount > currentBalance) return showAlert('Insufficient available balance to fulfill withdrawal request.');
       if (!bankCode) return showAlert('Please select your bank.');
@@ -212,8 +222,8 @@
         console.error('Withdrawal failure:', err);
         showAlert(err.message || 'Withdrawal processing error. Please try again.');
       } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Confirm Withdrawal Request';
+        submitBtn.disabled = !withdrawalsEnabled;
+        submitBtn.textContent = withdrawalsEnabled ? 'Confirm Withdrawal Request' : 'Withdrawals Locked';
       }
     });
 

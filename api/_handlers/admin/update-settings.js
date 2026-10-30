@@ -23,6 +23,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'Valid settings key and JSON object required.' });
   }
 
+  const problem = validateSetting(key, value);
+  if (problem) return res.status(400).json({ success: false, error: problem });
+
   try {
     const { data, error } = await supabaseAdmin.rpc('admin_update_site_setting', {
       p_admin_id: user.id,
@@ -35,4 +38,24 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Internal settings updater error.' });
   }
+}
+
+function num(v) { return typeof v === 'number' && Number.isFinite(v); }
+
+function validateSetting(key, v) {
+  if (key === 'withdrawal_config') {
+    if (!num(v.min_withdrawal) || v.min_withdrawal <= 0) return 'Minimum withdrawal must be greater than 0.';
+    if (!num(v.fee_value) || v.fee_value < 0 || v.fee_value >= 100) return 'Withdrawal fee must be between 0 and 99.99%.';
+    if (typeof v.is_enabled !== 'boolean') return 'Withdrawal open/locked state is required.';
+    return null;
+  }
+  if (key === 'deposit_config') {
+    if (!num(v.min_deposit) || v.min_deposit <= 0) return 'Minimum deposit must be greater than 0.';
+    return null;
+  }
+  if (key === 'referral_config') {
+    if (!num(v.commission_rate) || v.commission_rate < 0 || v.commission_rate > 100) return 'Commission must be between 0 and 100%.';
+    return null;
+  }
+  return null;
 }
