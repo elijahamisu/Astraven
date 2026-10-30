@@ -293,6 +293,7 @@
       const { data: prods } = await supabase
         .from('products')
         .select(`id, code, name, price, duration_days, product_categories(name)`)
+        .is('archived_at', null)
         .order('price', { ascending: true });
 
       if (prods) {
