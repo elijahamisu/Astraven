@@ -243,6 +243,7 @@
         <button class="filter-btn" data-filter="pending">Pending</button>
         <button class="filter-btn" data-filter="approved">Approved</button>
         <button class="filter-btn" data-filter="rejected">Rejected</button>
+        <button class="filter-btn" data-filter="failed">Failed</button>
       </div>
 
       <!-- Responsive Card Feed -->
@@ -272,7 +273,7 @@
       const { data: deposits, error } = await supabase
         .from('deposits')
         .select(`
-          id, reference, amount, sender_name, transfer_reference, receipt_url, status, created_at,
+          id, reference, amount, sender_name, transfer_reference, receipt_url, status, created_at, gateway, platform_osn, rejection_reason,
           profiles:user_id(username, full_name)
         `)
         .order('created_at', { ascending: false })
@@ -324,6 +325,7 @@
 
       container.innerHTML = filtered.map(d => {
         const isPending = d.status === 'pending';
+        const isGateway = d.gateway === 'afrstar';
         const badgeClass = d.status === 'approved' ? 'badge-completed' : (isPending ? 'badge-pending' : 'badge-failed');
         const username = d.profiles?.username || 'user';
         const fullName = d.profiles?.full_name || d.sender_name || 'Investor';
@@ -357,8 +359,8 @@
 
               <!-- Narration Details -->
               <div class="narration-box">
-                <span class="narration-label">Bank Narration / Reference</span>
-                <div class="narration-text">${escapeHtml(d.transfer_reference || 'None provided')}</div>
+                <span class="narration-label">${isGateway ? 'Gateway Payment Reference' : 'Bank Narration / Reference'}</span>
+                <div class="narration-text">${escapeHtml(d.transfer_reference || (isGateway ? (d.platform_osn ? 'Order ' + d.platform_osn : 'Awaiting payment') : 'None provided'))}</div>
               </div>
 
               <!-- Receipt Proof -->
@@ -372,7 +374,11 @@
 
             <!-- Action Buttons -->
             <div class="card-actions-row">
-              ${isPending ? `
+              ${isPending && isGateway ? `
+                <div class="settled-note" style="grid-column: span 2;">
+                  Awaiting gateway payment. Credited automatically when Afrstar confirms.
+                </div>
+              ` : isPending ? `
                 <button class="btn-approve-action" onclick="reviewDep('${d.id}', 'approved')">
                   <span>✓</span>
                   <span>Approve &amp; Credit</span>

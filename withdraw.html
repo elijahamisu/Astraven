@@ -64,8 +64,10 @@
           </div>
 
           <div class="form-group">
-            <label for="bankName">Bank Name</label>
-            <input type="text" id="bankName" class="form-control" placeholder="e.g. Access Bank, GTBank, Opay, Zenith" required>
+            <label for="bankCode">Bank</label>
+            <select id="bankCode" class="form-control" required>
+              <option value="">Select your bank</option>
+            </select>
           </div>
 
           <div class="form-group">
@@ -108,6 +110,7 @@
     import { initUserNavigation } from './shared/user-navigation.js';
     import { requireAuth, supabase } from './shared/supabase-client.js';
     import { formatCurrency } from './shared/formatters.js';
+    import { AFRSTAR_BANKS } from './shared/afrstar-banks.js';
 
     let currentSession = null;
     let minWithdrawal = 1;
@@ -119,7 +122,6 @@
       banner.textContent = msg;
       banner.className = isError ? 'alert-banner error' : 'alert-banner success';
       banner.style.display = 'block';
-      alert(msg);
     }
 
     async function initWithdraw() {
@@ -154,6 +156,14 @@
         document.getElementById('amount').placeholder = `Min. ${formatCurrency(minWithdrawal)}`;
       }
 
+      const bankSelect = document.getElementById('bankCode');
+      [...AFRSTAR_BANKS].sort((a, b) => a.name.localeCompare(b.name)).forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.code;
+        opt.textContent = b.name;
+        bankSelect.appendChild(opt);
+      });
+
       document.getElementById('amount').addEventListener('input', updateCalc);
     }
 
@@ -172,68 +182,32 @@
       document.getElementById('alertBanner').style.display = 'none';
 
       const amount = Number(document.getElementById('amount').value);
-      const bankName = document.getElementById('bankName').value.trim();
+      const bankCode = document.getElementById('bankCode').value;
       const accountName = document.getElementById('accountName').value.trim();
       const accountNumber = document.getElementById('accountNumber').value.trim();
       const submitBtn = document.getElementById('submitBtn');
 
-      if (amount < minWithdrawal) {
-        return showAlert(`Minimum withdrawal amount is ${formatCurrency(minWithdrawal)}.`);
-      }
-
-      if (amount > currentBalance) {
-        return showAlert('Insufficient available balance to fulfill withdrawal request.');
-      }
-
-      if (!/^\d{10}$/.test(accountNumber)) {
-        return showAlert('Account number must be exactly 10 digits.');
-      }
+      if (amount < minWithdrawal) return showAlert(`Minimum withdrawal amount is ${formatCurrency(minWithdrawal)}.`);
+      if (amount > currentBalance) return showAlert('Insufficient available balance to fulfill withdrawal request.');
+      if (!bankCode) return showAlert('Please select your bank.');
+      if (!/^\d{10}$/.test(accountNumber)) return showAlert('Account number must be exactly 10 digits.');
+      if (!accountName) return showAlert('Please enter the account name.');
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Reserving Funds...';
 
       try {
-        // 1. Direct RPC execution (Fastest, zero serverless timeout)
-        const { data, error } = await supabase.rpc('request_withdrawal', {
-          p_user_id: currentSession.user.id,
-          p_amount: amount,
-          p_bank_name: bankName,
-          p_account_name: accountName,
-          p_account_number: accountNumber,
-          p_idempotency_key: 'WTH-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/withdrawals/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${(session || currentSession).access_token}` },
+          body: JSON.stringify({ amount, bankCode, accountName, accountNumber })
         });
+        const apiResult = await res.json().catch(() => ({ success: false, error: 'Unexpected server response.' }));
+        if (!apiResult.success) throw new Error(apiResult.error || 'Failed to submit withdrawal.');
 
-        if (error || !data?.success) {
-          // 2. Fallback to serverless API
-          const res = await fetch('/api/withdrawals/request', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${currentSession.access_token}`
-            },
-            body: JSON.stringify({
-              amount,
-              bankName,
-              accountName,
-              accountNumber,
-              idempotencyKey: 'WTH-' + currentSession.user.id.substring(0, 8) + '-' + Date.now()
-            })
-          });
-
-          const apiResult = await res.json();
-          if (!apiResult.success) {
-            throw new Error(apiResult.error || error?.message || 'Failed to submit withdrawal.');
-          }
-
-          showAlert(`Withdrawal request ${apiResult.reference} registered! ₦${apiResult.net_amount} will be settled.`, false);
-        } else {
-          showAlert(`Withdrawal request ${data.reference} registered! ₦${data.net_amount} will be settled.`, false);
-        }
-
-        setTimeout(() => {
-          window.location.href = 'withdrawal-history.html';
-        }, 1200);
-
+        showAlert(`Withdrawal ${apiResult.reference} submitted. ${formatCurrency(apiResult.net_amount)} will be paid to your bank once approved.`, false);
+        setTimeout(() => { window.location.href = 'withdrawal-history.html'; }, 1500);
       } catch (err) {
         console.error('Withdrawal failure:', err);
         showAlert(err.message || 'Withdrawal processing error. Please try again.');

@@ -37,7 +37,9 @@
       <div class="filter-tabs">
         <button class="filter-btn active" data-filter="all">All</button>
         <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="processing">Processing</button>
         <button class="filter-btn" data-filter="paid">Paid</button>
+        <button class="filter-btn" data-filter="failed">Failed</button>
         <button class="filter-btn" data-filter="rejected">Rejected</button>
       </div>
 
@@ -95,7 +97,9 @@
 
       container.innerHTML = filtered.map(w => {
         const isPending = w.status === 'pending';
-        const badgeClass = w.status === 'paid' ? 'badge-completed' : (isPending ? 'badge-pending' : 'badge-failed');
+        const isProcessing = w.status === 'processing';
+        const badgeClass = w.status === 'paid' ? 'badge-completed' : ((isPending || isProcessing) ? 'badge-pending' : 'badge-failed');
+        const lastErr = w.metadata?.last_payout_error;
 
         return `
           <div class="with-card" id="card-${w.id}">
@@ -124,18 +128,22 @@
               </div>
 
               <div style="background: var(--light-gold-bg); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.82rem;">
-                <div><strong>Bank:</strong> ${w.bank_name}</div>
+                <div><strong>Bank:</strong> ${w.bank_name}${w.bank_code ? ` <span style="color: var(--secondary-text);">(${w.bank_code})</span>` : ''}</div>
                 <div><strong>Account Name:</strong> ${w.account_name}</div>
                 <div><strong>Account Number:</strong> <span style="font-family: monospace; font-weight: 700;">${w.account_number}</span></div>
                 ${w.payment_reference ? `<div style="color: var(--success-green); margin-top: 4px;"><strong>Settlement:</strong> ${w.payment_reference}</div>` : ''}
+                ${w.platform_osn ? `<div style="margin-top: 4px;"><strong>Gateway Order:</strong> <span style="font-family: monospace;">${w.platform_osn}</span></div>` : ''}
+                ${isPending && lastErr ? `<div style="color: var(--error-red); margin-top: 4px;"><strong>Last payout error:</strong> ${lastErr}</div>` : ''}
                 ${w.rejection_reason ? `<div style="color: var(--error-red); margin-top: 4px;"><strong>Rejection Reason:</strong> ${w.rejection_reason}</div>` : ''}
               </div>
             </div>
 
             <div class="card-actions-row">
               ${isPending ? `
-                <button class="btn-gold" style="padding: 12px; font-size: 0.88rem;" onclick="reviewWith('${w.id}', 'paid')">Mark Paid</button>
+                <button class="btn-gold" style="padding: 12px; font-size: 0.88rem;" onclick="reviewWith('${w.id}', 'approve')">Approve &amp; Pay</button>
                 <button class="btn-emerald" style="padding: 12px; font-size: 0.88rem; background: rgba(215, 25, 32, 0.08); color: var(--error-red); border-color: var(--error-red);" onclick="reviewWith('${w.id}', 'rejected')">Reject</button>
+              ` : isProcessing ? `
+                <div style="grid-column: span 2; text-align: center; font-size: 0.8rem; color: var(--secondary-text); padding: 6px 0;">Approved, payout sent to gateway. Awaiting bank confirmation.</div>
               ` : `
                 <div style="grid-column: span 2; text-align: center; font-size: 0.8rem; color: var(--secondary-text); padding: 6px 0;">Settled (${w.status})</div>
               `}
@@ -145,45 +153,42 @@
       }).join('');
     }
 
-    // Direct one-click review (Prompt removed for "Mark Paid")
+    // Approve -> Afrstar payout (server-side). Reject -> refund reserved funds.
     window.reviewWith = async function(id, action) {
-      let payRef = 'SETTLED';
       let reason = null;
-
-      if (action === 'paid') {
-        // Simple confirmation with no text input prompt
-        if (!confirm('Confirm marking this withdrawal request as paid?')) return;
+      if (action === 'approve') {
+        const w = allWithdrawals.find(x => x.id === id);
+        if (!confirm(`Approve and pay ${formatCurrency(w?.net_amount || 0)} to ${w?.account_name || ''} (${w?.bank_name || ''} ${w?.account_number || ''}) via the payment gateway?`)) return;
       } else {
-        reason = prompt('Enter administrative rejection reason (reserved funds will be refunded to user):');
+        reason = prompt('Enter rejection reason (reserved funds will be refunded to user):');
         if (!reason) return;
       }
 
       const card = document.getElementById(`card-${id}`);
       const actionsRow = card?.querySelector('.card-actions-row');
       if (actionsRow) {
-        actionsRow.innerHTML = `<div style="grid-column: span 2; text-align: center; font-size: 0.82rem; color: var(--secondary-text);">Updating status...</div>`;
+        actionsRow.innerHTML = `<div style="grid-column: span 2; text-align: center; font-size: 0.82rem; color: var(--secondary-text);">${action === 'approve' ? 'Sending payout...' : 'Rejecting...'}</div>`;
       }
 
       try {
-        const { data, error } = await supabase.rpc('review_withdrawal', {
-          p_withdrawal_id: id,
-          p_admin_id: currentSession.user.id,
-          p_action: action,
-          p_payment_reference: payRef,
-          p_rejection_reason: reason
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/withdrawals/review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${(session || currentSession).access_token}` },
+          body: JSON.stringify({ withdrawalId: id, action, rejectionReason: reason })
         });
-
-        if (error || !data?.success) {
-          alert('Action error: ' + (data?.error || error?.message || 'Failed'));
-          loadWithdrawals();
+        const data = await res.json().catch(() => ({ success: false, error: 'Unexpected server response.' }));
+        if (!data.success) {
+          alert('Action error: ' + (data.error || 'Failed'));
+        } else if (action === 'approve') {
+          alert(data.warning || 'Approved. Payout sent to the gateway; status updates when the bank confirms.');
         } else {
-          alert(`Withdrawal marked ${action} successfully!`);
-          loadWithdrawals();
+          alert('Withdrawal rejected and funds refunded.');
         }
       } catch (err) {
         alert('Action error: ' + err.message);
-        loadWithdrawals();
       }
+      loadWithdrawals();
     };
 
     loadWithdrawals();

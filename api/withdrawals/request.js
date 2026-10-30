@@ -1,34 +1,35 @@
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// User withdrawal request: funds are reserved and the request waits for admin approval.
+import { getSupabaseAdmin, getUserFromRequest } from '../_lib/afrstar.js';
+import { AFRSTAR_BANKS } from '../../shared/afrstar-banks.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed.' });
 
-  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
-  if (!token) return res.status(401).json({ success: false, error: 'Unauthorized.' });
+  let supabaseAdmin;
+  try { supabaseAdmin = getSupabaseAdmin(); } catch (e) { return res.status(500).json({ success: false, error: e.message }); }
 
-  const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token);
-  if (authErr || !user) return res.status(401).json({ success: false, error: 'Invalid session.' });
+  const user = await getUserFromRequest(req, supabaseAdmin);
+  if (!user) return res.status(401).json({ success: false, error: 'Invalid session.' });
 
-  const { amount, bankName, accountName, accountNumber, idempotencyKey } = req.body || {};
+  const { amount, bankCode, accountName, accountNumber } = req.body || {};
   const numAmount = Number(amount);
-  if (isNaN(numAmount) || numAmount <= 0) return res.status(400).json({ success: false, error: 'Invalid withdrawal amount.' });
-  if (!bankName || !accountName || !accountNumber) return res.status(400).json({ success: false, error: 'All banking details are required.' });
+  if (!Number.isFinite(numAmount) || numAmount <= 0) return res.status(400).json({ success: false, error: 'Invalid withdrawal amount.' });
+
+  const bank = AFRSTAR_BANKS.find(b => b.code === String(bankCode || ''));
+  if (!bank) return res.status(400).json({ success: false, error: 'Please select a supported bank.' });
+  if (!/^\d{10}$/.test(String(accountNumber || '').trim())) return res.status(400).json({ success: false, error: 'Account number must be exactly 10 digits.' });
+  if (!String(accountName || '').trim()) return res.status(400).json({ success: false, error: 'Account name is required.' });
 
   try {
-    const { data, error } = await supabaseAdmin.rpc('request_withdrawal', {
+    const { data, error } = await supabaseAdmin.rpc('request_gateway_withdrawal', {
       p_user_id: user.id,
       p_amount: numAmount,
-      p_bank_name: bankName,
-      p_account_name: accountName,
-      p_account_number: accountNumber,
-      p_idempotency_key: idempotencyKey || null
+      p_bank_code: bank.code,
+      p_bank_name: bank.name,
+      p_account_name: String(accountName).trim(),
+      p_account_number: String(accountNumber).trim()
     });
-
-    if (error || !data.success) return res.status(400).json(data || { success: false, error: error.message });
+    if (error || !data?.success) return res.status(400).json({ success: false, error: data?.error || error?.message || 'Withdrawal failed.' });
     return res.status(200).json(data);
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Internal withdrawal service error.' });
