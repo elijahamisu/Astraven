@@ -1,1 +1,0 @@
-import"./supabase-client-BCUvSBAr.js";import{i}from"./user-navigation-CnUP_QeE.js";import"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/+esm";import"./site-settings-CsXfhtzc.js";import"./mobile-cards-DX-1T3ZF.js";i({requireSession:!1});

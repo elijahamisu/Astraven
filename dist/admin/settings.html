@@ -32,7 +32,7 @@
     .switch-input:checked + .switch-ui::after { transform: translateX(22px); }
     .switch-input:focus-visible + .switch-ui { outline: 2px solid var(--metallic-gold); outline-offset: 2px; }
   </style>
-  <script type="module" crossorigin src="/assets/admin/settings-Ja07k5Er.js"></script>
+  <script type="module" crossorigin src="/assets/admin/settings-DMuHoysD.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
   <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
   <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
@@ -123,6 +123,24 @@
           <div class="form-group"><label for="manAccName">Account name</label><input id="manAccName" class="form-control" maxlength="120"></div>
           <div class="form-group"><label for="manNote">Instructions (optional)</label><textarea id="manNote" class="form-control" rows="2" maxlength="500" placeholder="e.g. Use your username as narration"></textarea></div>
           <button type="submit" id="saveManBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">Save Manual Deposit Details</button>
+        </form>
+
+        <form class="astra-card" id="popupForm">
+          <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 14px;">Welcome Popup (Dashboard)</h2>
+          <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 14px;">
+            <input type="checkbox" id="wpEnabled"> Show popup every time users open the dashboard
+          </label>
+          <div class="form-group">
+            <label>Picture</label>
+            <img id="wpPreview" alt="" style="width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; border: 1px solid #E5E7EB; display: none; margin-bottom: 8px;">
+            <input type="file" id="wpImage" class="form-control" accept="image/png,image/jpeg,image/webp">
+            <button type="button" id="wpRemoveImg" style="margin-top: 6px; background: none; border: none; color: var(--error-red); font-size: 0.8rem; cursor: pointer; text-align: left; padding: 0;">Remove picture</button>
+          </div>
+          <div class="form-group"><label for="wpTitle">Title</label><input id="wpTitle" class="form-control" maxlength="150"></div>
+          <div class="form-group"><label for="wpMessage">Message</label><textarea id="wpMessage" class="form-control" rows="5" maxlength="2000"></textarea></div>
+          <div class="form-group"><label for="wpChanLabel">Channel button text</label><input id="wpChanLabel" class="form-control" maxlength="80" placeholder="Join Official Telegram Channel"></div>
+          <div class="form-group"><label for="wpChanUrl">Official channel link</label><input id="wpChanUrl" class="form-control" maxlength="500" placeholder="https://t.me/astravenhq"></div>
+          <button type="submit" id="savePopupBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">Save Welcome Popup</button>
         </form>
 
         <form class="astra-card" id="welcomeForm">

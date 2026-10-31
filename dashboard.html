@@ -376,6 +376,7 @@
     import { initUserNavigation } from './shared/user-navigation.js';
     import { requireAuth, supabase } from './shared/supabase-client.js';
     import { formatCurrency, formatDate } from './shared/formatters.js';
+    import { showWelcomePopup } from './shared/welcome-popup.js';
 
     async function loadDashboard() {
       await initUserNavigation({ requireSession: true });
@@ -472,7 +473,7 @@
       });
     }
 
-    loadDashboard();
+    loadDashboard().then(() => showWelcomePopup());
   </script>
 </body>
 </html>

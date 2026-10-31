@@ -68,6 +68,15 @@ function validateSetting(key, v) {
     if (v.admin_withdraw_fee_pct != null && (!num(v.admin_withdraw_fee_pct) || v.admin_withdraw_fee_pct < 0 || v.admin_withdraw_fee_pct >= 100)) return 'Gateway fee must be between 0 and 99.99%.';
     return null;
   }
+  if (key === 'welcome_popup') {
+    if (typeof v.is_enabled !== 'boolean') return 'Welcome popup on/off is required.';
+    for (const [f, max] of [['title', 150], ['message', 2000], ['image_url', 1000], ['channel_label', 80], ['channel_url', 500]]) {
+      if (v[f] != null && (typeof v[f] !== 'string' || v[f].length > max)) return 'Invalid ' + f.replace('_', ' ') + '.';
+    }
+    if (v.channel_url && !/^https:\/\//i.test(v.channel_url)) return 'Channel link must start with https://';
+    if (v.image_url && !/^(https:\/\/|\/)/i.test(v.image_url)) return 'Invalid picture link.';
+    return null;
+  }
   if (key === 'welcome_bonus') {
     if (!num(v.amount) || v.amount < 0 || v.amount > 1000000) return 'Welcome bonus must be between 0 and 1,000,000.';
     return null;
