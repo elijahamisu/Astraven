@@ -89,11 +89,6 @@ export const USER_NAVIGATION_CONFIG = [
 
 export async function initUserNavigation({ requireSession = true } = {}) {
   let session = null;
-  if (requireSession) {
-    session = await requireAuth();
-    if (!session) return;
-  }
-
   const currentFile = window.location.pathname.split('/').pop() || 'index.html';
   const isNested = window.location.pathname.includes('/admin/');
   const rootPrefix = isNested ? '../' : './';
@@ -242,6 +237,11 @@ export async function initUserNavigation({ requireSession = true } = {}) {
   document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     await signOutUser();
   });
+
+  if (requireSession) {
+    session = await requireAuth();
+    if (!session) return;
+  }
 
   // Hydrate user profile info & notification counter
   if (session && supabase) {

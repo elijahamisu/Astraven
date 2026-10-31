@@ -1,9 +1,0 @@
-import{r as s,s as d}from"./supabase-client-BCUvSBAr.js";import{i as c}from"./user-navigation-C7tDwe5x.js";import{a as m,f as l}from"./formatters-kkpPVsns.js";import"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/+esm";import"./site-settings-1MPb4jkf.js";import"./mobile-cards-DX-1T3ZF.js";let n=null;async function u(){await c({requireSession:!0}),n=await s(),n&&(a(),document.getElementById("giftForm").addEventListener("submit",async t=>{t.preventDefault();const r=document.getElementById("code").value.trim(),e=document.getElementById("redeemBtn");e.disabled=!0,e.textContent="Verifying Voucher...";try{const o=await(await fetch("/api/gift-codes/redeem",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${n.access_token}`},body:JSON.stringify({code:r})})).json();o.success?(alert(`🎉 Success! ₦${o.amount} credited to your available balance.`),document.getElementById("giftForm").reset(),a()):alert(o.error||"Failed to redeem voucher.")}catch{alert("Network or server error during redemption.")}finally{e.disabled=!1,e.textContent="Redeem Voucher"}}))}async function a(){const{data:t}=await d.from("gift_code_redemptions").select("*").eq("user_id",n.user.id).order("created_at",{ascending:!1}),r=document.getElementById("historyContainer");if(!t||t.length===0){r.innerHTML='<p style="text-align: center; color: var(--secondary-text); padding: 10px;">No gift codes redeemed yet.</p>';return}r.innerHTML=t.map(e=>`
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ECECEC;">
-          <div>
-            <div style="font-weight: 700; color: var(--deep-forest); font-size: 0.9rem;">${m(e.reward_amount)}</div>
-            <div style="font-size: 0.75rem; color: var(--secondary-text);">${l(e.created_at)}</div>
-          </div>
-          <span class="badge-status badge-completed">Claimed</span>
-        </div>
-      `).join("")}u();
