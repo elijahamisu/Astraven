@@ -144,7 +144,7 @@ export async function createSettlement({ orderId, amount, notificationUrl, name,
 export async function getBalance() {
   const cfg = getConfig();
   const signature = crypto.createHash('md5').update(`merchant_no=${cfg.merchantNo}&key=${cfg.payoutKey}`, 'utf8').digest('hex').toUpperCase();
-  return call('/api/merchant/balance', null, { raw: { merchant_no: cfg.merchantNo, signature, data: { merchant_no: cfg.merchantNo, signature } } });
+  return call('/api/merchant/balance', null, { raw: { merchant_no: cfg.merchantNo, signature } });
 }
 
 export const queryPayment = (orderId) => call('/api/pay/queryPaymentOrder', null, { raw: { merchant_no: getConfig().merchantNo, data: { order_id: orderId } } });
