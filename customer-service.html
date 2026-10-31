@@ -184,8 +184,8 @@
             <span style="font-size: 0.75rem; color: var(--secondary-text);">Updated: ${formatDate(t.last_message_at)}</span>
           </div>
           <div>
-            <span class="badge-status ${t.status === 'resolved' ? 'badge-completed' : (t.status === 'open' ? 'badge-pending' : 'badge-completed')}">
-              ${t.status.replace(/_/g, ' ')}
+            <span class="badge-status ${['closed', 'resolved'].includes(t.status) ? 'badge-failed' : (t.status === 'open' ? 'badge-pending' : 'badge-completed')}">
+              ${['closed', 'resolved'].includes(t.status) ? 'session ended' : t.status.replace(/_/g, ' ')}
             </span>
           </div>
         </a>
@@ -247,6 +247,7 @@
     }
 
     loadTickets();
+    if (new URLSearchParams(location.search).get('new') === '1') setTimeout(() => document.getElementById('openModalBtn')?.click(), 400);
   </script>
 </body>
 </html>

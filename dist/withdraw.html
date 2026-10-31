@@ -38,13 +38,13 @@
     .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
     .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
   </style>
-  <script type="module" crossorigin src="/assets/withdraw-CZ8nS-Mp.js"></script>
+  <script type="module" crossorigin src="/assets/withdraw-CtAKbmEN.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
   <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
   <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
-  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-CnUP_QeE.js">
   <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
-  <link rel="modulepreload" crossorigin href="/assets/mgm-banks-CTAtA-Ij.js">
+  <link rel="modulepreload" crossorigin href="/assets/mgm-banks-DGIe8LZ_.js">
   <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
 </head>
 <body>
@@ -70,6 +70,20 @@
             <small id="minNotice" style="color: var(--secondary-text); font-size: 0.78rem;">Loading limits...</small>
           </div>
 
+          <div id="boundCard" style="display: none; background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%); border: 1.5px solid var(--metallic-gold); border-radius: 14px; padding: 16px; color: var(--white); margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.72rem; letter-spacing: .08em; color: var(--soft-gold);">PAYOUT TO YOUR BOUND CARD</span>
+              <a href="bank-card.html" style="font-size: 0.75rem; color: var(--bright-gold); font-weight: 700; text-decoration: none; border: 1px solid var(--metallic-gold); padding: 3px 10px; border-radius: 6px;">Edit</a>
+            </div>
+            <div id="bcBank" style="font-weight: 700; color: var(--bright-gold); margin-top: 8px;"></div>
+            <div id="bcNum" style="font-family: monospace; font-size: 1.2rem; letter-spacing: .1em; margin: 4px 0;"></div>
+            <div id="bcName" style="font-size: 0.8rem; text-transform: uppercase; color: #D1D5DB;"></div>
+          </div>
+          <div id="noCardHint" style="display: none; font-size: 0.82rem; background: var(--light-gold-bg); border: 1px solid rgba(212,175,55,.4); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 14px;">
+            Tip: <a href="bank-card.html" style="color: var(--primary-green); font-weight: 700;">Bind a bank card</a> so you never have to type your account details again.
+          </div>
+
+          <div id="bankFields">
           <div class="form-group">
             <label for="bankCode">Bank</label>
             <select id="bankCode" class="form-control" required>
@@ -85,6 +99,7 @@
           <div class="form-group">
             <label for="accountNumber">Account Number (10 Digits)</label>
             <input type="text" id="accountNumber" class="form-control" maxlength="10" placeholder="0123456789" required>
+          </div>
           </div>
 
           <!-- Dynamic Fee Breakdown -->

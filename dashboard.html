@@ -35,13 +35,13 @@
     /* Shortcuts Grid */
     .shortcuts-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
       margin-bottom: 28px;
     }
     @media (min-width: 440px) {
       .shortcuts-grid {
-        grid-template-columns: repeat(6, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 12px;
       }
     }
@@ -84,7 +84,8 @@
       fill: currentColor;
     }
     .shortcut-tile-title {
-      font-size: 0.75rem;
+      overflow-wrap: anywhere;
+      font-size: 0.72rem;
       font-weight: 600;
       line-height: 1.2;
     }
@@ -236,7 +237,7 @@
         </div>
       </section>
 
-      <!-- 4. Quick Action Shortcuts (6 Key Portals) -->
+      <!-- 4. Quick Action Shortcuts (10 Key Portals) -->
       <h2 class="section-title" style="margin-bottom: 12px;">Quick Portals</h2>
       <div class="shortcuts-grid">
         <a href="deposit.html" class="shortcut-tile">
@@ -279,6 +280,34 @@
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
           </div>
           <span class="shortcut-tile-title">Lucky Spin</span>
+        </a>
+
+        <a href="leaderboard.html" class="shortcut-tile">
+          <div class="shortcut-icon-circle">
+            <svg viewBox="0 0 24 24"><path d="M7.5 21H2V9h5.5v12zm7.25-18h-5.5v18h5.5V3zM22 11h-5.5v10H22V11z"/></svg>
+          </div>
+          <span class="shortcut-tile-title">Leaderboard</span>
+        </a>
+
+        <a href="customer-service.html" class="shortcut-tile">
+          <div class="shortcut-icon-circle">
+            <svg viewBox="0 0 24 24"><path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h4v1h-7v2h6c1.66 0 3-1.34 3-3V10a9 9 0 0 0-9-9z"/></svg>
+          </div>
+          <span class="shortcut-tile-title">Support</span>
+        </a>
+
+        <a href="blog.html" class="shortcut-tile">
+          <div class="shortcut-icon-circle">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+          </div>
+          <span class="shortcut-tile-title">Blog</span>
+        </a>
+
+        <a href="bank-card.html" class="shortcut-tile">
+          <div class="shortcut-icon-circle">
+            <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+          </div>
+          <span class="shortcut-tile-title">Bank Card</span>
         </a>
       </div>
 

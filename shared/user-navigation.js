@@ -38,6 +38,7 @@ export const USER_NAVIGATION_CONFIG = [
       { label: 'Deposit', href: 'deposit.html' },
       { label: 'Deposit History', href: 'deposit-history.html' },
       { label: 'Withdraw', href: 'withdraw.html' },
+      { label: 'Bind Bank Card', href: 'bank-card.html' },
       { label: 'Withdrawal History', href: 'withdrawal-history.html' },
       { label: 'Transactions', href: 'transactions.html' }
     ]

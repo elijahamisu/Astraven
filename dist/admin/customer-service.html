@@ -249,7 +249,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/admin/customer-service-DYC3_nkE.js"></script>
+  <script type="module" crossorigin src="/assets/admin/customer-service-uWXccp2H.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
   <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
   <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
@@ -272,7 +272,7 @@
         <button class="filter-btn" data-filter="open">Open</button>
         <button class="filter-btn" data-filter="in_progress">In Progress</button>
         <button class="filter-btn" data-filter="waiting_for_user">Waiting for User</button>
-        <button class="filter-btn" data-filter="resolved">Resolved</button>
+        <button class="filter-btn" data-filter="ended">Ended</button>
       </div>
 
       <!-- Mobile-first Card Feed -->
@@ -308,8 +308,6 @@
           <select id="statusSelect" class="form-control" style="width: auto; flex: 1; min-width: 160px; font-size: 0.82rem; font-weight: 600;">
             <option value="waiting_for_user">Status: Waiting for User</option>
             <option value="in_progress">Status: Keep In Progress</option>
-            <option value="resolved">Status: Mark as Resolved</option>
-            <option value="closed">Status: Close Ticket</option>
           </select>
 
           <button type="submit" id="sendReplyBtn" class="btn-gold" style="padding: 10px 20px; font-size: 0.88rem;">
@@ -317,6 +315,10 @@
           </button>
         </div>
       </form>
+      <div id="endSessionBar" style="padding: 10px 16px 14px; border-top: 1px solid #ECECEC;">
+        <button type="button" id="endSessionBtn" style="width: 100%; padding: 11px; border-radius: var(--radius-sm); border: 1.5px solid var(--error-red); background: rgba(215,25,32,.06); color: var(--error-red); font-weight: 700; cursor: pointer;">End Session</button>
+      </div>
+      <div id="endedNote" style="display: none; padding: 14px 16px; text-align: center; font-size: 0.85rem; color: var(--secondary-text); border-top: 1px solid #ECECEC;">This session has ended. The user must start a new session to chat again.</div>
     </div>
   </div>
 

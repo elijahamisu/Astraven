@@ -92,6 +92,10 @@
         </div>
 
         <!-- Reply Input Bar -->
+        <div id="endedBar" style="display: none; text-align: center; padding: 16px; background: #FFFDF8; border-top: 1px solid #ECECEC;">
+          <p style="font-size: 0.88rem; color: var(--secondary-text); margin-bottom: 10px;">This session has ended. You can't send messages here anymore.</p>
+          <a href="customer-service.html?new=1" class="btn-gold" style="display: inline-block; padding: 10px 20px; text-decoration: none;">Start a New Session</a>
+        </div>
         <form class="chat-input-bar" id="replyForm">
           <div style="display: flex; gap: 8px;">
             <input type="text" id="replyMsg" class="form-control" style="flex: 1; padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm);" placeholder="Type your reply to the support team..." required autocomplete="off">
@@ -120,7 +124,11 @@
       targetTicketId = urlParams.get('id');
 
       if (!targetTicketId) {
-        document.getElementById('ticketSummary').innerHTML = `<p style="color: var(--error-red);">No ticket specified.</p>`;
+        const ended = ['closed', 'resolved'].includes(ticket.status);
+      document.getElementById('replyForm').style.display = ended ? 'none' : '';
+      document.getElementById('endedBar').style.display = ended ? 'block' : 'none';
+
+      document.getElementById('ticketSummary').innerHTML = `<p style="color: var(--error-red);">No ticket specified.</p>`;
         return;
       }
 
@@ -138,7 +146,7 @@
       document.getElementById('ticketSummary').innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <span style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold);">${ticket.ticket_ref}</span>
-          <span class="badge-status ${ticket.status === 'resolved' ? 'badge-completed' : 'badge-pending'}">${ticket.status.replace(/_/g, ' ')}</span>
+          <span class="badge-status ${ended ? 'badge-failed' : 'badge-pending'}">${ended ? 'session ended' : ticket.status.replace(/_/g, ' ')}</span>
         </div>
         <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 4px;">${escapeHtml(ticket.subject)}</h2>
         <span style="font-size: 0.75rem; color: var(--secondary-text);">Category: <strong>${ticket.category}</strong> | Opened: ${formatDate(ticket.created_at)}</span>
@@ -213,8 +221,9 @@
       });
 
       btn.disabled = false;
-      if (error || !data.success) {
+      if (error || !data?.success) {
         alert(data?.error || error?.message || 'Failed to send reply');
+        if (data?.ended) loadConversation();
       } else {
         input.value = '';
         loadConversation();

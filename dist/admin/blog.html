@@ -219,11 +219,12 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/admin/blog-BPhyx-rX.js"></script>
+  <script type="module" crossorigin src="/assets/admin/blog-CFwK39LA.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
   <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
   <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
   <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="modulepreload" crossorigin href="/assets/usernames-CpnWIWI3.js">
   <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
 </head>
 <body>
@@ -251,6 +252,16 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <div id="commentsModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; align-items: center; justify-content: center; padding: 16px;" onclick="if (event.target === this) closeComments()">
+    <div style="background: var(--white); border-radius: var(--radius-md); width: 100%; max-width: 560px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #ECECEC;">
+        <div style="min-width: 0;"><span style="font-size: 0.72rem; color: var(--metallic-gold); font-weight: 700;">COMMENTS</span><h3 id="cmTitle" style="font-size: 1rem; color: var(--deep-forest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></h3></div>
+        <button onclick="closeComments()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary-text);">&times;</button>
+      </div>
+      <div id="cmList" style="padding: 4px 16px 12px; overflow-y: auto;"></div>
+    </div>
   </div>
 
 </body>

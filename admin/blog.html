@@ -248,10 +248,21 @@
     </main>
   </div>
 
+  <div id="commentsModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; align-items: center; justify-content: center; padding: 16px;" onclick="if (event.target === this) closeComments()">
+    <div style="background: var(--white); border-radius: var(--radius-md); width: 100%; max-width: 560px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #ECECEC;">
+        <div style="min-width: 0;"><span style="font-size: 0.72rem; color: var(--metallic-gold); font-weight: 700;">COMMENTS</span><h3 id="cmTitle" style="font-size: 1rem; color: var(--deep-forest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></h3></div>
+        <button onclick="closeComments()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary-text);">&times;</button>
+      </div>
+      <div id="cmList" style="padding: 4px 16px 12px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
   <script type="module">
     import { initAdminNavigation } from '../shared/admin-navigation.js';
     import { supabase } from '../shared/supabase-client.js';
     import { formatDate } from '../shared/formatters.js';
+    import { fetchUsernames } from '../shared/usernames.js';
 
     let currentSession = null;
     let allPosts = [];
@@ -320,12 +331,12 @@
               <p class="post-content">${escapeHtml(p.content)}</p>
 
               <!-- Inline Screenshot Preview -->
-              ${p.image_url ? `
+              ${[p.image_url, p.image_url_2].filter(Boolean).map(u => `
                 <div class="proof-image-container">
-                  <img src="${p.image_url}" alt="Payment Proof" class="proof-img" onclick="window.open('${p.image_url}', '_blank')">
-                  <span class="proof-caption">🔍 Tap screenshot to view full resolution</span>
+                  <img src="${u}" alt="Post picture" class="proof-img" onclick="window.open('${u}', '_blank')">
+                  <span class="proof-caption">🔍 Tap picture to view full resolution</span>
                 </div>
-              ` : ''}
+              `).join('')}
 
               ${p.caption ? `
                 <p style="font-size: 0.8rem; color: var(--secondary-text); font-style: italic;">"${escapeHtml(p.caption)}"</p>
@@ -357,6 +368,12 @@
                 </button>
               ` : ''}
 
+              ${isApproved ? `
+                <button class="btn-approve-mod" style="flex: 1; width: 100%;" onclick="openComments('${p.id}')">
+                  <span>💬</span>
+                  <span>Comments (${Number(p.comments_count) || 0})</span>
+                </button>
+              ` : ''}
               <!-- Delete button is available on EVERY post (before or after approval) -->
               <button class="btn-delete-mod" style="${!isPending ? 'flex: 1; width: 100%;' : ''}" onclick="deletePost('${p.id}')">
                 <span>🗑️</span>
@@ -423,6 +440,42 @@
       } catch (err) {
         alert('Error deleting post: ' + err.message);
       }
+    };
+
+    // Comments moderation (approved posts)
+    let activeCommentsPost = null;
+    window.openComments = async function(postId) {
+      activeCommentsPost = postId;
+      const post = allPosts.find(p => p.id === postId);
+      document.getElementById('cmTitle').textContent = post ? post.title : 'Comments';
+      document.getElementById('commentsModal').style.display = 'flex';
+      const list = document.getElementById('cmList');
+      list.innerHTML = '<p style="text-align: center; color: var(--secondary-text); padding: 16px;">Loading comments...</p>';
+      const { data: comments, error } = await supabase.from('blog_comments').select('id, user_id, comment, created_at').eq('post_id', postId).order('created_at', { ascending: false });
+      if (error) { list.innerHTML = `<p style="color: var(--error-red); padding: 16px;">${escapeHtml(error.message)}</p>`; return; }
+      if (!comments.length) { list.innerHTML = '<p style="text-align: center; color: var(--secondary-text); padding: 16px;">No comments on this post.</p>'; return; }
+      const names = await fetchUsernames(comments.map(c => c.user_id));
+      list.innerHTML = comments.map(c => `
+        <div id="cm-${c.id}" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #ECECEC;">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 0.78rem;"><strong>@${escapeHtml(names.get(c.user_id) || 'user')}</strong> <span style="color: var(--secondary-text);">${formatDate(c.created_at)}</span></div>
+            <div style="font-size: 0.88rem; margin-top: 3px; overflow-wrap: anywhere;">${escapeHtml(c.comment)}</div>
+          </div>
+          <button onclick="deleteComment('${c.id}')" style="flex-shrink: 0; border: 1px solid var(--error-red); color: var(--error-red); background: rgba(215,25,32,.06); border-radius: 6px; padding: 5px 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">Delete</button>
+        </div>`).join('');
+    };
+    window.deleteComment = async function(id) {
+      if (!confirm('Delete this comment?')) return;
+      const { error, count } = await supabase.from('blog_comments').delete({ count: 'exact' }).eq('id', id);
+      if (error || !count) return alert('Could not delete: ' + (error?.message || 'not allowed'));
+      document.getElementById(`cm-${id}`)?.remove();
+      const post = allPosts.find(p => p.id === activeCommentsPost);
+      if (post) post.comments_count = Math.max(0, (Number(post.comments_count) || 1) - 1);
+    };
+    window.closeComments = function() {
+      document.getElementById('commentsModal').style.display = 'none';
+      const active = document.querySelector('.filter-btn.active');
+      renderCards(active ? active.dataset.filter : 'all');
     };
 
     function escapeHtml(str) {

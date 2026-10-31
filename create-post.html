@@ -71,8 +71,13 @@
           </div>
 
           <div class="form-group">
-            <label for="receiptImage">Withdrawal Receipt / Proof Image (Optional, Max 5MB)</label>
+            <label for="receiptImage">Picture 1 (Optional, Max 5MB)</label>
             <input type="file" id="receiptImage" class="form-control" accept="image/png,image/jpeg,image/webp">
+          </div>
+
+          <div class="form-group">
+            <label for="receiptImage2">Picture 2 (Optional, Max 5MB)</label>
+            <input type="file" id="receiptImage2" class="form-control" accept="image/png,image/jpeg,image/webp">
           </div>
 
           <div class="form-group">
@@ -109,7 +114,7 @@
         const content = document.getElementById('content').value.trim();
         const caption = document.getElementById('caption').value.trim();
         const fileInput = document.getElementById('receiptImage');
-        const file = fileInput.files[0];
+        const files = [fileInput.files[0], document.getElementById('receiptImage2').files[0]].filter(Boolean);
 
         if (!title || !content) {
           alertBanner.textContent = 'Please provide both a title and message.';
@@ -120,19 +125,19 @@
         submitBtn.disabled = true;
         submitBtn.textContent = 'Uploading & Submitting...';
 
-        let imageUrl = null;
+        const imageUrls = [];
 
         try {
-          if (file) {
+          for (const [i, file] of files.entries()) {
             if (file.size > 5 * 1024 * 1024) {
-              throw new Error('Image size exceeds maximum limit of 5MB.');
+              throw new Error(`Picture ${i + 1} is larger than 5MB.`);
             }
-            const ext = file.name.split('.').pop();
-            const filePath = `${currentSession.user.id}/${Date.now()}_proof.${ext}`;
+            const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const filePath = `${currentSession.user.id}/${Date.now()}_${i + 1}.${ext}`;
 
             const { error: uploadErr } = await supabase.storage
               .from('blog-attachments')
-              .upload(filePath, file);
+              .upload(filePath, file, { contentType: file.type });
 
             if (uploadErr) throw uploadErr;
 
@@ -140,7 +145,7 @@
               .from('blog-attachments')
               .getPublicUrl(filePath);
 
-            imageUrl = publicUrl;
+            imageUrls.push(publicUrl);
           }
 
           const { error: insertErr } = await supabase
@@ -150,7 +155,8 @@
               title: title,
               content: content,
               caption: caption || null,
-              image_url: imageUrl,
+              image_url: imageUrls[0] || null,
+              image_url_2: imageUrls[1] || null,
               status: 'pending'
             });
 

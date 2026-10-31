@@ -123,7 +123,7 @@
       const { data: posts, error } = await supabase
         .from('blog_posts')
         .select(`
-          id, user_id, title, content, caption, image_url, likes_count, comments_count, bonus_awarded, created_at
+          id, user_id, title, content, caption, image_url, image_url_2, likes_count, comments_count, bonus_awarded, created_at
         `)
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
@@ -175,8 +175,10 @@
             <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 8px;">${escapeHtml(p.title)}</h2>
             <p style="font-size: 0.9rem; color: var(--primary-text); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(p.content)}</p>
 
-            ${p.image_url ? `
-              <img src="${p.image_url}" alt="Proof attachment" class="post-image-preview" loading="lazy" onclick="window.open('${p.image_url}', '_blank')">
+            ${[p.image_url, p.image_url_2].filter(Boolean).length ? `
+              <div style="display: grid; grid-template-columns: repeat(${[p.image_url, p.image_url_2].filter(Boolean).length}, minmax(0, 1fr)); gap: 8px;">
+                ${[p.image_url, p.image_url_2].filter(Boolean).map(u => `<img src="${u}" alt="Post picture" class="post-image-preview" loading="lazy" onclick="window.open('${u}', '_blank')">`).join('')}
+              </div>
             ` : ''}
 
             ${p.caption ? `
