@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Notification | ASTRAVEN Admin</title>
+  <style>
+    .notif-wrap { max-width: 600px; margin: 0 auto; }
+  </style>
+  <script type="module" crossorigin src="/assets/admin/notifications-Dy_kBeQz.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div class="notif-wrap">
+        <div style="margin-bottom: 24px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Member Comms</span>
+          <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Dispatch Notification</h1>
+        </div>
+
+        <form class="astra-card" id="dispatchForm">
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            <label style="font-size: 0.85rem; font-weight: 700;">Target User UUID</label>
+            <input type="text" id="targetUserId" class="form-control" placeholder="User UUID" required>
+
+            <label style="font-size: 0.85rem; font-weight: 700;">Notification Title</label>
+            <input type="text" id="notifTitle" class="form-control" placeholder="e.g. Flight Syndicate Update" required>
+
+            <label style="font-size: 0.85rem; font-weight: 700;">Message Content</label>
+            <textarea id="notifMessage" class="form-control" style="min-height: 90px;" placeholder="Message to display in user inbox..." required></textarea>
+          </div>
+          <button type="submit" class="btn-gold" style="width: 100%; padding: 12px;">Send Alert</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

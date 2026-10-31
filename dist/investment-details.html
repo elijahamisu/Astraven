@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investment Portfolio Details | ASTRAVEN</title>
+  <style>
+    .details-wrap {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .info-cell {
+      background: var(--light-gold-bg);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/investment-details-ClUI38wk.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="details-wrap">
+        <a href="my-investments.html" style="color: var(--primary-green); font-weight: 600; font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 16px;">
+          ← Back to Holdings
+        </a>
+
+        <div class="astra-card" id="contentCard">
+          <p style="text-align: center; color: var(--secondary-text);">Loading holding details...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

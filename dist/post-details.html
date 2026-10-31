@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post Discussion | ASTRAVEN</title>
+  <style>
+    .post-wrap { max-width: 680px; margin: 0 auto; }
+    .comment-item {
+      padding: 14px 0;
+      border-bottom: 1px solid #ECECEC;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .comment-item:last-child { border-bottom: none; }
+    .comment-author-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+    }
+    .comment-author {
+      font-weight: 700;
+      color: var(--deep-forest);
+    }
+    .comment-time {
+      color: var(--secondary-text);
+      font-size: 0.75rem;
+    }
+    .comment-text {
+      font-size: 0.92rem;
+      color: var(--primary-text);
+      line-height: 1.45;
+      word-break: break-word;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/post-details-0IgGjOk1.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/usernames-CpnWIWI3.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="post-wrap">
+        <a href="blog.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 16px;">
+          ← Back to Community Feed
+        </a>
+
+        <!-- Main Post Card -->
+        <div class="astra-card" id="postContentCard" style="margin-bottom: 24px;">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading post...</p>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="astra-card">
+          <h3 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 14px;" id="commentsHeading">
+            Discussion &amp; Comments
+          </h3>
+
+          <!-- Add Comment Form -->
+          <form id="commentForm" style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <input type="text" id="commentInput" class="form-control" style="flex: 1; padding: 12px 14px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm);" placeholder="Write a comment..." required maxlength="300" autocomplete="off">
+            <button type="submit" id="commentBtn" class="btn-gold" style="padding: 12px 20px; font-size: 0.88rem; flex-shrink: 0;">Send</button>
+          </form>
+
+          <!-- Comments Feed (Newest first) -->
+          <div id="commentsList">
+            <p style="color: var(--secondary-text); font-size: 0.85rem; text-align: center; padding: 20px;">Loading comments...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

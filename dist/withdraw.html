@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Withdraw Funds | ASTRAVEN</title>
+  <style>
+    .with-wrap { max-width: 580px; margin: 0 auto; }
+    .breakdown-box {
+      background: var(--light-gold-bg);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin: 18px 0;
+    }
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 0.88rem;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+  </style>
+  <script type="module" crossorigin src="/assets/withdraw-CZ8nS-Mp.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="modulepreload" crossorigin href="/assets/mgm-banks-CTAtA-Ij.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="with-wrap">
+        <h1 class="font-heading" style="margin-bottom: 6px; font-size: 1.8rem;">Withdraw Funds</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+          Direct bank settlement to your designated Nigerian commercial account.
+        </p>
+
+        <form class="astra-card" id="withForm">
+          <div style="background: var(--deep-forest); color: var(--white); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.85rem; opacity: 0.9;">Available Balance:</span>
+            <strong id="availBal" style="font-size: 1.3rem; color: var(--bright-gold); font-family: var(--font-heading);">₦0.00</strong>
+          </div>
+
+          <div class="form-group">
+            <label for="amount">Withdrawal Amount (₦)</label>
+            <input type="number" id="amount" class="form-control" placeholder="Enter amount" min="1" step="any" required>
+            <small id="minNotice" style="color: var(--secondary-text); font-size: 0.78rem;">Loading limits...</small>
+          </div>
+
+          <div class="form-group">
+            <label for="bankCode">Bank</label>
+            <select id="bankCode" class="form-control" required>
+              <option value="">Select your bank</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="accountName">Account Name</label>
+            <input type="text" id="accountName" class="form-control" placeholder="Full name registered on account" required>
+          </div>
+
+          <div class="form-group">
+            <label for="accountNumber">Account Number (10 Digits)</label>
+            <input type="text" id="accountNumber" class="form-control" maxlength="10" placeholder="0123456789" required>
+          </div>
+
+          <!-- Dynamic Fee Breakdown -->
+          <div class="breakdown-box">
+            <div class="breakdown-row">
+              <span style="color: var(--secondary-text);">Gross Amount:</span>
+              <strong id="bkGross">₦0.00</strong>
+            </div>
+            <div class="breakdown-row">
+              <span style="color: var(--secondary-text);">Processing Fee (<span id="feePercent">5</span>%):</span>
+              <strong id="bkFee" style="color: var(--error-red);">- ₦0.00</strong>
+            </div>
+            <div class="breakdown-row" style="border-top: 1px solid rgba(212, 175, 55, 0.4); padding-top: 6px; margin-top: 6px;">
+              <span>Net Settlement to Bank:</span>
+              <strong id="bkNet" style="color: var(--primary-green); font-size: 1.1rem; font-family: var(--font-heading);">₦0.00</strong>
+            </div>
+          </div>
+
+          <div id="alertBanner" class="alert-banner"></div>
+
+          <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 14px;">
+            Confirm Withdrawal Request
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

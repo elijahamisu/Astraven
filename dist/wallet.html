@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviation Wallet | ASTRAVEN</title>
+  <style>
+    .wallet-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .wallet-actions-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 480px) {
+      .wallet-actions-bar {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+    .action-pill {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-sm);
+      padding: 12px 6px;
+      text-align: center;
+      text-decoration: none;
+      color: var(--deep-forest);
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .action-pill:hover {
+      background: var(--light-gold-bg);
+      border-color: var(--metallic-gold);
+      transform: translateY(-2px);
+    }
+    .tx-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      min-width: 440px;
+    }
+    .tx-table th, .tx-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #ECECEC;
+    }
+    .tx-table th {
+      background: #FAFAFA;
+      color: var(--secondary-text);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/wallet-Dmjve9AM.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Financial Custody</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">My Wallet</h1>
+      </div>
+
+      <!-- Signature Balance Card -->
+      <section class="astra-card-signature">
+        <div class="aircraft-watermark"></div>
+        <div class="card-signature-content">
+          <div class="signature-top-row">
+            <span class="signature-brand-tag">ASTRAVEN WALLET</span>
+            <div class="nigeria-badge">
+              <div class="flag-pill">
+                <span class="fg-green"></span>
+                <span class="fg-white"></span>
+                <span class="fg-green"></span>
+              </div>
+              <span>Secured Liquidity</span>
+            </div>
+          </div>
+
+          <div class="balance-label">AVAILABLE BALANCE</div>
+          <div class="balance-value" id="walletBalance">₦0.00</div>
+
+          <div class="signature-btn-group">
+            <a href="deposit.html" class="btn-gold">
+              <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              <span>Deposit</span>
+            </a>
+            <a href="withdraw.html" class="btn-emerald">
+              <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M5 11h14v2H5z"/></svg>
+              <span>Withdraw</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Secondary Metrics -->
+      <section class="wallet-stat-grid">
+        <div class="astra-card-secondary">
+          <div class="secondary-stat-label">Pending / Reserved</div>
+          <div class="secondary-stat-value" id="reservedBalance">₦0.00</div>
+        </div>
+        <div class="astra-card-secondary">
+          <div class="secondary-stat-label">Total Deposited</div>
+          <div class="secondary-stat-value" id="totalDeposited">₦0.00</div>
+        </div>
+        <div class="astra-card-secondary">
+          <div class="secondary-stat-label">Total Withdrawn</div>
+          <div class="secondary-stat-value" id="totalWithdrawn">₦0.00</div>
+        </div>
+      </section>
+
+      <!-- Wallet Links Bar -->
+      <div class="wallet-actions-bar">
+        <a href="deposit.html" class="action-pill">
+          <span>💳</span>
+          <span>Deposit</span>
+        </a>
+        <a href="deposit-history.html" class="action-pill">
+          <span>📜</span>
+          <span>Dep. History</span>
+        </a>
+        <a href="withdraw.html" class="action-pill">
+          <span>💸</span>
+          <span>Withdraw</span>
+        </a>
+        <a href="withdrawal-history.html" class="action-pill">
+          <span>🕒</span>
+          <span>With. History</span>
+        </a>
+        <a href="transactions.html" class="action-pill">
+          <span>📊</span>
+          <span>Full Ledger</span>
+        </a>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="astra-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h2 style="font-size: 1.15rem; color: var(--deep-forest);">Recent Ledger Activity</h2>
+          <a href="transactions.html" style="font-size: 0.82rem; color: var(--primary-green); font-weight: 700; text-decoration: none;">View All →</a>
+        </div>
+        <div class="table-responsive" id="txLedgerContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 24px;">Loading wallet ledger...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

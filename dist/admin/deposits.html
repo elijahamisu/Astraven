@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Deposits | ASTRAVEN Admin</title>
+  <style>
+    .page-header-wrap {
+      margin-bottom: 20px;
+    }
+    .header-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--metallic-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .header-title {
+      font-size: clamp(1.5rem, 5vw, 2.1rem);
+      color: var(--deep-forest);
+      line-height: 1.2;
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+    }
+    .filter-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .filter-btn {
+      padding: 10px 18px;
+      border-radius: 9999px;
+      border: 1.5px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .filter-btn.active {
+      background: var(--deep-forest);
+      color: var(--bright-gold);
+      border-color: var(--metallic-gold);
+      box-shadow: 0 2px 8px rgba(0, 43, 26, 0.2);
+    }
+    .deposits-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .deposit-card {
+      background: var(--white);
+      border: 1.5px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 14px rgba(0, 43, 26, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-top-bar {
+      background: #FAFAFA;
+      padding: 12px 16px;
+      border-bottom: 1px solid #ECECEC;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .ref-code {
+      font-family: monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--deep-forest);
+    }
+    .ref-date {
+      font-size: 0.75rem;
+      color: var(--secondary-text);
+      display: block;
+      margin-top: 2px;
+    }
+    .card-body {
+      padding: 16px;
+    }
+    .amount-investor-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .amount-value {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--primary-green);
+      line-height: 1.1;
+    }
+    .amount-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--secondary-text);
+      display: block;
+      margin-bottom: 2px;
+    }
+    .investor-meta {
+      text-align: right;
+    }
+    .investor-handle {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--deep-forest);
+      display: block;
+    }
+    .investor-name {
+      font-size: 0.8rem;
+      color: var(--secondary-text);
+    }
+    .narration-box {
+      background: var(--cream-white);
+      border: 1px solid #E5E7EB;
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+    .narration-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--metallic-gold);
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .narration-text {
+      color: var(--primary-text);
+      word-break: break-all;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    .proof-btn {
+      width: 100%;
+      background: var(--light-gold-bg);
+      border: 1px dashed var(--metallic-gold);
+      border-radius: var(--radius-sm);
+      color: var(--primary-green);
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .card-actions-row {
+      padding: 12px 16px;
+      background: #FFFDF8;
+      border-top: 1px solid #ECECEC;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 10px;
+    }
+    .btn-approve-action {
+      background: linear-gradient(135deg, var(--bright-gold) 0%, var(--metallic-gold) 100%);
+      color: var(--deep-forest);
+      border: 1px solid var(--metallic-gold);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-reject-action {
+      background: rgba(215, 25, 32, 0.08);
+      color: var(--error-red);
+      border: 1px solid var(--error-red);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .settled-note {
+      font-size: 0.8rem;
+      color: var(--secondary-text);
+      font-style: italic;
+      text-align: center;
+      width: 100%;
+      padding: 6px 0;
+    }
+    .empty-state-box {
+      background: var(--white);
+      border: 1.5px dashed rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius-md);
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--secondary-text);
+    }
+    @media (min-width: 768px) {
+      .deposits-feed {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/admin/deposits-C93HtSlJ.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div class="page-header-wrap">
+        <span class="header-tag">✦ Custody Reconciliation</span>
+        <h1 class="header-title font-heading">Manual Bank Deposits</h1>
+      </div>
+
+      <!-- Horizontal Pill Filter Tabs -->
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All Deposits</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="approved">Approved</button>
+        <button class="filter-btn" data-filter="rejected">Rejected</button>
+        <button class="filter-btn" data-filter="failed">Failed</button>
+      </div>
+
+      <!-- Responsive Card Feed -->
+      <div class="deposits-feed" id="depositsFeed">
+        <div class="empty-state-box">
+          <p>Loading deposits...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

@@ -29,7 +29,8 @@ export const ADMIN_NAVIGATION_CONFIG = [
       { label: 'Transaction Ledger', href: '/admin/transactions.html' },
       { label: 'Wallet Adjustments', href: '/admin/wallet-adjustments.html' },
       { label: 'Deposits Review', href: '/admin/deposits.html' },
-      { label: 'Withdrawal Rails', href: '/admin/withdrawals.html' }
+      { label: 'Withdrawal Rails', href: '/admin/withdrawals.html' },
+      { label: 'Payment Gateway', href: '/admin/gateway.html' }
     ]
   },
   {

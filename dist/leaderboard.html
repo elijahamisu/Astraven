@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Influencer Leaderboard | ASTRAVEN</title>
+  <style>
+    .podium-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+      align-items: flex-end;
+    }
+    .podium-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: 16px 8px;
+      text-align: center;
+      border: 1.5px solid #E5E7EB;
+      box-shadow: var(--shadow-sm);
+    }
+    .podium-card.rank-1 {
+      border-color: var(--bright-gold);
+      background: linear-gradient(180deg, #FFFDF5 0%, #FFF8E5 100%);
+      transform: translateY(-8px);
+    }
+    .podium-card.rank-2 { border-color: #94A3B8; }
+    .podium-card.rank-3 { border-color: #D97706; }
+    .podium-crest {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      margin: 0 auto 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+    .rank-1 .podium-crest { background: var(--bright-gold); color: var(--deep-forest); }
+    .rank-2 .podium-crest { background: #CBD5E1; color: #1E293B; }
+    .rank-3 .podium-crest { background: #FDE68A; color: #78350F; }
+    .leader-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #ECECEC;
+    }
+    .leader-row:last-child { border-bottom: none; }
+  </style>
+  <script type="module" crossorigin src="/assets/leaderboard-Dqfmr4HV.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Aviation Hall of Fame</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Top 10 Influencers</h1>
+        <p style="color: var(--secondary-text); font-size: 0.88rem; margin-top: 4px;">
+          Rankings are calculated dynamically from verified qualifying team deposits.
+        </p>
+      </div>
+
+      <!-- Top 3 Podium (Rank 2, Rank 1, Rank 3) -->
+      <div class="podium-grid" id="podiumContainer">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Remaining Rankings 4 - 10 -->
+      <div class="astra-card" style="padding: 0; overflow: hidden;" id="rankingTableContainer">
+        <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Calculating ranking metrics...</p>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Conversation | ASTRAVEN</title>
+  <style>
+    .chat-wrap { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; min-height: 70vh; }
+    .chat-header {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+    }
+    .messages-thread {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .msg-bubble {
+      max-width: 82%;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      line-height: 1.45;
+      position: relative;
+      word-break: break-word;
+    }
+    .msg-bubble.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
+      color: var(--white);
+      border-bottom-right-radius: 2px;
+    }
+    .msg-bubble.staff {
+      align-self: flex-start;
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: var(--primary-text);
+      border-bottom-left-radius: 2px;
+      box-shadow: var(--shadow-sm);
+    }
+    .msg-meta {
+      font-size: 0.7rem;
+      opacity: 0.75;
+      margin-top: 4px;
+      display: block;
+      text-align: right;
+    }
+    .chat-input-bar {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+    .msg-inline-img {
+      width: 100%;
+      max-width: 280px;
+      max-height: 240px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid rgba(212, 175, 55, 0.4);
+      margin-top: 8px;
+      cursor: pointer;
+      display: block;
+      background: #F3F4F6;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/ticket-details-BgFwEa_t.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="chat-wrap">
+        <a href="customer-service.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; margin-bottom: 12px; display: inline-block;">
+          ← Back to All Tickets
+        </a>
+
+        <!-- Header Summary -->
+        <div class="chat-header" id="ticketSummary">
+          <p style="color: var(--secondary-text);">Loading ticket information...</p>
+        </div>
+
+        <!-- Conversation Thread -->
+        <div class="messages-thread" id="chatThread">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading conversation...</p>
+        </div>
+
+        <!-- Reply Input Bar -->
+        <form class="chat-input-bar" id="replyForm">
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="replyMsg" class="form-control" style="flex: 1; padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm);" placeholder="Type your reply to the support team..." required autocomplete="off">
+            <button type="submit" id="sendBtn" class="btn-gold" style="padding: 10px 20px; font-size: 0.88rem;">Send</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

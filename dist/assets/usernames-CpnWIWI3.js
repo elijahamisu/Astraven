@@ -1,0 +1,1 @@
+import{s as t}from"./supabase-client-BCUvSBAr.js";async function u(n){const e=[...new Set((n||[]).filter(Boolean))];if(!e.length)return new Map;const{data:s}=await t.rpc("get_public_usernames",{p_user_ids:e});return new Map((s||[]).map(a=>[a.id,a.username]))}export{u as f};

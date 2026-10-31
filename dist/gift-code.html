@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redeem Gift Code | ASTRAVEN</title>
+  <style>
+    .gift-wrap { max-width: 520px; margin: 0 auto; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      background: var(--cream-white);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/gift-code-D9whAKUc.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="gift-wrap">
+        <h1 class="font-heading" style="margin-bottom: 6px; font-size: 1.8rem;">Gift Code Redemption</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+          Enter your official promotional voucher code to credit verified capital instantly to your wallet.
+        </p>
+
+        <form class="astra-card" id="giftForm" style="margin-bottom: 24px;">
+          <div class="form-group">
+            <label for="code">Voucher Code</label>
+            <input type="text" id="code" class="form-control" placeholder="e.g. ASTRAVEN2026" required autocomplete="off">
+          </div>
+
+          <button type="submit" id="redeemBtn" class="btn-gold" style="width: 100%; padding: 14px;">
+            Redeem Voucher
+          </button>
+        </form>
+
+        <div class="astra-card">
+          <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 14px;">Redemption History</h2>
+          <div id="historyContainer">
+            <p style="text-align: center; color: var(--secondary-text); padding: 20px;">Loading your redemptions...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

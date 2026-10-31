@@ -34,6 +34,8 @@
         <h1 class="header-title font-heading">Withdrawal Requests</h1>
       </div>
 
+      <div id="modeBanner" style="background: var(--light-gold-bg); border: 1px solid rgba(212,175,55,0.4); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.85rem; margin-bottom: 14px;"></div>
+
       <div class="filter-tabs">
         <button class="filter-btn active" data-filter="all">All</button>
         <button class="filter-btn" data-filter="pending">Pending</button>
@@ -54,8 +56,11 @@
     import { supabase } from '../shared/supabase-client.js';
     import { formatCurrency, formatDate } from '../shared/formatters.js';
 
+    import { watchSetting } from '../shared/site-settings.js';
     let currentSession = null;
     let allWithdrawals = [];
+    let payMode = 'manual';
+    let currentFilter = 'all';
 
     async function loadWithdrawals() {
       const auth = await initAdminNavigation();
@@ -75,18 +80,23 @@
       }
 
       allWithdrawals = withdrawals;
-      renderCards('all');
+      renderCards(currentFilter);
 
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          renderCards(btn.dataset.filter);
+          currentFilter = btn.dataset.filter;
+          renderCards(currentFilter);
         });
       });
     }
 
     function renderCards(filter) {
+      const banner = document.getElementById('modeBanner');
+      if (banner) banner.innerHTML = payMode === 'gateway'
+        ? '<strong>Gateway mode:</strong> approved payouts are sent automatically through MGM Pay.'
+        : '<strong>Manual mode:</strong> transfer to the user yourself, then tap Mark Paid.';
       const container = document.getElementById('withdrawalsFeed');
       const filtered = allWithdrawals.filter(w => filter === 'all' || w.status === filter);
 
@@ -140,7 +150,9 @@
 
             <div class="card-actions-row">
               ${isPending ? `
-                <button class="btn-gold" style="padding: 12px; font-size: 0.88rem;" onclick="reviewWith('${w.id}', 'approve')">Approve &amp; Pay</button>
+                ${payMode === 'gateway'
+                  ? `<button class="btn-gold" style="padding: 12px; font-size: 0.88rem;" onclick="reviewWith('${w.id}', 'approve')">Send to Gateway</button>`
+                  : `<button class="btn-gold" style="padding: 12px; font-size: 0.88rem;" onclick="reviewWith('${w.id}', 'paid')">Mark Paid</button>`}
                 <button class="btn-emerald" style="padding: 12px; font-size: 0.88rem; background: rgba(215, 25, 32, 0.08); color: var(--error-red); border-color: var(--error-red);" onclick="reviewWith('${w.id}', 'rejected')">Reject</button>
               ` : isProcessing ? `
                 <div style="grid-column: span 2; text-align: center; font-size: 0.8rem; color: var(--secondary-text); padding: 6px 0;">Approved, payout sent to gateway. Awaiting bank confirmation.</div>
@@ -155,10 +167,13 @@
 
     // Approve -> Afrstar payout (server-side). Reject -> refund reserved funds.
     window.reviewWith = async function(id, action) {
-      let reason = null;
+      let reason = null, paymentReference = null;
+      const w = allWithdrawals.find(x => x.id === id);
       if (action === 'approve') {
-        const w = allWithdrawals.find(x => x.id === id);
-        if (!confirm(`Approve and pay ${formatCurrency(w?.net_amount || 0)} to ${w?.account_name || ''} (${w?.bank_name || ''} ${w?.account_number || ''}) via the payment gateway?`)) return;
+        if (!confirm(`Send ${formatCurrency(w?.net_amount || 0)} to ${w?.account_name || ''} (${w?.bank_name || ''} ${w?.account_number || ''}) through the payment gateway?`)) return;
+      } else if (action === 'paid') {
+        paymentReference = prompt(`Confirm you've transferred ${formatCurrency(w?.net_amount || 0)} to ${w?.account_name || ''} (${w?.bank_name || ''} ${w?.account_number || ''}).\nEnter the transfer reference (optional):`, '');
+        if (paymentReference === null) return;
       } else {
         reason = prompt('Enter rejection reason (reserved funds will be refunded to user):');
         if (!reason) return;
@@ -167,7 +182,7 @@
       const card = document.getElementById(`card-${id}`);
       const actionsRow = card?.querySelector('.card-actions-row');
       if (actionsRow) {
-        actionsRow.innerHTML = `<div style="grid-column: span 2; text-align: center; font-size: 0.82rem; color: var(--secondary-text);">${action === 'approve' ? 'Sending payout...' : 'Rejecting...'}</div>`;
+        actionsRow.innerHTML = `<div style="grid-column: span 2; text-align: center; font-size: 0.82rem; color: var(--secondary-text);">${action === 'approve' ? 'Sending to gateway...' : action === 'paid' ? 'Marking paid...' : 'Rejecting...'}</div>`;
       }
 
       try {
@@ -175,13 +190,15 @@
         const res = await fetch('/api/withdrawals/review', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${(session || currentSession).access_token}` },
-          body: JSON.stringify({ withdrawalId: id, action, rejectionReason: reason })
+          body: JSON.stringify({ withdrawalId: id, action, rejectionReason: reason, paymentReference })
         });
         const data = await res.json().catch(() => ({ success: false, error: 'Unexpected server response.' }));
         if (!data.success) {
           alert('Action error: ' + (data.error || 'Failed'));
         } else if (action === 'approve') {
-          alert(data.warning || 'Approved. Payout sent to the gateway; status updates when the bank confirms.');
+          alert(data.warning || 'Sent to gateway. Status updates when the bank confirms.');
+        } else if (action === 'paid') {
+          alert('Marked as paid.');
         } else {
           alert('Withdrawal rejected and funds refunded.');
         }
@@ -191,6 +208,7 @@
       loadWithdrawals();
     };
 
+    watchSetting('payment_gateway', (cfg) => { payMode = cfg?.mode === 'gateway' ? 'gateway' : 'manual'; if (allWithdrawals.length) renderCards(currentFilter); });
     loadWithdrawals();
   </script>
 </body>

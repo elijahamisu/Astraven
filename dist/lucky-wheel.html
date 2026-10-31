@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviation Lucky Wheel | ASTRAVEN</title>
+  <style>
+    .wheel-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .wheel-stage {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      margin: 20px auto;
+    }
+    .wheel-canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 6px solid var(--metallic-gold);
+      box-shadow: 0 8px 24px rgba(0, 43, 26, 0.4);
+      transition: transform 4s cubic-bezier(0.15, 0.9, 0.2, 1);
+    }
+    .wheel-pointer {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 26px solid var(--bright-gold);
+      z-index: 10;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    }
+    .wheel-center-crest {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--deep-forest);
+      border: 3px solid var(--metallic-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bright-gold);
+      font-weight: 700;
+      font-size: 1.2rem;
+      z-index: 5;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/lucky-wheel-ClvJW5TG.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="wheel-wrap">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Flight Roulette</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Astraven Lucky Wheel</h1>
+        <p style="color: var(--secondary-text); font-size: 0.88rem; margin-top: 4px;">
+          Spin to win cash prizes up to <span id="maxPrize">₦8,000</span>, credited straight to your wallet.
+        </p>
+
+        <div id="spinsBadge" style="display: inline-block; margin-top: 12px; padding: 8px 16px; border-radius: 999px; background: #FFF8E1; border: 1px solid var(--metallic-gold); color: var(--deep-forest); font-weight: 700; font-size: 0.9rem;">
+          Spins available: <span id="spinsLeft">…</span>
+        </div>
+
+        <div class="wheel-stage">
+          <div class="wheel-pointer"></div>
+          <canvas id="wheelCanvas" class="wheel-canvas" width="600" height="600"></canvas>
+          <div class="wheel-center-crest">✦</div>
+        </div>
+
+        <button id="spinBtn" class="btn-gold" style="width: 100%; max-width: 280px; padding: 14px; font-size: 1.05rem;">
+          SPIN LUCKY WHEEL
+        </button>
+
+        <div style="margin-top: 20px;">
+          <a href="lucky-wheel-history.html" style="font-size: 0.85rem; color: var(--primary-green); font-weight: 600; text-decoration: none;">
+            View My Spin History →
+          </a>
+        </div>
+
+        <div class="astra-card" style="margin-top: 20px; text-align: left; max-width: 420px; margin-left: auto; margin-right: auto;">
+          <h3 style="font-size: 0.95rem; color: var(--deep-forest); margin-bottom: 8px;">How to earn spins</h3>
+          <p style="font-size: 0.85rem; color: var(--secondary-text); margin: 0 0 6px;">✦ 1 spin for every package you buy in ASTRA-VIP, SSVIP or Limited Products.</p>
+          <p style="font-size: 0.85rem; color: var(--secondary-text); margin: 0;">✦ 1 spin for every friend you invite directly who deposits and buys a package.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

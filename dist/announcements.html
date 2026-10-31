@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Announcements | ASTRAVEN</title>
+  <style>
+    .notice-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .notice-card.urgent {
+      border-left: 5px solid var(--error-red);
+      background: #FFFDFD;
+    }
+    .notice-card.maintenance {
+      border-left: 5px solid var(--pending-orange);
+    }
+    .notice-card.general {
+      border-left: 5px solid var(--primary-green);
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/announcements-DekhUcMv.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Operational Notices</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">Official Announcements</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-top: 4px;">
+          Real-time updates regarding aviation contracts, banking rails, and corporate milestones.
+        </p>
+      </div>
+
+      <div id="announcementsList">
+        <div class="astra-card" style="text-align: center; padding: 40px; color: var(--secondary-text);">Loading official broadcasts...</div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

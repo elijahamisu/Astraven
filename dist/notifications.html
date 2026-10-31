@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notification Centre | ASTRAVEN</title>
+  <style>
+    .notif-wrap { max-width: 680px; margin: 0 auto; }
+    .notif-card-item {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+    .notif-card-item.unread {
+      background: #FFFDF5;
+      border-left: 4px solid var(--bright-gold);
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/notifications-PAYM_Apt.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="notif-wrap">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Member Activity</span>
+            <h1 class="font-heading" style="font-size: 1.8rem;">Notifications</h1>
+          </div>
+          <button id="markAllBtn" class="btn-emerald" style="padding: 8px 16px; font-size: 0.82rem;">
+            Mark All as Read
+          </button>
+        </div>
+
+        <div id="notifsContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading alerts...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

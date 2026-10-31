@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Gift Codes | ASTRAVEN Admin</title>
+  <style>
+    .create-box { background: var(--light-gold-bg); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--metallic-gold); margin-bottom: 24px; }
+  </style>
+  <script type="module" crossorigin src="/assets/admin/gift-codes-DIKjePiF.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Promotional Vouchers</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Gift Codes</h1>
+      </div>
+
+      <form class="create-box" id="newCodeForm">
+        <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin-bottom: 12px;">Issue New Gift Code</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px;">
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="codeName" class="form-control" placeholder="CODE (e.g. SKYLINE2026)" required style="text-transform: uppercase; flex: 1; min-width: 0;">
+            <button type="button" id="randomCodeBtn" class="btn-gold" title="Generate random code" style="padding: 8px 12px; font-size: 0.8rem; white-space: nowrap;">🎲 Random</button>
+          </div>
+          <input type="number" id="codeAmount" class="form-control" placeholder="Amount (₦)" min="100" required>
+          <input type="number" id="codeCapacity" class="form-control" placeholder="Max Redemptions" min="1" value="100" required>
+        </div>
+        <button type="submit" class="btn-gold" style="padding: 10px 20px; font-size: 0.85rem;">Issue Code</button>
+      </form>
+
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive" id="codesTableContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading vouchers...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,1 @@
+function t(e){if(!e)return!1;const s=e.replace(/[\s-]/g,"");return/^((\+234)|0)[789][01]\d{8}$/.test(s)}function i(e){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase())}export{t as a,i};

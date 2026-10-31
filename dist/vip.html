@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASTRA-VIP Packages | ASTRAVEN</title>
+  <style>
+    .page-header {
+      margin-bottom: 24px;
+    }
+    .page-lead {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary-green);
+      font-weight: 700;
+    }
+    .page-title {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      color: var(--deep-forest);
+      margin-top: 2px;
+    }
+    .catalog-search-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      font-size: 0.9rem;
+    }
+    .products-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+    }
+    @media (min-width: 650px) {
+      .products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (min-width: 1100px) {
+      .products-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    .product-card {
+      background: linear-gradient(135deg, #002B1A 0%, #003D24 100%);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      color: var(--white);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+    .product-card.inactive {
+      opacity: 0.72;
+      border-color: #6B7280;
+      background: linear-gradient(135deg, #1A2621 0%, #20332B 100%);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .vip-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--bright-gold);
+      text-transform: uppercase;
+    }
+    .prod-name {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      color: var(--white);
+      margin: 4px 0 12px;
+    }
+    .price-tag {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: var(--font-heading);
+      color: var(--bright-gold);
+      margin-bottom: 14px;
+    }
+    .terms-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      font-size: 0.82rem;
+    }
+    .term-label {
+      color: var(--secondary-text);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+    }
+    .term-value {
+      color: var(--white);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .card-actions {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/vip-CDPNuJge.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="page-header">
+        <span class="page-lead">✦ Premier Flight Portfolios</span>
+        <h1 class="page-title">ASTRA-VIP Packages</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-top: 4px;">
+          Verified commercial aviation tiers distributing daily automated settlements.
+        </p>
+      </div>
+
+      <div class="catalog-search-bar">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search VIP packages...">
+      </div>
+
+      <div class="products-grid" id="productsContainer">
+        <div class="astra-card" style="text-align: center; padding: 40px;">
+          <p style="color: var(--secondary-text);">Loading ASTRA-VIP packages...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

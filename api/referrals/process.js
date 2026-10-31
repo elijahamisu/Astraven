@@ -1,7 +1,7 @@
 // Referral commission is paid automatically inside the verified Afrstar deposit
 // webhook (confirm_gateway_deposit). This endpoint is an admin-only, idempotent
 // re-run for a specific gateway deposit; manual deposits never earn commission.
-import { getSupabaseAdmin, getUserFromRequest, isAdmin } from '../_lib/afrstar.js';
+import { getSupabaseAdmin, getUserFromRequest, isAdmin } from '../_lib/mgm.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed.' });

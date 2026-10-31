@@ -1,6 +1,6 @@
 // User withdrawal request: funds are reserved and the request waits for admin approval.
-import { getSupabaseAdmin, getUserFromRequest } from '../../_lib/afrstar.js';
-import { AFRSTAR_BANKS } from '../../../shared/afrstar-banks.js';
+import { getSupabaseAdmin, getUserFromRequest } from '../../_lib/mgm.js';
+import { MGM_BANKS } from '../../../shared/mgm-banks.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed.' });
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   const numAmount = Number(amount);
   if (!Number.isFinite(numAmount) || numAmount <= 0) return res.status(400).json({ success: false, error: 'Invalid withdrawal amount.' });
 
-  const bank = AFRSTAR_BANKS.find(b => b.code === String(bankCode || ''));
+  const bank = MGM_BANKS.find(b => b.code === String(bankCode || ''));
   if (!bank) return res.status(400).json({ success: false, error: 'Please select a supported bank.' });
   if (!/^\d{10}$/.test(String(accountNumber || '').trim())) return res.status(400).json({ success: false, error: 'Account number must be exactly 10 digits.' });
   if (!String(accountName || '').trim()) return res.status(400).json({ success: false, error: 'Account name is required.' });

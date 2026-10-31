@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website Settings | ASTRAVEN Admin</title>
+  <style>
+    .settings-grid { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; position: relative; }
+    .switch-input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .switch-ui { flex: 0 0 auto; width: 50px; height: 28px; border-radius: 999px; background: #D1D5DB; position: relative; transition: background .2s; }
+    .switch-ui::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+    .switch-input:checked + .switch-ui { background: var(--primary-green, #0F7A4A); }
+    .switch-input:checked + .switch-ui::after { transform: translateX(22px); }
+    .switch-input:focus-visible + .switch-ui { outline: 2px solid var(--metallic-gold); outline-offset: 2px; }
+  </style>
+  <script type="module" crossorigin src="/assets/admin/settings-Ja07k5Er.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div class="settings-grid">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Platform Configuration</span>
+          <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Central Website Settings</h1>
+        </div>
+
+        <div id="alertBanner" class="alert-banner"></div>
+
+        <!-- Withdrawal Configuration -->
+        <form class="astra-card" id="withConfigForm">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+            <h2 style="font-size: 1.25rem; color: var(--deep-forest);">Withdrawals</h2>
+            <span id="withStatusBadge" class="badge-status badge-completed">OPEN</span>
+          </div>
+
+          <div class="form-group">
+            <label class="switch-row" for="withEnabled">
+              <span>
+                <strong style="display: block; color: var(--deep-forest);">Allow withdrawals</strong>
+                <small style="color: var(--secondary-text);">Turn off to lock withdrawals for all users instantly.</small>
+              </span>
+              <input type="checkbox" id="withEnabled" class="switch-input">
+              <span class="switch-ui" aria-hidden="true"></span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="minWith">Minimum Withdrawal (₦)</label>
+            <input type="number" id="minWith" class="form-control" required min="1" step="any" placeholder="e.g. 600">
+          </div>
+
+          <div class="form-group">
+            <label for="feePercent">Withdrawal Fee (%)</label>
+            <input type="number" id="feePercent" class="form-control" required min="0" max="100" step="any" placeholder="e.g. 10">
+          </div>
+
+          <button type="submit" id="saveWithBtn" class="btn-emerald" style="width: 100%; padding: 12px; margin-top: 8px;">
+            Save Withdrawal Settings
+          </button>
+        </form>
+
+        <!-- Deposit Configuration -->
+        <form class="astra-card" id="depositConfigForm">
+          <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 14px;">Deposits</h2>
+
+          <div class="form-group">
+            <label for="minDep">Minimum Deposit (₦)</label>
+            <input type="number" id="minDep" class="form-control" required min="1" step="any" placeholder="e.g. 6000">
+          </div>
+
+          <button type="submit" id="saveDepBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">
+            Save Deposit Settings
+          </button>
+        </form>
+
+        <!-- Referral Configuration -->
+        <form class="astra-card" id="refConfigForm">
+          <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 14px;">Referral Commission</h2>
+
+          <div class="form-group">
+            <label for="commRate">Commission on referral deposits (%)</label>
+            <input type="number" id="commRate" class="form-control" required min="0" max="100" step="any" placeholder="e.g. 10">
+            <small style="color: var(--secondary-text); font-size: 0.78rem;">Paid to the referrer on each successful gateway deposit.</small>
+          </div>
+
+          <button type="submit" id="saveRefBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">
+            Save Referral Settings
+          </button>
+        </form>
+
+        <form class="astra-card" id="manualDepForm">
+          <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 14px;">Manual Deposit Account</h2>
+          <label style="display: flex; gap: 8px; align-items: center; font-weight: 600; margin-bottom: 12px;">
+            <input type="checkbox" id="manEnabled"> Allow manual bank transfer deposits
+          </label>
+          <div class="form-group"><label for="manBank">Bank name</label><input id="manBank" class="form-control" maxlength="100" placeholder="e.g. Opay"></div>
+          <div class="form-group"><label for="manAccNo">Account number</label><input id="manAccNo" class="form-control" inputmode="numeric" maxlength="10" placeholder="10 digits"></div>
+          <div class="form-group"><label for="manAccName">Account name</label><input id="manAccName" class="form-control" maxlength="120"></div>
+          <div class="form-group"><label for="manNote">Instructions (optional)</label><textarea id="manNote" class="form-control" rows="2" maxlength="500" placeholder="e.g. Use your username as narration"></textarea></div>
+          <button type="submit" id="saveManBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">Save Manual Deposit Details</button>
+        </form>
+
+        <form class="astra-card" id="welcomeForm">
+          <h2 style="font-size: 1.25rem; color: var(--deep-forest); margin-bottom: 14px;">Welcome Bonus</h2>
+          <div class="form-group">
+            <label for="welcomeAmt">Bonus for new sign-ups (₦)</label>
+            <input type="number" id="welcomeAmt" class="form-control" required min="0" step="any" placeholder="e.g. 600">
+            <small style="color: var(--secondary-text); font-size: 0.78rem;">Credited to every new account at registration. Set 0 to turn it off.</small>
+          </div>
+          <button type="submit" id="saveWelcomeBtn" class="btn-gold" style="width: 100%; padding: 12px; margin-top: 8px;">Save Welcome Bonus</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

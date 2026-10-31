@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Gateway | ASTRAVEN Admin</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    .gw-grid { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control { padding: 12px 14px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm); font-size: 0.95rem; background: var(--cream-white); width: 100%; box-sizing: border-box; }
+    .alert-banner { padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 4px; font-size: 0.88rem; display: none; }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+    .bal-card { background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%); border: 1.5px solid var(--metallic-gold); border-radius: var(--radius-md); padding: 20px; color: var(--white); }
+    .bal-big { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; color: var(--bright-gold); margin: 6px 0 10px; }
+    .bal-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #D1D5DB; padding: 4px 0; }
+    .mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mode-btn { padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid rgba(212,175,55,.5); background: var(--white); font-weight: 700; color: var(--deep-forest); cursor: pointer; }
+    .mode-btn.active { background: var(--deep-forest); color: var(--bright-gold); border-color: var(--metallic-gold); }
+    .fee-box { background: var(--light-gold-bg); border: 1px solid rgba(212,175,55,.4); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.85rem; margin-bottom: 14px; }
+    .fee-box div { display: flex; justify-content: space-between; padding: 2px 0; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab { padding: 9px 16px; border-radius: 999px; border: 1.5px solid rgba(212,175,55,.4); background: var(--white); font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+    .tab.active { background: var(--deep-forest); color: var(--bright-gold); }
+    h2.card-title { font-size: 1.1rem; color: var(--deep-forest); margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+    <main class="main-content">
+      <div class="gw-grid">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase; letter-spacing: .06em;">✦ MGM Pay</span>
+          <h1 class="font-heading" style="font-size: clamp(1.5rem, 5vw, 2.1rem); color: var(--deep-forest);">Payment Gateway</h1>
+        </div>
+
+        <div id="alertBanner" class="alert-banner"></div>
+
+        <div class="astra-card">
+          <h2 class="card-title">Payment Mode</h2>
+          <div class="mode-toggle">
+            <button class="mode-btn" data-mode="gateway">⚡ Gateway (automatic)</button>
+            <button class="mode-btn" data-mode="manual">🏦 Manual</button>
+          </div>
+          <small id="modeHelp" style="display: block; margin-top: 10px; color: var(--secondary-text); font-size: 0.8rem;"></small>
+        </div>
+
+        <div class="bal-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--soft-gold); letter-spacing: .08em;">Gateway Balance</span>
+            <button id="refreshBal" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--metallic-gold); background: transparent; color: var(--metallic-gold);">Refresh</button>
+          </div>
+          <div class="bal-big" id="balAvail">—</div>
+          <div class="bal-row"><span>Frozen</span><strong id="balFrozen">—</strong></div>
+          <div class="bal-row"><span>Total</span><strong id="balTotal">—</strong></div>
+          <div id="balErr" style="font-size: 0.78rem; color: #FCA5A5; margin-top: 6px;"></div>
+        </div>
+
+        <div class="astra-card">
+          <div class="tabs">
+            <button class="tab active" data-tab="withdraw">Withdraw</button>
+            <button class="tab" data-tab="topup">Top Up</button>
+          </div>
+
+          <form id="withdrawForm">
+            <div class="form-group"><label for="wAmount">Amount (₦)</label><input type="number" id="wAmount" class="form-control" min="100" step="0.01" required></div>
+            <div class="fee-box">
+              <div><span>Gateway fee (<span id="feePctTxt">9.5</span>%)</span><strong id="feeTxt">₦0.00</strong></div>
+              <div><span>You receive</span><strong id="netTxt" style="color: var(--primary-green);">₦0.00</strong></div>
+            </div>
+            <div class="form-group"><label for="wBank">Bank</label><select id="wBank" class="form-control" required></select></div>
+            <div class="form-group"><label for="wAcc">Account number</label><input id="wAcc" class="form-control" inputmode="numeric" maxlength="10" pattern="\d{10}" required></div>
+            <div class="form-group"><label for="wName">Account name</label><input id="wName" class="form-control" maxlength="120" required></div>
+            <button type="submit" id="wBtn" class="btn-gold" style="width: 100%; padding: 14px;">Withdraw from Gateway</button>
+          </form>
+
+          <form id="topupForm" style="display: none;">
+            <div class="form-group"><label for="tAmount">Top-up amount (₦)</label><input type="number" id="tAmount" class="form-control" min="100" step="0.01" required></div>
+            <small style="display: block; margin-bottom: 12px; color: var(--secondary-text); font-size: 0.8rem;">You'll be taken to the gateway's payment page. The balance updates once the payment is confirmed.</small>
+            <button type="submit" id="tBtn" class="btn-emerald" style="width: 100%; padding: 14px;">Top Up Gateway</button>
+          </form>
+        </div>
+
+        <div class="astra-card">
+          <h2 class="card-title">Gateway Fee for Admin Withdrawals</h2>
+          <div class="form-group"><label for="feePct">Fee (%)</label><input type="number" id="feePct" class="form-control" min="0" max="99.99" step="0.01"></div>
+          <button id="saveFee" class="btn-emerald" style="padding: 10px 18px;">Save Fee</button>
+        </div>
+
+        <div class="astra-card">
+          <h2 class="card-title">Recent Gateway Top-ups &amp; Withdrawals</h2>
+          <div id="ordersBox" style="font-size: 0.85rem; color: var(--secondary-text);">Loading…</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initAdminNavigation } from '../shared/admin-navigation.js';
+    import { supabase } from '../shared/supabase-client.js';
+    import { formatCurrency, formatDate } from '../shared/formatters.js';
+    import { watchSetting } from '../shared/site-settings.js';
+    import { MGM_BANKS } from '../shared/mgm-banks.js';
+
+    let gwCfg = { mode: 'manual', provider: 'mgm', admin_withdraw_fee_pct: 9.5 };
+
+    function showAlert(msg, isError = true) {
+      const b = document.getElementById('alertBanner');
+      b.textContent = msg; b.className = 'alert-banner ' + (isError ? 'error' : 'success');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function api(path, body) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify(body || {})
+      });
+      return res.json().catch(() => ({ success: false, error: `Unexpected server response (HTTP ${res.status})` }));
+    }
+
+    function renderMode() {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === gwCfg.mode));
+      document.getElementById('modeHelp').textContent = gwCfg.mode === 'gateway'
+        ? 'Users pay through MGM Pay and are credited automatically. Withdrawals show "Send to Gateway" after you approve.'
+        : 'Users pay to your manual bank account and upload a receipt. You approve deposits and mark withdrawals paid yourself.';
+      const pct = Number(gwCfg.admin_withdraw_fee_pct ?? 9.5);
+      document.getElementById('feePctTxt').textContent = pct;
+      if (document.activeElement?.id !== 'feePct') document.getElementById('feePct').value = pct;
+      updateFee();
+    }
+
+    async function saveCfg(next, okMsg) {
+      const r = await api('/api/admin/update-settings', { key: 'payment_gateway', value: next });
+      if (!r.success) return showAlert(r.error || 'Could not save.');
+      gwCfg = next; renderMode(); showAlert(okMsg, false);
+    }
+
+    document.querySelectorAll('.mode-btn').forEach(b => b.addEventListener('click', () => {
+      const mode = b.dataset.mode;
+      if (mode === gwCfg.mode) return;
+      if (!confirm(mode === 'gateway' ? 'Switch to automatic gateway payments?' : 'Switch to manual payments? Users will see the manual bank account instead of the gateway.')) return;
+      saveCfg({ ...gwCfg, mode }, `Switched to ${mode} mode.`);
+    }));
+
+    document.getElementById('saveFee').addEventListener('click', () => {
+      const pct = Number(document.getElementById('feePct').value);
+      if (!Number.isFinite(pct) || pct < 0 || pct >= 100) return showAlert('Fee must be between 0 and 99.99%.');
+      saveCfg({ ...gwCfg, admin_withdraw_fee_pct: pct }, 'Fee saved.');
+    });
+
+    function updateFee() {
+      const amt = Number(document.getElementById('wAmount').value) || 0;
+      const pct = Number(gwCfg.admin_withdraw_fee_pct ?? 9.5);
+      const fee = Math.round(amt * pct) / 100;
+      document.getElementById('feeTxt').textContent = formatCurrency(fee);
+      document.getElementById('netTxt').textContent = formatCurrency(Math.max(0, amt - fee));
+    }
+    document.getElementById('wAmount').addEventListener('input', updateFee);
+
+    async function loadBalance() {
+      document.getElementById('balErr').textContent = '';
+      document.getElementById('balAvail').textContent = 'Loading…';
+      const r = await api('/api/admin/gateway-balance');
+      if (!r.success) {
+        document.getElementById('balAvail').textContent = '—';
+        document.getElementById('balErr').textContent = r.error || 'Could not reach gateway.';
+        return;
+      }
+      document.getElementById('balAvail').textContent = formatCurrency(Number(r.available_balance || 0));
+      document.getElementById('balFrozen').textContent = formatCurrency(Number(r.freeze_balance || 0));
+      document.getElementById('balTotal').textContent = formatCurrency(Number(r.total_balance || 0));
+    }
+    document.getElementById('refreshBal').addEventListener('click', loadBalance);
+
+    async function loadOrders() {
+      const { data, error } = await supabase.from('gateway_admin_orders').select('*').order('created_at', { ascending: false }).limit(30);
+      const box = document.getElementById('ordersBox');
+      if (error) { box.textContent = 'Could not load: ' + error.message; return; }
+      if (!data.length) { box.textContent = 'No gateway top-ups or withdrawals yet.'; return; }
+      box.innerHTML = `<table style="width: 100%; border-collapse: collapse;"><thead><tr style="text-align: left;">
+        <th style="padding: 8px;">Type</th><th style="padding: 8px;">Amount</th><th style="padding: 8px;">Fee / Sent</th><th style="padding: 8px;">Status</th><th style="padding: 8px;">Date</th></tr></thead><tbody>
+        ${data.map(o => `<tr style="border-top: 1px solid #ECECEC;">
+          <td style="padding: 8px; font-weight: 700;">${o.kind === 'topup' ? 'Top-up' : 'Withdraw'}</td>
+          <td style="padding: 8px;">${formatCurrency(o.amount)}</td>
+          <td style="padding: 8px;">${o.kind === 'withdraw' ? `${formatCurrency(o.fee)} / ${formatCurrency(o.payout_amount)}` : '—'}</td>
+          <td style="padding: 8px;"><span class="badge-status ${o.status === 'success' ? 'badge-completed' : o.status === 'failed' ? 'badge-failed' : 'badge-pending'}">${o.status.toUpperCase()}</span>${o.status_detail ? `<div style="font-size: 0.72rem;">${String(o.status_detail).replace(/</g, '&lt;')}</div>` : ''}</td>
+          <td style="padding: 8px; font-size: 0.75rem;">${formatDate(o.created_at)}</td></tr>`).join('')}
+        </tbody></table>`;
+    }
+
+    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+      document.getElementById('withdrawForm').style.display = t.dataset.tab === 'withdraw' ? 'block' : 'none';
+      document.getElementById('topupForm').style.display = t.dataset.tab === 'topup' ? 'block' : 'none';
+    }));
+
+    document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amount = Number(document.getElementById('wAmount').value);
+      const pct = Number(gwCfg.admin_withdraw_fee_pct ?? 9.5);
+      const fee = Math.round(amount * pct) / 100;
+      const bankSel = document.getElementById('wBank');
+      const body = { amount, bankCode: bankSel.value, accountNumber: document.getElementById('wAcc').value.trim(), accountName: document.getElementById('wName').value.trim() };
+      if (!confirm(`Withdraw ${formatCurrency(amount)} from the gateway?\nFee (${pct}%): ${formatCurrency(fee)}\nSent to ${body.accountName} (${bankSel.selectedOptions[0]?.text} ${body.accountNumber}): ${formatCurrency(amount - fee)}`)) return;
+      const btn = document.getElementById('wBtn'); btn.disabled = true; btn.textContent = 'Sending…';
+      const r = await api('/api/admin/gateway-withdraw', body);
+      btn.disabled = false; btn.textContent = 'Withdraw from Gateway';
+      if (!r.success) return showAlert(r.error || 'Withdrawal failed.');
+      showAlert(r.warning || `Withdrawal sent: ${formatCurrency(r.payout)} after ${formatCurrency(r.fee)} fee.`, false);
+      e.target.reset(); updateFee(); loadOrders(); loadBalance();
+    });
+
+    document.getElementById('topupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amount = Number(document.getElementById('tAmount').value);
+      const btn = document.getElementById('tBtn'); btn.disabled = true; btn.textContent = 'Creating payment…';
+      const r = await api('/api/admin/gateway-topup', { amount });
+      btn.disabled = false; btn.textContent = 'Top Up Gateway';
+      if (!r.success) return showAlert(r.error || 'Top-up failed.');
+      window.location.href = r.pay_url;
+    });
+
+    (async () => {
+      const auth = await initAdminNavigation();
+      if (!auth) return;
+      const sel = document.getElementById('wBank');
+      sel.innerHTML = '<option value="">Select bank</option>' + [...MGM_BANKS].sort((a, b) => a.name.localeCompare(b.name)).map(b => `<option value="${b.code}">${b.name}</option>`).join('');
+      await watchSetting('payment_gateway', (cfg) => { gwCfg = { ...gwCfg, ...(cfg || {}) }; renderMode(); });
+      renderMode();
+      loadBalance(); loadOrders();
+    })();
+  </script>
+</body>
+</html>

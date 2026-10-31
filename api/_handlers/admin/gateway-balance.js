@@ -1,5 +1,5 @@
-// Admin-only: Afrstar merchant balance (POST /gateway/balance/).
-import { getBalance, getSupabaseAdmin, getUserFromRequest, isAdmin } from '../../_lib/afrstar.js';
+// Admin-only: MGM Pay merchant balance.
+import { errMsg, getBalance, getSupabaseAdmin, getUserFromRequest, isAdmin, isOk } from '../../_lib/mgm.js';
 
 export default async function handler(req, res) {
   let supabaseAdmin;
@@ -7,10 +7,11 @@ export default async function handler(req, res) {
   const user = await getUserFromRequest(req, supabaseAdmin);
   if (!user || !(await isAdmin(supabaseAdmin, user.id))) return res.status(403).json({ success: false, error: 'Access denied.' });
   try {
-    const result = await getBalance();
-    if (Number(result.code) !== 0) return res.status(502).json({ success: false, error: result.message || 'Gateway error' });
-    return res.status(200).json({ success: true, balance: result.data?.balance });
+    const r = await getBalance();
+    if (!isOk(r)) return res.status(502).json({ success: false, error: errMsg(r) });
+    const d = r.data || {};
+    return res.status(200).json({ success: true, available_balance: d.available_balance, freeze_balance: d.freeze_balance, total_balance: d.total_balance });
   } catch (err) {
-    return res.status(502).json({ success: false, error: 'Payment gateway is unreachable.' });
+    return res.status(502).json({ success: false, error: err.message || 'Payment gateway is unreachable.' });
   }
 }

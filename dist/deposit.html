@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deposit Funds | ASTRAVEN</title>
+  <style>
+    .deposit-wrap { max-width: 580px; margin: 0 auto; }
+    .bank-card {
+      background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      color: var(--white);
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+    }
+    .bank-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    }
+    .bank-row:last-child { border-bottom: none; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+  </style>
+  <script type="module" crossorigin src="/assets/deposit-tRnmoaJi.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="deposit-wrap">
+        <h1 class="font-heading" style="margin-bottom: 6px; font-size: 1.8rem;">Fund Your Wallet</h1>
+        <p id="introText" style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+          Pay securely through our licensed Nigerian payment gateway. Your wallet is credited automatically once payment is confirmed.
+        </p>
+
+        <div id="gatewaySection">
+        <div class="bank-card">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--soft-gold); letter-spacing: 0.08em; margin-bottom: 8px;">
+            SECURE GATEWAY DEPOSIT
+          </div>
+          <div class="bank-row"><span style="color: #D1D5DB;">Method:</span><strong style="color: var(--white);">Bank transfer via secure checkout</strong></div>
+          <div class="bank-row"><span style="color: #D1D5DB;">Crediting:</span><strong style="color: var(--white);">Automatic on confirmation</strong></div>
+          <div style="margin-top: 10px; font-size: 0.8rem; color: #CBD5E1; line-height: 1.4;">
+            You'll be taken to the payment page with a one-time account to transfer the exact amount to. Don't close it until the transfer is complete.
+          </div>
+        </div>
+
+        <div id="alertBanner" class="alert-banner"></div>
+
+        <form class="astra-card" id="depositForm">
+          <div class="form-group">
+            <label for="amount">Deposit Amount (₦)</label>
+            <input type="number" id="amount" class="form-control" placeholder="Enter deposit amount" min="1" step="0.01" required>
+            <small id="minDepositNotice" style="color: var(--secondary-text); font-size: 0.78rem;">Minimum deposit applies.</small>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 14px; margin-top: 8px;">
+            Proceed to Secure Payment
+          </button>
+        </form>
+        </div>
+
+        <div id="manualSection" style="display: none; margin-top: 20px;">
+          <div class="bank-details-card" style="margin-bottom: 14px;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--metallic-gold); margin-bottom: 8px;">PAY BY BANK TRANSFER</div>
+            <div class="bank-row"><span style="color: #D1D5DB;">Bank:</span><strong style="color: var(--white);" id="manBankTxt"></strong></div>
+            <div class="bank-row"><span style="color: #D1D5DB;">Account number:</span><strong style="color: var(--white);"><span id="manAccTxt"></span> <button type="button" id="copyAccBtn" style="margin-left: 6px; font-size: 0.7rem; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--metallic-gold); background: transparent; color: var(--metallic-gold);">Copy</button></strong></div>
+            <div class="bank-row"><span style="color: #D1D5DB;">Account name:</span><strong style="color: var(--white);" id="manNameTxt"></strong></div>
+            <div id="manNoteTxt" style="margin-top: 10px; font-size: 0.8rem; color: #CBD5E1; line-height: 1.4;"></div>
+            <div style="margin-top: 8px; font-size: 0.8rem; color: #CBD5E1;">Transfer, then upload your receipt below. Your wallet is credited once an admin confirms it.</div>
+          </div>
+          <form class="astra-card" id="manualForm">
+            <div class="form-group"><label for="manAmount">Amount sent (₦)</label><input type="number" id="manAmount" class="form-control" min="1" step="0.01" required></div>
+            <div class="form-group"><label for="manSender">Sender account name</label><input id="manSender" class="form-control" maxlength="120" required></div>
+            <div class="form-group"><label for="manRef">Transfer reference (optional)</label><input id="manRef" class="form-control" maxlength="100"></div>
+            <div class="form-group"><label for="manReceipt">Payment receipt</label><input type="file" id="manReceipt" class="form-control" accept="image/*,application/pdf" required></div>
+            <button type="submit" id="manSubmitBtn" class="btn-emerald" style="width: 100%; padding: 14px; margin-top: 8px;">I Have Paid, Submit Proof</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

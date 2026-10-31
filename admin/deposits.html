@@ -325,7 +325,7 @@
 
       container.innerHTML = filtered.map(d => {
         const isPending = d.status === 'pending';
-        const isGateway = d.gateway === 'afrstar';
+        const isGateway = ['afrstar', 'mgm'].includes(d.gateway);
         const badgeClass = d.status === 'approved' ? 'badge-completed' : (isPending ? 'badge-pending' : 'badge-failed');
         const username = d.profiles?.username || 'user';
         const fullName = d.profiles?.full_name || d.sender_name || 'Investor';
@@ -376,7 +376,7 @@
             <div class="card-actions-row">
               ${isPending && isGateway ? `
                 <div class="settled-note" style="grid-column: span 2;">
-                  Awaiting gateway payment. Credited automatically when Afrstar confirms.
+                  Gateway deposit. Credited automatically when the gateway confirms payment.
                 </div>
               ` : isPending ? `
                 <button class="btn-approve-action" onclick="reviewDep('${d.id}', 'approved')">

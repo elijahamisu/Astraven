@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSVIP Maturity Portfolios | ASTRAVEN</title>
+  <style>
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: clamp(1.4rem, 4vw, 2rem); color: var(--deep-forest); }
+    .grid-ssvip {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+    }
+    @media (min-width: 650px) {
+      .grid-ssvip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/ssvip-DbVFYu7w.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="page-header">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Fixed Maturity Model</span>
+        <h1 class="page-title">SSVIP Capital Growth</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem;">
+          Lump-sum capital and total return credited directly upon completion of the maturity term.
+        </p>
+      </div>
+
+      <div class="grid-ssvip" id="ssvipContainer">
+        <div class="astra-card" style="text-align: center; padding: 30px;">Loading SSVIP tiers...</div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

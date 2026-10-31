@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Community Post | ASTRAVEN</title>
+  <style>
+    .editor-wrap { max-width: 640px; margin: 0 auto; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+    textarea.form-control { min-height: 140px; resize: vertical; }
+    .proof-notice {
+      background: var(--light-gold-bg);
+      border-left: 4px solid var(--metallic-gold);
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      color: var(--deep-forest);
+      line-height: 1.4;
+    }
+    .alert-banner {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+  </style>
+  <script type="module" crossorigin src="/assets/create-post-BipEqTiz.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="editor-wrap">
+        <a href="blog.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 16px;">
+          ← Back to Community Feed
+        </a>
+
+        <h1 class="font-heading" style="font-size: 1.8rem; margin-bottom: 6px;">Submit Proof & Post</h1>
+        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+          Publish your aviation returns, testimonial, or verified withdrawal receipts.
+        </p>
+
+        <div class="proof-notice">
+          <strong>Privacy Recommendation:</strong> Please mask or blur unrelated personal bank account numbers or phone numbers before uploading receipts. All submissions are moderated before appearing on the public feed.
+        </div>
+
+        <div id="alertBanner" class="alert-banner"></div>
+
+        <form class="astra-card" id="postForm">
+          <div class="form-group">
+            <label for="title">Post Title</label>
+            <input type="text" id="title" class="form-control" placeholder="e.g. Daily VIP 3 Settlement Confirmed!" required maxlength="180">
+          </div>
+
+          <div class="form-group">
+            <label for="content">Message / Testimonial</label>
+            <textarea id="content" class="form-control" placeholder="Write your community update or experience with ASTRAVEN..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="receiptImage">Withdrawal Receipt / Proof Image (Optional, Max 5MB)</label>
+            <input type="file" id="receiptImage" class="form-control" accept="image/png,image/jpeg,image/webp">
+          </div>
+
+          <div class="form-group">
+            <label for="caption">Short Caption / Highlight Tag (Optional)</label>
+            <input type="text" id="caption" class="form-control" placeholder="e.g. 50-day cycle paying smoothly on time">
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 14px;">
+            Submit Post for Review
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

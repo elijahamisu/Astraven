@@ -1,10 +1,14 @@
 import gatewayBalance from '../_handlers/admin/gateway-balance.js';
+import gatewayTopup from '../_handlers/admin/gateway-topup.js';
+import gatewayWithdraw from '../_handlers/admin/gateway-withdraw.js';
 import grantProduct from '../_handlers/admin/grant-product.js';
 import updateSettings from '../_handlers/admin/update-settings.js';
 import walletAdjustment from '../_handlers/admin/wallet-adjustment.js';
 
 const routes = {
   'gateway-balance': gatewayBalance,
+  'gateway-topup': gatewayTopup,
+  'gateway-withdraw': gatewayWithdraw,
   'grant-product': grantProduct,
   'update-settings': updateSettings,
   'wallet-adjustment': walletAdjustment,

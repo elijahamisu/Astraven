@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Investments | ASTRAVEN Admin</title>
+  <style>
+    .grant-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 43, 26, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .grant-modal.active { display: flex; }
+    .grant-modal-box {
+      background: var(--white);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/admin/investments-D_bfBqhn.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Flight Syndicate Holdings</span>
+          <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Active Investments</h1>
+        </div>
+        <button id="openGlobalGrantModalBtn" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">
+          + Grant User Package
+        </button>
+      </div>
+
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive" id="invTableContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading investments...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Global Grant Modal -->
+  <div class="grant-modal" id="globalGrantModal">
+    <div class="grant-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.3rem; color: var(--deep-forest);">Grant User Package</h2>
+        <button id="closeGlobalModalBtn" type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary-text);">&times;</button>
+      </div>
+
+      <form id="globalGrantForm">
+        <div class="form-group">
+          <label for="globalUserUuid">Investor Account UUID</label>
+          <input type="text" id="globalUserUuid" class="form-control" placeholder="Paste target user UUID" required>
+        </div>
+
+        <div class="form-group">
+          <label for="globalProductSelect">Select Flight Package</label>
+          <select id="globalProductSelect" class="form-control" required>
+            <option value="">-- Choose Package --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="globalGrantReason">Administrative Reason / Note</label>
+          <input type="text" id="globalGrantReason" class="form-control" placeholder="e.g. VIP Sponsorship, Promotional Award" required>
+        </div>
+
+        <button type="submit" id="submitGlobalGrantBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 8px;">
+          Execute Package Grant
+        </button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Submissions | ASTRAVEN</title>
+  <style>
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active { background: var(--dark-emerald); color: var(--bright-gold); border-color: var(--bright-gold); }
+    .my-post-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/my-posts-l25a1gB1.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Member Moderation</span>
+          <h1 class="font-heading" style="font-size: 1.8rem;">My Submissions</h1>
+        </div>
+        <a href="create-post.html" class="btn-gold" style="padding: 10px 16px; font-size: 0.85rem;">+ Create New Post</a>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All Posts</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="approved">Approved</button>
+        <button class="filter-btn" data-filter="rejected">Rejected</button>
+      </div>
+
+      <div id="myPostsList">
+        <div class="astra-card" style="text-align: center; padding: 40px; color: var(--secondary-text);">Loading your submissions...</div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

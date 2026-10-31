@@ -51,15 +51,16 @@
     <main class="main-content">
       <div class="deposit-wrap">
         <h1 class="font-heading" style="margin-bottom: 6px; font-size: 1.8rem;">Fund Your Wallet</h1>
-        <p style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
+        <p id="introText" style="color: var(--secondary-text); font-size: 0.9rem; margin-bottom: 20px;">
           Pay securely through our licensed Nigerian payment gateway. Your wallet is credited automatically once payment is confirmed.
         </p>
 
+        <div id="gatewaySection">
         <div class="bank-card">
           <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--soft-gold); letter-spacing: 0.08em; margin-bottom: 8px;">
             SECURE GATEWAY DEPOSIT
           </div>
-          <div class="bank-row"><span style="color: #D1D5DB;">Method:</span><strong style="color: var(--white);">Bank transfer via Afrstar checkout</strong></div>
+          <div class="bank-row"><span style="color: #D1D5DB;">Method:</span><strong style="color: var(--white);">Bank transfer via secure checkout</strong></div>
           <div class="bank-row"><span style="color: #D1D5DB;">Crediting:</span><strong style="color: var(--white);">Automatic on confirmation</strong></div>
           <div style="margin-top: 10px; font-size: 0.8rem; color: #CBD5E1; line-height: 1.4;">
             You'll be taken to the payment page with a one-time account to transfer the exact amount to. Don't close it until the transfer is complete.
@@ -79,10 +80,11 @@
             Proceed to Secure Payment
           </button>
         </form>
+        </div>
 
         <div id="manualSection" style="display: none; margin-top: 20px;">
           <div class="bank-details-card" style="margin-bottom: 14px;">
-            <div style="font-size: 0.75rem; font-weight: 700; color: var(--metallic-gold); margin-bottom: 8px;">OR PAY BY MANUAL BANK TRANSFER</div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--metallic-gold); margin-bottom: 8px;">PAY BY BANK TRANSFER</div>
             <div class="bank-row"><span style="color: #D1D5DB;">Bank:</span><strong style="color: var(--white);" id="manBankTxt"></strong></div>
             <div class="bank-row"><span style="color: #D1D5DB;">Account number:</span><strong style="color: var(--white);"><span id="manAccTxt"></span> <button type="button" id="copyAccBtn" style="margin-left: 6px; font-size: 0.7rem; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--metallic-gold); background: transparent; color: var(--metallic-gold);">Copy</button></strong></div>
             <div class="bank-row"><span style="color: #D1D5DB;">Account name:</span><strong style="color: var(--white);" id="manNameTxt"></strong></div>
@@ -175,11 +177,22 @@
     });
 
     let manualCfg = {};
+    let payMode = 'manual';
+    function applyMode() {
+      const gw = payMode === 'gateway';
+      const manOn = !gw && !!manualCfg.is_enabled && !!manualCfg.account_number;
+      document.getElementById('gatewaySection').style.display = gw ? 'block' : 'none';
+      document.getElementById('manualSection').style.display = manOn ? 'block' : 'none';
+      document.getElementById('introText').textContent = gw
+        ? 'Pay securely through our Nigerian payment gateway. Your wallet is credited automatically once payment is confirmed.'
+        : (manOn ? 'Transfer to the account below and upload your receipt. Your wallet is credited once an admin confirms it.' : 'Deposits are not available right now. Please check back shortly.');
+    }
     async function loadManual() {
+      await watchSetting('payment_gateway', (cfg) => { payMode = cfg?.mode === 'gateway' ? 'gateway' : 'manual'; applyMode(); });
       await watchSetting('manual_deposit_config', (cfg) => {
         manualCfg = cfg || {};
+        applyMode();
         const on = !!cfg?.is_enabled && cfg.account_number;
-        document.getElementById('manualSection').style.display = on ? 'block' : 'none';
         if (!on) return;
         document.getElementById('manBankTxt').textContent = cfg.bank_name || '';
         document.getElementById('manAccTxt').textContent = cfg.account_number || '';

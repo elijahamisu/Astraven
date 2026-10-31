@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Overview | ASTRAVEN</title>
+  <style>
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .metric-card {
+      background: var(--white);
+      border: 1.5px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .metric-val {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--deep-forest);
+      margin-top: 4px;
+    }
+    .quick-link-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .quick-link-row a {
+      text-decoration: none;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/admin/index-Cs4Ds_fx.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase;">✦ Executive Control Console</span>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">Platform Overview</h1>
+      </div>
+
+      <!-- Quick Action Buttons with absolute paths (/admin/...) -->
+      <div class="quick-link-row">
+        <a href="/admin/deposits.html" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">Review Pending Deposits</a>
+        <a href="/admin/withdrawals.html" class="btn-emerald" style="padding: 10px 18px; font-size: 0.85rem;">Review Pending Withdrawals</a>
+        <a href="/admin/wallet-adjustments.html" class="btn-emerald" style="padding: 10px 18px; font-size: 0.85rem;">Manual Wallet Adjustment</a>
+        <a href="/admin/settings.html" class="btn-gold" style="padding: 10px 18px; font-size: 0.85rem;">Website Settings</a>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--secondary-text);">Total Registered Users</span>
+          <div class="metric-val" id="metricUsers">0</div>
+        </div>
+        <div class="metric-card">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--secondary-text);">Pending Deposits</span>
+          <div class="metric-val" id="metricPendingDep" style="color: var(--pending-orange);">0</div>
+        </div>
+        <div class="metric-card">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--secondary-text);">Pending Withdrawals</span>
+          <div class="metric-val" id="metricPendingWith" style="color: var(--error-red);">0</div>
+        </div>
+        <div class="metric-card">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--secondary-text);">Active Investments</span>
+          <div class="metric-val" id="metricActiveInvs" style="color: var(--primary-green);">0</div>
+        </div>
+      </div>
+
+      <div class="astra-card">
+        <h2 style="font-size: 1.2rem; color: var(--deep-forest); margin-bottom: 12px;">Recent Automated Cron Runs</h2>
+        <div class="table-responsive" id="cronLogsContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 24px;">Loading settlement runs...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

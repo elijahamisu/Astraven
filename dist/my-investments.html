@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Investments | ASTRAVEN</title>
+  <style>
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      background: var(--white);
+      color: var(--deep-forest);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-btn.active {
+      background: var(--dark-emerald);
+      color: var(--bright-gold);
+      border-color: var(--bright-gold);
+    }
+    .investments-list {
+      display: grid;
+      gap: 14px;
+    }
+    .inv-item-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/my-investments-D0Oj-YcR.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Aviation Holdings</span>
+        <h1 class="font-heading" style="font-size: 1.8rem;">My Investments</h1>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">All Packages</button>
+        <button class="filter-btn" data-filter="active">Active</button>
+        <button class="filter-btn" data-filter="matured">Matured</button>
+      </div>
+
+      <div class="investments-list" id="invContainer">
+        <div class="astra-card" style="text-align: center; padding: 40px;">Loading investment holdings...</div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

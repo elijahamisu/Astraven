@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Gateway | ASTRAVEN Admin</title>
+  <style>
+    .gw-grid { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control { padding: 12px 14px; border: 1px solid #D1D5DB; border-radius: var(--radius-sm); font-size: 0.95rem; background: var(--cream-white); width: 100%; box-sizing: border-box; }
+    .alert-banner { padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 4px; font-size: 0.88rem; display: none; }
+    .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
+    .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+    .bal-card { background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%); border: 1.5px solid var(--metallic-gold); border-radius: var(--radius-md); padding: 20px; color: var(--white); }
+    .bal-big { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; color: var(--bright-gold); margin: 6px 0 10px; }
+    .bal-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #D1D5DB; padding: 4px 0; }
+    .mode-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mode-btn { padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid rgba(212,175,55,.5); background: var(--white); font-weight: 700; color: var(--deep-forest); cursor: pointer; }
+    .mode-btn.active { background: var(--deep-forest); color: var(--bright-gold); border-color: var(--metallic-gold); }
+    .fee-box { background: var(--light-gold-bg); border: 1px solid rgba(212,175,55,.4); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.85rem; margin-bottom: 14px; }
+    .fee-box div { display: flex; justify-content: space-between; padding: 2px 0; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab { padding: 9px 16px; border-radius: 999px; border: 1.5px solid rgba(212,175,55,.4); background: var(--white); font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+    .tab.active { background: var(--deep-forest); color: var(--bright-gold); }
+    h2.card-title { font-size: 1.1rem; color: var(--deep-forest); margin-bottom: 12px; }
+  </style>
+  <script type="module" crossorigin src="/assets/admin/gateway-B1Whowmf.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mgm-banks-CTAtA-Ij.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+    <main class="main-content">
+      <div class="gw-grid">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--metallic-gold); text-transform: uppercase; letter-spacing: .06em;">✦ MGM Pay</span>
+          <h1 class="font-heading" style="font-size: clamp(1.5rem, 5vw, 2.1rem); color: var(--deep-forest);">Payment Gateway</h1>
+        </div>
+
+        <div id="alertBanner" class="alert-banner"></div>
+
+        <div class="astra-card">
+          <h2 class="card-title">Payment Mode</h2>
+          <div class="mode-toggle">
+            <button class="mode-btn" data-mode="gateway">⚡ Gateway (automatic)</button>
+            <button class="mode-btn" data-mode="manual">🏦 Manual</button>
+          </div>
+          <small id="modeHelp" style="display: block; margin-top: 10px; color: var(--secondary-text); font-size: 0.8rem;"></small>
+        </div>
+
+        <div class="bal-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--soft-gold); letter-spacing: .08em;">Gateway Balance</span>
+            <button id="refreshBal" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--metallic-gold); background: transparent; color: var(--metallic-gold);">Refresh</button>
+          </div>
+          <div class="bal-big" id="balAvail">—</div>
+          <div class="bal-row"><span>Frozen</span><strong id="balFrozen">—</strong></div>
+          <div class="bal-row"><span>Total</span><strong id="balTotal">—</strong></div>
+          <div id="balErr" style="font-size: 0.78rem; color: #FCA5A5; margin-top: 6px;"></div>
+        </div>
+
+        <div class="astra-card">
+          <div class="tabs">
+            <button class="tab active" data-tab="withdraw">Withdraw</button>
+            <button class="tab" data-tab="topup">Top Up</button>
+          </div>
+
+          <form id="withdrawForm">
+            <div class="form-group"><label for="wAmount">Amount (₦)</label><input type="number" id="wAmount" class="form-control" min="100" step="0.01" required></div>
+            <div class="fee-box">
+              <div><span>Gateway fee (<span id="feePctTxt">9.5</span>%)</span><strong id="feeTxt">₦0.00</strong></div>
+              <div><span>You receive</span><strong id="netTxt" style="color: var(--primary-green);">₦0.00</strong></div>
+            </div>
+            <div class="form-group"><label for="wBank">Bank</label><select id="wBank" class="form-control" required></select></div>
+            <div class="form-group"><label for="wAcc">Account number</label><input id="wAcc" class="form-control" inputmode="numeric" maxlength="10" pattern="\d{10}" required></div>
+            <div class="form-group"><label for="wName">Account name</label><input id="wName" class="form-control" maxlength="120" required></div>
+            <button type="submit" id="wBtn" class="btn-gold" style="width: 100%; padding: 14px;">Withdraw from Gateway</button>
+          </form>
+
+          <form id="topupForm" style="display: none;">
+            <div class="form-group"><label for="tAmount">Top-up amount (₦)</label><input type="number" id="tAmount" class="form-control" min="100" step="0.01" required></div>
+            <small style="display: block; margin-bottom: 12px; color: var(--secondary-text); font-size: 0.8rem;">You'll be taken to the gateway's payment page. The balance updates once the payment is confirmed.</small>
+            <button type="submit" id="tBtn" class="btn-emerald" style="width: 100%; padding: 14px;">Top Up Gateway</button>
+          </form>
+        </div>
+
+        <div class="astra-card">
+          <h2 class="card-title">Gateway Fee for Admin Withdrawals</h2>
+          <div class="form-group"><label for="feePct">Fee (%)</label><input type="number" id="feePct" class="form-control" min="0" max="99.99" step="0.01"></div>
+          <button id="saveFee" class="btn-emerald" style="padding: 10px 18px;">Save Fee</button>
+        </div>
+
+        <div class="astra-card">
+          <h2 class="card-title">Recent Gateway Top-ups &amp; Withdrawals</h2>
+          <div id="ordersBox" style="font-size: 0.85rem; color: var(--secondary-text);">Loading…</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frequently Asked Questions | ASTRAVEN</title>
+  <style>
+    .faq-wrap { max-width: 720px; margin: 0 auto; }
+    .search-box {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--white);
+      margin-bottom: 20px;
+    }
+    .accordion-item {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .accordion-trigger {
+      width: 100%;
+      padding: 16px;
+      text-align: left;
+      background: none;
+      border: none;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--deep-forest);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .accordion-trigger:hover { background: var(--light-gold-bg); }
+    .accordion-body {
+      display: none;
+      padding: 0 16px 16px;
+      font-size: 0.88rem;
+      color: var(--primary-text);
+      line-height: 1.5;
+      border-top: 1px solid #F3F4F6;
+    }
+    .accordion-item.active .accordion-body { display: block; }
+    .accordion-item.active .chevron { transform: rotate(180deg); }
+    .chevron { transition: transform 0.2s; font-size: 0.8rem; color: var(--metallic-gold); }
+  </style>
+  <script type="module" crossorigin src="/assets/faq-QmfX6DrO.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="faq-wrap">
+        <div style="margin-bottom: 20px;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Knowledge Base</span>
+          <h1 class="font-heading" style="font-size: 1.8rem;">Frequently Asked Questions</h1>
+          <p style="color: var(--secondary-text); font-size: 0.88rem; margin-top: 4px;">
+            Instant answers regarding aviation investment contracts, bank transfers, and affiliate rewards.
+          </p>
+        </div>
+
+        <input type="text" id="faqSearch" class="search-box" placeholder="Search questions (e.g. withdrawal, VIP, deposit)...">
+
+        <div id="faqList">
+          <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Loading knowledge base...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

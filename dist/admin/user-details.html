@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile Dossier | ASTRAVEN Admin</title>
+  <style>
+    .dossier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .dossier-cell { background: var(--light-gold-bg); padding: 14px; border-radius: var(--radius-sm); border: 1px solid rgba(212, 175, 55, 0.3); }
+    .grant-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 43, 26, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .grant-modal.active { display: flex; }
+    .grant-modal-box {
+      background: var(--white);
+      border: 1.5px solid var(--metallic-gold);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+    .dl-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0 6px; }
+    .dl-chip { border: 1px solid #E5E7EB; background: #fff; color: var(--deep-forest); border-radius: 999px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .dl-chip span { display: inline-block; min-width: 18px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: #F3F4F6; font-size: 0.72rem; }
+    .dl-chip.active { background: var(--deep-forest); color: #fff; border-color: var(--deep-forest); }
+    .dl-chip.active span { background: rgba(255,255,255,.2); }
+  </style>
+  <script type="module" crossorigin src="/assets/admin/user-details-tVX0Ofa-.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div style="margin-bottom: 20px;">
+        <a href="/admin/users.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 12px;">
+          ← Back to User Directory
+        </a>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest);">User Dossier</h1>
+      </div>
+
+      <div class="astra-card" id="userDossierContainer" style="margin-bottom: 24px;">
+        <p style="text-align: center; color: var(--secondary-text); padding: 40px;">Compiling dossier...</p>
+      </div>
+
+      <!-- User Active Investments Section -->
+      <div class="astra-card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 18px 20px; border-bottom: 1px solid #ECECEC; display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin: 0;">Active Flight Packages &amp; Investments</h2>
+          <button id="openGrantModalBtn" class="btn-gold" style="padding: 8px 16px; font-size: 0.8rem;">+ Grant Package</button>
+        </div>
+        <div class="table-responsive" id="userInvestmentsContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 30px;">Loading user portfolio...</p>
+        </div>
+      </div>
+
+      <!-- Downline Section -->
+      <div class="astra-card" style="padding: 0; overflow: hidden; margin-top: 24px;">
+        <div style="padding: 18px 20px; border-bottom: 1px solid #ECECEC;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <h2 style="font-size: 1.15rem; color: var(--deep-forest); margin: 0;">Downline Team</h2>
+            <span id="downlineSummary" style="font-size: 0.8rem; color: var(--secondary-text);"></span>
+          </div>
+          <div class="dl-filters" id="downlineFilters">
+            <button type="button" class="dl-chip active" data-filter="all">All <span data-count="all">0</span></button>
+            <button type="button" class="dl-chip" data-filter="active">Active <span data-count="active">0</span></button>
+            <button type="button" class="dl-chip" data-filter="inactive">Inactive <span data-count="inactive">0</span></button>
+            <select id="downlineLevel" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.8rem;">
+              <option value="0">All levels</option>
+              <option value="1">Level 1 (direct)</option>
+              <option value="2">Level 2</option>
+              <option value="3">Level 3</option>
+            </select>
+          </div>
+          <small style="color: var(--secondary-text); font-size: 0.75rem;">Active = has at least one running package they bought (admin grants don't count).</small>
+        </div>
+        <div class="table-responsive" id="userDownlineContainer">
+          <p style="text-align: center; color: var(--secondary-text); padding: 30px;">Loading downline...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Grant Product Modal -->
+  <div class="grant-modal" id="grantModal">
+    <div class="grant-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.3rem; color: var(--deep-forest);">Grant Flight Package</h2>
+        <button id="closeModalBtn" type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--secondary-text);">&times;</button>
+      </div>
+
+      <p style="color: var(--secondary-text); font-size: 0.85rem; margin-bottom: 16px;">
+        This will immediately activate the selected package for this investor without deducting their wallet balance. Settlements will proceed automatically.
+      </p>
+
+      <form id="grantProductForm">
+        <div class="form-group">
+          <label for="productSelect">Select Package / Flight Syndicate</label>
+          <select id="productSelect" class="form-control" required>
+            <option value="">-- Choose Product --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="grantReason">Administrative Reason / Note</label>
+          <input type="text" id="grantReason" class="form-control" placeholder="e.g. Executive Partner Allocation, Influencer Grant" required>
+        </div>
+
+        <button type="submit" id="submitGrantBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 8px;">
+          Confirm &amp; Activate Package
+        </button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>

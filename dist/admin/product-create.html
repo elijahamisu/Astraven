@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Product | ASTRAVEN Admin</title>
+  <style>
+    .form-wrap { max-width: 640px; margin: 0 auto; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--deep-forest); }
+    .form-control {
+      padding: 12px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      background: var(--cream-white);
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/admin/product-create-Cxv8dVok.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/admin-navigation-CfdeLVZw.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="adminNavigationContainer"></div>
+
+    <main class="main-content">
+      <div class="form-wrap">
+        <a href="products.html" style="color: var(--primary-green); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 12px;">
+          ← Back to Catalog
+        </a>
+        <h1 class="font-heading" style="font-size: 2rem; color: var(--deep-forest); margin-bottom: 20px;">Deploy New Package</h1>
+
+        <form class="astra-card" id="createProdForm">
+          <div class="form-group">
+            <label for="catSlug">Product Classification</label>
+            <select id="catSlug" class="form-control" required>
+              <option value="vip">ASTRA-VIP (Daily Income)</option>
+              <option value="ssvip">SSVIP (Maturity Model)</option>
+              <option value="limited">Limited Route Capacity</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="code">Unique Code Identifier</label>
+            <input type="text" id="code" class="form-control" placeholder="e.g. VIP-9 or LTD-KANO" required>
+          </div>
+
+          <div class="form-group">
+            <label for="name">Package Name</label>
+            <input type="text" id="name" class="form-control" placeholder="e.g. Trans-Atlantic Jetliner Syndicate" required>
+          </div>
+
+          <div class="form-group">
+            <label for="desc">Description</label>
+            <textarea id="desc" class="form-control" style="min-height: 80px;" placeholder="Contract specifications..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="price">Purchase Cost (₦)</label>
+            <input type="number" id="price" class="form-control" min="1000" step="100" required>
+          </div>
+
+          <div class="form-group">
+            <label for="duration">Cycle Duration (Days)</label>
+            <input type="number" id="duration" class="form-control" min="1" value="50" required>
+          </div>
+
+          <div class="form-group">
+            <label for="daily">Daily Settlement Amount (₦, 0 for maturity products)</label>
+            <input type="number" id="daily" class="form-control" min="0" step="0.01" value="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="total">Total Expected Contract Payout (₦)</label>
+            <input type="number" id="total" class="form-control" min="1000" step="100" required>
+          </div>
+
+          <div class="form-group">
+            <label for="payoutType">Settlement Type</label>
+            <select id="payoutType" class="form-control" required>
+              <option value="daily">Daily Automated Settlement</option>
+              <option value="maturity">Lump-Sum at Maturity</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="isLimited">
+              <span>Is Limited Capacity Route?</span>
+            </label>
+          </div>
+
+          <div class="form-group" id="capacityGroup" style="display: none;">
+            <label for="maxCapacity">Maximum Seat/Slot Allocation</label>
+            <input type="number" id="maxCapacity" class="form-control" min="1" placeholder="e.g. 50">
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-gold" style="width: 100%; padding: 13px; margin-top: 8px;">
+            Deploy Flight Syndicate
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

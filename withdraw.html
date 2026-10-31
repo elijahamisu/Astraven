@@ -112,7 +112,7 @@
     import { initUserNavigation } from './shared/user-navigation.js';
     import { requireAuth, supabase } from './shared/supabase-client.js';
     import { formatCurrency } from './shared/formatters.js';
-    import { AFRSTAR_BANKS } from './shared/afrstar-banks.js';
+    import { MGM_BANKS } from './shared/mgm-banks.js';
 
     let currentSession = null;
     let minWithdrawal = 1;
@@ -166,7 +166,7 @@
       });
 
       const bankSelect = document.getElementById('bankCode');
-      [...AFRSTAR_BANKS].sort((a, b) => a.name.localeCompare(b.name)).forEach(b => {
+      [...MGM_BANKS].sort((a, b) => a.name.localeCompare(b.name)).forEach(b => {
         const opt = document.createElement('option');
         opt.value = b.code;
         opt.textContent = b.name;

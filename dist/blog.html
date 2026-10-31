@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Proofs & Blog | ASTRAVEN</title>
+  <style>
+    .blog-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .post-card {
+      background: var(--white);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .post-author-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .author-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--deep-forest);
+      color: var(--bright-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      border: 1px solid var(--metallic-gold);
+      flex-shrink: 0;
+    }
+    .post-image-preview {
+      width: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      border: 1px solid #E5E7EB;
+      margin: 14px 0;
+      background: #F3F4F6;
+      cursor: pointer;
+    }
+    .post-actions-bar {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid #ECECEC;
+      margin-top: 14px;
+    }
+    .action-interactive-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--secondary-text);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+    .action-interactive-btn:hover {
+      background: var(--light-gold-bg);
+      color: var(--deep-forest);
+    }
+    .action-interactive-btn.liked {
+      color: var(--error-red);
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/blog-Ds1vS8l3.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
+  <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
+  <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-navigation-FagTkAhj.js">
+  <link rel="modulepreload" crossorigin href="/assets/usernames-CpnWIWI3.js">
+  <link rel="modulepreload" crossorigin href="/assets/formatters-kkpPVsns.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-client-EgumnwMA.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="navigationContainer"></div>
+
+    <main class="main-content">
+      <div class="blog-header-row">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase;">✦ Investor Community</span>
+          <h1 class="font-heading" style="font-size: 1.8rem;">Proof &amp; Discussion Feed</h1>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <a href="my-posts.html" class="btn-emerald" style="padding: 10px 14px; font-size: 0.85rem;">My Submissions</a>
+          <a href="create-post.html" class="btn-gold" style="padding: 10px 16px; font-size: 0.85rem;">+ Create Post</a>
+        </div>
+      </div>
+
+      <div id="postsFeedContainer">
+        <div class="astra-card" style="text-align: center; padding: 40px; color: var(--secondary-text);">
+          Loading community posts...
+        </div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

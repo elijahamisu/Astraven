@@ -63,6 +63,11 @@ function validateSetting(key, v) {
     }
     return null;
   }
+  if (key === 'payment_gateway') {
+    if (!['gateway', 'manual'].includes(v.mode)) return 'Mode must be gateway or manual.';
+    if (v.admin_withdraw_fee_pct != null && (!num(v.admin_withdraw_fee_pct) || v.admin_withdraw_fee_pct < 0 || v.admin_withdraw_fee_pct >= 100)) return 'Gateway fee must be between 0 and 99.99%.';
+    return null;
+  }
   if (key === 'welcome_bonus') {
     if (!num(v.amount) || v.amount < 0 || v.amount > 1000000) return 'Welcome bonus must be between 0 and 1,000,000.';
     return null;
