@@ -100,6 +100,28 @@
               ${formatCurrency(prod.price)}
             </div>
 
+            ${(() => {
+              const price = Number(prod.price) || 0;
+              const total = Number(prod.total_payout) || 0;
+              const profit = total - price;
+              const days = Number(prod.duration_days) || 0;
+              const daily = Number(prod.daily_income) || 0;
+              const yieldPct = price > 0 ? Math.round((profit / price) * 100) : 0;
+              const cell = (label, value, color = 'var(--deep-forest)') => `
+                <div style="background: rgba(0,0,0,0.03); border-radius: 10px; padding: 10px;">
+                  <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--secondary-text);">${label}</div>
+                  <div style="font-weight: 700; font-size: 0.95rem; color: ${color}; margin-top: 2px;">${value}</div>
+                </div>`;
+              return `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
+                  ${cell('Duration', `${days} Day${days === 1 ? '' : 's'}`)}
+                  ${cell(prod.payout_type === 'maturity' || daily <= 0 ? 'Payout' : 'Daily Income',
+                         prod.payout_type === 'maturity' || daily <= 0 ? 'At maturity' : formatCurrency(daily), 'var(--metallic-gold)')}
+                  ${cell('Total Return', formatCurrency(total))}
+                  ${cell('Profit', `+${formatCurrency(profit)} (${yieldPct}%)`, 'var(--success-green)')}
+                </div>`;
+            })()}
+
             <div style="font-size: 0.85rem; margin-bottom: 14px;">
               <div style="display: flex; justify-content: space-between; color: var(--secondary-text); font-size: 0.8rem;">
                 <span>Quota Reserved</span>
