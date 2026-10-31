@@ -37,8 +37,27 @@
     }
     .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
     .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+      .rc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 2000; display: none; align-items: flex-end; justify-content: center; }
+    .rc-overlay.active { display: flex; }
+    .rc-sheet { background: var(--white); width: 100%; max-width: 480px; max-height: 94vh; overflow-y: auto; border-radius: 22px 22px 0 0; animation: rcUp .3s ease; }
+    @media (min-width: 600px) { .rc-overlay { align-items: center; } .rc-sheet { border-radius: 22px; } }
+    @keyframes rcUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .rc-head { background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%); border-bottom: 2px solid var(--metallic-gold); padding: 16px 18px; display: flex; align-items: center; gap: 12px; color: var(--white); border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .rc-logo { width: 44px; height: 44px; border-radius: 10px; background: rgba(212,175,55,.15); border: 1px solid var(--metallic-gold); display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 700; color: var(--bright-gold); font-size: 1.3rem; }
+    .rc-close { margin-left: auto; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: var(--white); font-size: 1.1rem; cursor: pointer; }
+    .rc-check { width: 76px; height: 76px; border-radius: 50%; background: rgba(34,197,94,.15); display: flex; align-items: center; justify-content: center; margin: 22px auto 10px; }
+    .rc-check span { width: 56px; height: 56px; border-radius: 50%; background: var(--success-green, #16A34A); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; }
+    .rc-title { text-align: center; font-size: 1.35rem; font-weight: 800; color: var(--success-green, #16A34A); margin-bottom: 4px; }
+    .rc-sub { text-align: center; font-size: 0.82rem; color: var(--secondary-text); margin-bottom: 16px; padding: 0 20px; }
+    .rc-table { margin: 0 18px; border: 1px solid rgba(212,175,55,.35); border-radius: 16px; background: var(--light-gold-bg, #FBF7EC); overflow: hidden; }
+    .rc-row { display: flex; justify-content: space-between; gap: 12px; padding: 13px 16px; border-bottom: 1px solid rgba(212,175,55,.22); font-size: 0.9rem; }
+    .rc-row:last-child { border-bottom: none; }
+    .rc-row span:first-child { color: var(--secondary-text); flex-shrink: 0; }
+    .rc-row span:last-child { font-weight: 700; color: var(--deep-forest); text-align: right; overflow-wrap: anywhere; }
+    .rc-qr { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 0 8px; }
+    .rc-qr canvas { border: 1px solid #E5E7EB; border-radius: 12px; padding: 8px; background: #fff; }
   </style>
-  <script type="module" crossorigin src="/assets/withdraw-CtAKbmEN.js"></script>
+  <script type="module" crossorigin src="/assets/withdraw-BqKgL3_6.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/supabase-client-BCUvSBAr.js">
   <link rel="modulepreload" crossorigin href="/assets/site-settings-CsXfhtzc.js">
   <link rel="modulepreload" crossorigin href="/assets/mobile-cards-DX-1T3ZF.js">
@@ -126,6 +145,41 @@
         </form>
       </div>
     </main>
+  </div>
+
+  <div class="rc-overlay" id="receiptOverlay">
+    <div class="rc-sheet">
+      <div class="rc-head">
+        <div class="rc-logo">A</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1.05rem;">ASTRAVEN</div>
+          <div style="font-size: 0.72rem; letter-spacing: .08em; color: var(--soft-gold);">WITHDRAWAL RECEIPT</div>
+        </div>
+        <button class="rc-close" id="rcClose" aria-label="Close">✕</button>
+      </div>
+      <div class="rc-check"><span>✓</span></div>
+      <div class="rc-title">Withdrawal Submitted!</div>
+      <div class="rc-sub" id="rcSub">Your funds are reserved and will be paid to your bank once approved.</div>
+      <div class="rc-table">
+        <div class="rc-row"><span>Amount:</span><span id="rcAmount"></span></div>
+        <div class="rc-row"><span>Fee:</span><span id="rcFee"></span></div>
+        <div class="rc-row"><span>You'll receive:</span><span id="rcNet" style="color: var(--primary-green);"></span></div>
+        <div class="rc-row"><span>Date:</span><span id="rcDate"></span></div>
+        <div class="rc-row"><span>Account Name:</span><span id="rcName"></span></div>
+        <div class="rc-row"><span>Bank:</span><span id="rcBank"></span></div>
+        <div class="rc-row"><span>Account No:</span><span id="rcAcct"></span></div>
+        <div class="rc-row"><span>Paid from:</span><span>Main Wallet</span></div>
+        <div class="rc-row"><span>Status:</span><span style="color: #B45309;">Pending approval</span></div>
+        <div class="rc-row"><span>Withdraw ID:</span><span id="rcRef" style="font-family: monospace;"></span></div>
+      </div>
+      <div class="rc-qr">
+        <canvas id="rcQr"></canvas>
+        <span style="font-size: 0.72rem; color: var(--secondary-text);">Scan to verify withdrawal ID</span>
+      </div>
+      <div style="padding: 8px 18px 22px;">
+        <a href="withdrawal-history.html" class="btn-gold" style="display: block; text-align: center; padding: 13px; text-decoration: none;">View Withdrawal History</a>
+      </div>
+    </div>
   </div>
 
 </body>

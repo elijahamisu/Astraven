@@ -38,6 +38,25 @@
     }
     .alert-banner.error { background: #FDE8E8; border: 1px solid var(--error-red); color: var(--error-red); display: block; }
     .alert-banner.success { background: #E6F8EF; border: 1px solid var(--success-green); color: var(--success-green); display: block; }
+      .rc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 2000; display: none; align-items: flex-end; justify-content: center; }
+    .rc-overlay.active { display: flex; }
+    .rc-sheet { background: var(--white); width: 100%; max-width: 480px; max-height: 94vh; overflow-y: auto; border-radius: 22px 22px 0 0; animation: rcUp .3s ease; }
+    @media (min-width: 600px) { .rc-overlay { align-items: center; } .rc-sheet { border-radius: 22px; } }
+    @keyframes rcUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .rc-head { background: linear-gradient(135deg, var(--deep-forest) 0%, var(--card-green) 100%); border-bottom: 2px solid var(--metallic-gold); padding: 16px 18px; display: flex; align-items: center; gap: 12px; color: var(--white); border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .rc-logo { width: 44px; height: 44px; border-radius: 10px; background: rgba(212,175,55,.15); border: 1px solid var(--metallic-gold); display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 700; color: var(--bright-gold); font-size: 1.3rem; }
+    .rc-close { margin-left: auto; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: var(--white); font-size: 1.1rem; cursor: pointer; }
+    .rc-check { width: 76px; height: 76px; border-radius: 50%; background: rgba(34,197,94,.15); display: flex; align-items: center; justify-content: center; margin: 22px auto 10px; }
+    .rc-check span { width: 56px; height: 56px; border-radius: 50%; background: var(--success-green, #16A34A); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; }
+    .rc-title { text-align: center; font-size: 1.35rem; font-weight: 800; color: var(--success-green, #16A34A); margin-bottom: 4px; }
+    .rc-sub { text-align: center; font-size: 0.82rem; color: var(--secondary-text); margin-bottom: 16px; padding: 0 20px; }
+    .rc-table { margin: 0 18px; border: 1px solid rgba(212,175,55,.35); border-radius: 16px; background: var(--light-gold-bg, #FBF7EC); overflow: hidden; }
+    .rc-row { display: flex; justify-content: space-between; gap: 12px; padding: 13px 16px; border-bottom: 1px solid rgba(212,175,55,.22); font-size: 0.9rem; }
+    .rc-row:last-child { border-bottom: none; }
+    .rc-row span:first-child { color: var(--secondary-text); flex-shrink: 0; }
+    .rc-row span:last-child { font-weight: 700; color: var(--deep-forest); text-align: right; overflow-wrap: anywhere; }
+    .rc-qr { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 0 8px; }
+    .rc-qr canvas { border: 1px solid #E5E7EB; border-radius: 12px; padding: 8px; background: #fff; }
   </style>
 </head>
 <body>
@@ -121,7 +140,43 @@
     </main>
   </div>
 
+  <div class="rc-overlay" id="receiptOverlay">
+    <div class="rc-sheet">
+      <div class="rc-head">
+        <div class="rc-logo">A</div>
+        <div>
+          <div style="font-weight: 700; font-size: 1.05rem;">ASTRAVEN</div>
+          <div style="font-size: 0.72rem; letter-spacing: .08em; color: var(--soft-gold);">WITHDRAWAL RECEIPT</div>
+        </div>
+        <button class="rc-close" id="rcClose" aria-label="Close">✕</button>
+      </div>
+      <div class="rc-check"><span>✓</span></div>
+      <div class="rc-title">Withdrawal Submitted!</div>
+      <div class="rc-sub" id="rcSub">Your funds are reserved and will be paid to your bank once approved.</div>
+      <div class="rc-table">
+        <div class="rc-row"><span>Amount:</span><span id="rcAmount"></span></div>
+        <div class="rc-row"><span>Fee:</span><span id="rcFee"></span></div>
+        <div class="rc-row"><span>You'll receive:</span><span id="rcNet" style="color: var(--primary-green);"></span></div>
+        <div class="rc-row"><span>Date:</span><span id="rcDate"></span></div>
+        <div class="rc-row"><span>Account Name:</span><span id="rcName"></span></div>
+        <div class="rc-row"><span>Bank:</span><span id="rcBank"></span></div>
+        <div class="rc-row"><span>Account No:</span><span id="rcAcct"></span></div>
+        <div class="rc-row"><span>Paid from:</span><span>Main Wallet</span></div>
+        <div class="rc-row"><span>Status:</span><span style="color: #B45309;">Pending approval</span></div>
+        <div class="rc-row"><span>Withdraw ID:</span><span id="rcRef" style="font-family: monospace;"></span></div>
+      </div>
+      <div class="rc-qr">
+        <canvas id="rcQr"></canvas>
+        <span style="font-size: 0.72rem; color: var(--secondary-text);">Scan to verify withdrawal ID</span>
+      </div>
+      <div style="padding: 8px 18px 22px;">
+        <a href="withdrawal-history.html" class="btn-gold" style="display: block; text-align: center; padding: 13px; text-decoration: none;">View Withdrawal History</a>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
+    import QRCode from 'qrcode';
     import { watchSetting } from './shared/site-settings.js';
     let withdrawalsEnabled = true;
     import { initUserNavigation } from './shared/user-navigation.js';
@@ -247,8 +302,23 @@
         const apiResult = await res.json().catch(() => ({ success: false, error: 'Unexpected server response.' }));
         if (!apiResult.success) throw new Error(apiResult.error || 'Failed to submit withdrawal.');
 
-        showAlert(`Withdrawal ${apiResult.reference} submitted. ${formatCurrency(apiResult.net_amount)} will be paid to your bank once approved.`, false);
-        setTimeout(() => { window.location.href = 'withdrawal-history.html'; }, 1500);
+        const fee = Math.round((amount * (feeRate / 100)) * 100) / 100;
+        const net = apiResult.net_amount != null ? Number(apiResult.net_amount) : Math.max(0, amount - fee);
+        const ref = apiResult.reference || '';
+        document.getElementById('rcAmount').textContent = formatCurrency(amount);
+        document.getElementById('rcFee').textContent = formatCurrency(Math.max(0, amount - net));
+        document.getElementById('rcNet').textContent = formatCurrency(net);
+        document.getElementById('rcDate').textContent = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+        document.getElementById('rcName').textContent = accountName.toUpperCase();
+        document.getElementById('rcBank').textContent = (MGM_BANKS.find(b => b.code === bankCode) || {}).name || bankCode;
+        document.getElementById('rcAcct').textContent = accountNumber.slice(0, 3) + '****' + accountNumber.slice(-3);
+        document.getElementById('rcRef').textContent = ref;
+        try { await QRCode.toCanvas(document.getElementById('rcQr'), `ASTRAVEN WITHDRAWAL ${ref} ${formatCurrency(net)}`, { width: 150, margin: 1, color: { dark: '#0B2E1F' } }); } catch (_) { document.querySelector('.rc-qr').style.display = 'none'; }
+        document.getElementById('receiptOverlay').classList.add('active');
+        currentBalance -= amount;
+        document.getElementById('availBal').textContent = formatCurrency(currentBalance);
+        document.getElementById('amount').value = '';
+        updateCalc();
       } catch (err) {
         console.error('Withdrawal failure:', err);
         showAlert(err.message || 'Withdrawal processing error. Please try again.');
@@ -257,6 +327,8 @@
         submitBtn.textContent = withdrawalsEnabled ? 'Confirm Withdrawal Request' : 'Withdrawals Locked';
       }
     });
+
+    document.getElementById('rcClose').addEventListener('click', () => { window.location.href = 'withdrawal-history.html'; });
 
     initWithdraw();
   </script>
